@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>과학실험실 · 다양한 가상실험 자료실</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --bg-2:#0e1426;
+    --panel:#121a30;
+    --panel-2:#18233f;
+    --line:rgba(150,175,255,.13);
+    --line-2:rgba(150,175,255,.26);
+    --ink:#eef2ff;
+    --muted:#94a0c4;
+    --muted-2:#646f94;
+    --phys:#5b8cff;   /* 물리 */
+    --chem:#4be8a0;   /* 화학 */
+    --bio:#ff7eb3;    /* 생명 */
+    --earth:#ffb454;  /* 지구과학 */
+    --accent:#7c5cff;
+    --accent-2:#33d6e6;
+    --brand:linear-gradient(120deg,#5b8cff,#7c5cff 45%,#33d6e6);
+    --rad:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+
+  .ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .ambient .glow{position:absolute;filter:blur(70px);border-radius:50%;opacity:.45}
+  .g1{width:540px;height:540px;top:-160px;left:-120px;background:radial-gradient(circle,rgba(91,140,255,.5),transparent 65%)}
+  .g2{width:600px;height:600px;top:-200px;right:-150px;background:radial-gradient(circle,rgba(124,92,255,.45),transparent 65%)}
+  .g3{width:480px;height:480px;bottom:-200px;left:35%;background:radial-gradient(circle,rgba(51,214,230,.3),transparent 65%)}
+  .grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;background-image:radial-gradient(rgba(255,255,255,.9) .5px,transparent .5px);background-size:3px 3px}
+
+  .shell{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:0 24px 100px}
+
+  /* NAV */
+  .nav{display:flex;align-items:center;gap:16px;padding:24px 0 18px}
+  .brand{display:flex;align-items:center;gap:13px}
+  .logo{width:48px;height:48px;border-radius:13px;background:var(--brand);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 8px 22px rgba(124,92,255,.35)}
+  .logo svg{width:26px;height:26px;color:#fff}
+  .brand .name{font-size:21px;font-weight:800;letter-spacing:-.5px;line-height:1}
+  .brand .name em{font-style:normal;background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .sub{font-size:11px;color:var(--muted);letter-spacing:2.5px;margin-top:5px;text-transform:uppercase}
+  .nav .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .btn{border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--ink);border-radius:11px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+  .btn:hover{background:rgba(255,255,255,.08)}
+  .btn.solid{background:var(--brand);border:0;color:#fff;font-weight:800;box-shadow:0 8px 22px rgba(91,140,255,.3)}
+  .btn.solid:hover{filter:brightness(1.08)}
+  .btn.ghost-danger{border-color:rgba(255,126,179,.4);color:#ff9ec5}
+  .admin-badge{display:none;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--chem);border:1px solid rgba(75,232,160,.35);background:rgba(75,232,160,.08);padding:8px 13px;border-radius:999px}
+  .admin-badge .pulse{width:8px;height:8px;border-radius:50%;background:var(--chem);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(75,232,160,.5)}70%{box-shadow:0 0 0 8px rgba(75,232,160,0)}100%{box-shadow:0 0 0 0 rgba(75,232,160,0)}}
+  body.admin .admin-badge{display:inline-flex}
+
+  /* HERO */
+  .hero{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center;padding:26px 0 30px;border-bottom:1px solid var(--line)}
+  .hero h1{font-size:clamp(30px,5vw,54px);line-height:1.05;font-weight:800;letter-spacing:-1.8px;margin:0}
+  .hero h1 .lit{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);font-size:16px;max-width:48ch;margin:18px 0 0;line-height:1.6}
+  .hero .stats{display:flex;gap:30px;margin-top:24px;flex-wrap:wrap}
+  .stat .n{font-size:28px;font-weight:800;letter-spacing:-1px}
+  .stat .n.b{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .hero-art{position:relative;height:280px}
+  .hero-art svg{width:100%;height:100%}
+  @media(max-width:920px){.hero{grid-template-columns:1fr}.hero-art{display:none}}
+
+  /* CONTROLS */
+  .controls{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:28px 0 6px}
+  .fld{display:flex;flex-direction:column;gap:7px}
+  .fld label{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-weight:700}
+  .fld select,.fld input{background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--ink);padding:12px 14px;font-size:14px;font-family:inherit;min-width:150px}
+  .fld select:focus,.fld input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.22)}
+  .search{flex:1;min-width:220px}
+  .search .wrap{position:relative}
+  .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted-2)}
+  .search input{width:100%;padding-left:40px}
+  .viewseg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-left:auto}
+  .viewseg button{border:0;background:transparent;color:var(--muted);padding:12px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .viewseg button.on{background:var(--panel-2);color:var(--ink)}
+
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 4px}
+  .chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+  .chip:hover{border-color:var(--line-2);color:var(--ink)}
+  .chip.on{background:var(--ink);color:#0a0e1a;border-color:var(--ink);font-weight:800}
+  .chip .sw{width:8px;height:8px;border-radius:50%}
+
+  .resultline{margin:22px 2px 16px;font-size:13px;color:var(--muted)}
+  .resultline b{color:var(--ink)}
+
+  /* GRID */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(286px,1fr));gap:22px}
+  .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--rad);overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;display:flex;flex-direction:column}
+  .card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--ac,var(--phys));z-index:3}
+  .card:hover{transform:translateY(-6px);border-color:var(--line-2);box-shadow:0 24px 50px rgba(0,0,0,.45)}
+  .pv{position:relative;aspect-ratio:16/10;overflow:hidden;background:#0b1120}
+  .pv iframe{position:absolute;inset:0;width:250%;height:250%;transform:scale(.4);transform-origin:top left;border:0;pointer-events:none;background:#fff}
+  .pv .cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .pv .cover svg{width:100%;height:100%}
+  .pv .badge{position:absolute;left:12px;bottom:12px;z-index:2;font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:5px 10px;border-radius:999px;background:rgba(10,14,26,.7);border:1px solid var(--line-2);color:var(--ink);backdrop-filter:blur(6px)}
+  .pv .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,12,24,0);opacity:0;transition:.2s;z-index:2}
+  .card:hover .pv .play{opacity:1;background:linear-gradient(180deg,rgba(8,12,24,.15),rgba(8,12,24,.72))}
+  .play .go{background:var(--ink);color:#0a0e1a;font-weight:800;font-size:13px;padding:11px 20px;border-radius:999px;display:flex;gap:8px;align-items:center}
+  .cbody{padding:16px 17px 18px;display:flex;flex-direction:column;flex:1}
+  .ceyebrow{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:9px}
+  .ceyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--ac,var(--phys))}
+  .ctitle{font-size:18px;font-weight:800;letter-spacing:-.4px;line-height:1.25;margin:0 0 8px}
+  .cdesc{font-size:13px;color:var(--muted);line-height:1.55;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cfoot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+  .cdev{font-size:11.5px;color:var(--muted-2)}
+  .cdev b{color:var(--muted);font-weight:600}
+  .source-tag{font-size:10px;color:var(--muted-2);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
+  .admin-tools{position:absolute;top:14px;right:14px;z-index:4;display:none;gap:7px}
+  body.admin .card:hover .admin-tools{display:flex}
+  .admin-tools button{border:1px solid var(--line-2);background:rgba(0,0,0,.5);color:var(--ink);width:30px;height:30px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+  .admin-tools button:hover{background:var(--panel-2)}
+  .admin-tools button svg{width:15px;height:15px}
+  .admin-tools .del:hover{border-color:var(--bio);color:var(--bio)}
+
+  .list{display:none;flex-direction:column;gap:11px}
+  body.listview .grid{display:none}
+  body.listview .list{display:flex}
+  .lrow{display:flex;align-items:center;gap:18px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--ac,var(--phys));border-radius:14px;padding:14px 18px;cursor:pointer;transition:.15s}
+  .lrow:hover{background:var(--panel-2);transform:translateX(4px)}
+  .lthumb{width:64px;height:44px;border-radius:9px;overflow:hidden;flex:0 0 auto;background:#0b1120}
+  .lthumb svg{width:100%;height:100%}
+  .lrow .lmain{flex:1;min-width:0}
+  .lrow h3{margin:0;font-size:16px;font-weight:700}
+  .lrow .ld{font-size:12.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lrow .lmeta{display:flex;gap:7px;align-items:center;flex:0 0 auto}
+  .lrow .lgo{color:var(--accent-2);font-weight:800;font-size:13px;flex:0 0 auto}
+  .minitag{font-size:10.5px;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--muted);font-weight:600}
+
+  .empty{grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--muted)}
+  .empty .e-ico{width:64px;height:64px;margin:0 auto 16px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line)}
+  .empty .e-ico svg{width:30px;height:30px;color:var(--muted-2)}
+  .empty h3{color:var(--ink);font-size:18px;margin:0 0 6px}
+
+  /* MODAL */
+  .mask{position:fixed;inset:0;z-index:60;background:rgba(5,8,16,.7);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+  .mask.open{display:flex}
+  .modal{width:100%;max-width:560px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:22px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.6);animation:rise .25s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .mhead{position:relative;padding:22px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .mhead .bar{position:absolute;left:0;right:0;top:0;height:3px;background:var(--brand)}
+  .mhead h2{margin:0;font-size:18px;font-weight:800;flex:1;letter-spacing:-.3px}
+  .mhead .x{background:transparent;border:0;color:var(--muted);font-size:24px;cursor:pointer}
+  .mhead .x:hover{color:var(--ink)}
+  .mbody{padding:24px}
+  .mbody .fld{margin-bottom:18px;display:block}
+  .mbody .fld label{display:block;margin-bottom:8px}
+  .mbody input,.mbody select,.mbody textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--ink);padding:13px 14px;font-size:14px;font-family:inherit}
+  .mbody input:focus,.mbody select:focus,.mbody textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.22)}
+  .mbody textarea{resize:vertical;min-height:80px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .hint{font-size:11.5px;color:var(--muted-2);margin-top:7px;line-height:1.5}
+  .hint b{color:var(--muted)}
+  .err{color:#ff9ec5;font-size:12px;margin-top:7px;display:none}
+
+  /* source toggle */
+  .srcseg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;margin-bottom:8px}
+  .srcseg button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+  .srcseg button.on{background:var(--accent);color:#fff}
+  .drop{border:1.5px dashed var(--line-2);border-radius:13px;padding:24px 18px;text-align:center;cursor:pointer;transition:.15s;background:rgba(124,92,255,.04)}
+  .drop:hover,.drop.over{border-color:var(--accent);background:rgba(124,92,255,.1)}
+  .drop .di{width:42px;height:42px;margin:0 auto 10px;border-radius:11px;background:var(--panel-2);display:flex;align-items:center;justify-content:center}
+  .drop .di svg{width:22px;height:22px;color:var(--accent)}
+  .drop .dt{font-size:14px;font-weight:700}
+  .drop .ds{font-size:12px;color:var(--muted-2);margin-top:5px}
+  .drop.has{border-style:solid;border-color:var(--chem);background:rgba(75,232,160,.07)}
+  .drop.has .di{background:rgba(75,232,160,.15)}
+  .drop.has .di svg{color:var(--chem)}
+
+  .note{display:flex;gap:11px;background:rgba(91,140,255,.08);border:1px solid rgba(91,140,255,.25);border-radius:13px;padding:13px 15px;font-size:12px;color:#aac2ff;line-height:1.55;margin-bottom:4px}
+  .save{width:100%;margin-top:10px;border:0;border-radius:13px;padding:15px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;background:var(--brand);box-shadow:0 10px 26px rgba(91,140,255,.35)}
+  .save:hover{filter:brightness(1.07)}
+  .pwfield{display:flex;gap:10px}.pwfield input{flex:1}
+
+  .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);z-index:80;background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink);padding:13px 22px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 16px 40px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.3s;display:flex;align-items:center;gap:9px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .tdot{width:8px;height:8px;border-radius:50%;background:var(--chem)}
+
+  footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;color:var(--muted-2);font-size:12px}
+
+  @media(max-width:680px){.controls{flex-direction:column;align-items:stretch}.fld select{min-width:0}.viewseg{margin-left:0}.two{grid-template-columns:1fr}.label-hide{display:none}}
+</style>
+</head>
+<body>
+<div class="ambient"><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div></div>
+<div class="grain"></div>
+
+<div class="shell">
+  <div class="nav">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M9 3v6l-5 8.5A2 2 0 0 0 5.7 21h12.6a2 2 0 0 0 1.7-3.5L15 9V3"/>
+          <path d="M8 3h8M7.5 14h9"/>
+        </svg>
+      </div>
+      <div>
+        <div class="name">과학<em>실험실</em></div>
+        <div class="sub">Virtual Science Lab</div>
+      </div>
+    </div>
+    <div class="right">
+      <span class="admin-badge"><span class="pulse"></span>관리자 모드</span>
+      <button class="btn" id="adminBtn">🔑 <span class="label-hide">관리자</span></button>
+      <button class="btn solid" id="addBtn">＋ 실험 올리기</button>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div>
+      <h1>다양한 <span class="lit">가상 과학실험</span>을<br>한곳에서</h1>
+      <p>물리·화학·생명·지구과학. 클릭 한 번으로 실행되는 인터랙티브 실험을 모았습니다. 교실에서도, 집에서도 누구나 바로 탐구할 수 있습니다.</p>
+      <div class="stats">
+        <div class="stat"><div class="n b" id="statTotal">0</div><div class="l">개의 가상 실험</div></div>
+        <div class="stat"><div class="n" id="statField">4</div><div class="l">개 과학 분야</div></div>
+        <div class="stat"><div class="n" id="statGrade">3</div><div class="l">개 학년 대상</div></div>
+      </div>
+    </div>
+    <div class="hero-art">
+      <!-- general science illustration: flask + atom + leaf + planet -->
+      <svg viewBox="0 0 400 280" fill="none">
+        <defs>
+          <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b8cff"/><stop offset="0.5" stop-color="#7c5cff"/><stop offset="1" stop-color="#33d6e6"/>
+          </linearGradient>
+        </defs>
+        <circle cx="200" cy="140" r="120" stroke="rgba(150,175,255,.15)" stroke-width="1"/>
+        <circle cx="200" cy="140" r="86" stroke="rgba(150,175,255,.1)" stroke-width="1"/>
+        <!-- atom -->
+        <g transform="translate(200 140)" stroke="url(#hg)" stroke-width="2.2">
+          <ellipse rx="58" ry="22" /><ellipse rx="58" ry="22" transform="rotate(60)"/><ellipse rx="58" ry="22" transform="rotate(120)"/>
+          <circle r="7" fill="#7c5cff" stroke="none"/>
+          <circle cx="58" cy="0" r="4" fill="#33d6e6" stroke="none"/>
+          <circle cx="-29" cy="50" r="4" fill="#5b8cff" stroke="none"/>
+          <circle cx="-29" cy="-50" r="4" fill="#4be8a0" stroke="none"/>
+        </g>
+        <!-- flask -->
+        <g transform="translate(78 70)" stroke="#4be8a0" stroke-width="2.4" fill="none" stroke-linejoin="round">
+          <path d="M10 0v16L-6 44a6 6 0 0 0 5 9h22a6 6 0 0 0 5-9L15 16V0"/>
+          <path d="M7 0h11"/><path d="M-1 40h22" stroke="#4be8a0" opacity=".5"/>
+          <circle cx="6" cy="44" r="2.5" fill="#4be8a0" stroke="none"/><circle cx="14" cy="38" r="2" fill="#4be8a0" stroke="none"/>
+        </g>
+        <!-- leaf -->
+        <g transform="translate(286 60)" stroke="#ff7eb3" stroke-width="2.4" fill="none">
+          <path d="M0 36C0 14 18 0 38 0 38 22 22 38 0 36Z"/><path d="M6 30 30 8"/>
+        </g>
+        <!-- planet -->
+        <g transform="translate(300 200)" stroke="#ffb454" stroke-width="2.4" fill="none">
+          <circle cx="14" cy="14" r="15"/><ellipse cx="14" cy="14" rx="26" ry="9" transform="rotate(-22 14 14)"/>
+        </g>
+      </svg>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="fld"><label>학년</label>
+      <select id="fGrade"><option value="">전체 학년</option><option>중1</option><option>중2</option><option>중3</option></select></div>
+    <div class="fld search"><label>검색</label>
+      <div class="wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="fSearch" placeholder="실험 제목, 개념, 개발자로 찾기…"></div></div>
+    <div class="viewseg"><button id="gridBtn" class="on">⊞ 카드</button><button id="listBtn">☰ 목록</button></div>
+  </div>
+
+  <div class="chips" id="fieldChips"></div>
+  <div class="resultline" id="resultline"></div>
+  <div class="grid" id="grid"></div>
+  <div class="list" id="list"></div>
+
+  <footer>
+    <div>과학실험실 · 다양한 가상실험 자료실 — Made by jk-Lee</div>
+    <div id="footTools"></div>
+  </footer>
+</div>
+
+<!-- FORM MODAL -->
+<div class="mask" id="formMask">
+  <div class="modal">
+    <div class="mhead"><div class="bar"></div><h2 id="formTitle">새 실험 올리기</h2><button class="x" data-close>×</button></div>
+    <div class="mbody">
+      <div class="fld">
+        <label>실험 등록 방식</label>
+        <div class="srcseg"><button id="modeUrl" class="on" type="button">🔗 주소(URL) 첨부</button><button id="modeFile" type="button">📄 HTML 파일 첨부</button></div>
+        <!-- URL input -->
+        <div id="urlBox">
+          <input id="iUrl" placeholder="https://아이디.github.io/내실험/">
+          <div class="hint"><b>https://</b> 공개 주소. 카드에는 이 페이지가 자동으로 대표 이미지(미리보기)로 표시됩니다.</div>
+          <div class="err" id="eUrl">올바른 https:// 주소를 입력해 주세요.</div>
+        </div>
+        <!-- File drop -->
+        <div id="fileBox" style="display:none">
+          <div class="drop" id="drop">
+            <div class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
+            <div class="dt" id="dropText">HTML 파일을 끌어다 놓거나 클릭</div>
+            <div class="ds" id="dropSub">.html 파일 · 한 파일로 된 실험에 권장</div>
+          </div>
+          <input type="file" id="iFile" accept=".html,text/html" style="display:none">
+          <div class="err" id="eFile">HTML 파일을 첨부해 주세요.</div>
+        </div>
+      </div>
+      <div class="fld"><label>실험 이름</label>
+        <input id="iTitle" placeholder="예: 세포 분열 관찰 시뮬레이션">
+        <div class="err" id="eTitle">실험 이름을 입력해 주세요.</div></div>
+      <div class="two">
+        <div class="fld"><label>학년</label><select id="iGrade"><option>중1</option><option selected>중2</option><option>중3</option></select></div>
+        <div class="fld"><label>과학 분야</label><select id="iField"></select></div>
+      </div>
+      <div class="fld"><label>간단한 내용</label>
+        <textarea id="iDesc" placeholder="이 실험으로 무엇을 탐구하는지 한두 문장으로 적어 주세요."></textarea>
+        <div class="hint" id="descCount">0자</div></div>
+      <div class="fld"><label>개발자 / 팀</label><input id="iDev" placeholder="예: jk-Lee"></div>
+      <button class="save" id="saveBtn">실험 올리기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="mask" id="adminMask">
+  <div class="modal" style="max-width:420px">
+    <div class="mhead"><div class="bar"></div><h2 id="adminTitle">관리자 모드</h2><button class="x" data-close>×</button></div>
+    <div class="mbody">
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 0 18px" id="adminMsg"></p>
+      <div class="fld" id="pwArea">
+        <label>관리자 비밀번호</label>
+        <div class="pwfield"><input id="iPw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')document.getElementById('pwBtn').click()"><button class="btn solid" id="pwBtn" style="padding:0 18px">입장</button></div>
+        <div class="err" id="ePw">비밀번호가 일치하지 않습니다.</div>
+        <div class="hint" style="margin-top:14px">최초 비밀번호는 <b>science1234</b> 입니다. 입장 후 변경할 수 있습니다.</div>
+      </div>
+      <div id="adminPanel" style="display:none">
+        <div style="height:1px;background:var(--line);margin:0 0 18px"></div>
+        <div style="display:grid;gap:10px">
+          <button class="btn" id="exportBtn" style="justify-content:center">⤓ 전체 목록 백업 파일로 내보내기</button>
+          <button class="btn" id="importBtn" style="justify-content:center">⤒ 백업 파일 불러오기</button>
+          <button class="btn" id="pwChangeBtn" style="justify-content:center">🔒 비밀번호 변경</button>
+          <button class="btn ghost-danger" id="logoutBtn" style="justify-content:center">관리자 모드 종료</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="tdot"></span><span id="toastMsg"></span></div>
+
+<script>
+const STORE_KEY='scilab_apps_v1', PW_KEY='scilab_pw_v1', DEFAULT_PW='science1234';
+const FIELDS=['물리','화학','생명','지구과학'];
+const FIELD_COLOR={'물리':'var(--phys)','화학':'var(--chem)','생명':'var(--bio)','지구과학':'var(--earth)'};
+const FIELD_HEX={'물리':'#5b8cff','화학':'#4be8a0','생명':'#ff7eb3','지구과학':'#ffb454'};
+
+/* field illustration used as auto cover fallback */
+function coverSvg(field){
+  const c=FIELD_HEX[field]||'#5b8cff';
+  const inner={
+    '물리':`<circle cx="100" cy="62" r="9" fill="${c}"/><g stroke="${c}" stroke-width="2.4" fill="none" opacity=".9"><ellipse cx="100" cy="62" rx="40" ry="15"/><ellipse cx="100" cy="62" rx="40" ry="15" transform="rotate(60 100 62)"/><ellipse cx="100" cy="62" rx="40" ry="15" transform="rotate(120 100 62)"/></g>`,
+    '화학':`<g stroke="${c}" stroke-width="2.6" fill="none" stroke-linejoin="round"><path d="M92 34v16l-15 26a6 6 0 0 0 5 9h36a6 6 0 0 0 5-9l-15-26V34"/><path d="M88 34h24"/><path d="M80 70h40" opacity=".5"/></g><circle cx="95" cy="74" r="3" fill="${c}"/><circle cx="108" cy="66" r="2.5" fill="${c}"/>`,
+    '생명':`<g stroke="${c}" stroke-width="2.6" fill="none"><path d="M70 80C70 50 92 32 122 32 122 62 100 84 70 80Z"/><path d="M78 72 116 40"/><path d="M90 70l16-20M84 60l14-16" opacity=".6"/></g>`,
+    '지구과학':`<g stroke="${c}" stroke-width="2.6" fill="none"><circle cx="100" cy="62" r="26"/><ellipse cx="100" cy="62" rx="46" ry="15" transform="rotate(-20 100 62)"/></g><circle cx="100" cy="62" r="26" fill="${c}" opacity=".08"/>`
+  }[field]||'';
+  return `<svg viewBox="0 0 200 125" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="bgc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".14"/><stop offset="1" stop-color="${c}" stop-opacity=".02"/></linearGradient></defs><rect width="200" height="125" fill="url(#bgc)"/>${inner}</svg>`;
+}
+
+const SEED=[
+ {id:uid(),title:'전류와 자기장 탐구 실험',src:'url',url:'https://example.github.io/magnet',grade:'중2',field:'물리',desc:'전선에 흐르는 전류 세기를 바꾸며 주변에 생기는 자기장의 모양과 방향을 관찰합니다.',dev:'jk-Lee',t:Date.now()-700000},
+ {id:uid(),title:'산과 염기 중화 반응 실험실',src:'url',url:'https://example.github.io/acid',grade:'중3',field:'화학',desc:'산과 염기를 섞으며 pH 변화와 중화점을 지시약 색으로 확인합니다.',dev:'jk-Lee',t:Date.now()-600000},
+ {id:uid(),title:'세포 분열 관찰 시뮬레이션',src:'url',url:'https://example.github.io/cell',grade:'중2',field:'생명',desc:'체세포 분열의 각 단계를 멈춰가며 염색체의 움직임을 자세히 살펴봅니다.',dev:'곡선중 과학팀',t:Date.now()-500000},
+ {id:uid(),title:'별자리와 계절의 변화',src:'url',url:'https://example.github.io/season',grade:'중3',field:'지구과학',desc:'지구의 공전에 따라 밤하늘 별자리가 어떻게 달라지는지 회전시켜 봅니다.',dev:'jk-Lee',t:Date.now()-400000},
+ {id:uid(),title:'광합성 양분 생성 실험',src:'url',url:'https://example.github.io/photo',grade:'중1',field:'생명',desc:'빛의 세기와 이산화탄소 양을 조절해 광합성량이 어떻게 변하는지 측정합니다.',dev:'jk-Lee',t:Date.now()-300000},
+ {id:uid(),title:'물질의 상태 변화 관찰',src:'url',url:'https://example.github.io/state',grade:'중1',field:'화학',desc:'온도를 올리고 내리며 고체·액체·기체 사이의 상태 변화를 입자 모형으로 봅니다.',dev:'jk-Lee',t:Date.now()-200000},
+];
+
+let apps=load(), activeField='';
+function uid(){return 'x'+Math.random().toString(36).slice(2,9)}
+function load(){try{const r=localStorage.getItem(STORE_KEY);if(r)return JSON.parse(r);}catch(e){}localStorage.setItem(STORE_KEY,JSON.stringify(SEED));return SEED.slice();}
+function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify(apps));}catch(e){toast('저장 공간이 가득 찼습니다. HTML 파일이 너무 큽니다',true);}}
+function getPw(){return localStorage.getItem(PW_KEY)||DEFAULT_PW;}
+const $=s=>document.querySelector(s);
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const isAdmin=()=>document.body.classList.contains('admin');
+
+function buildChips(){
+  const el=$('#fieldChips');
+  el.innerHTML=`<button class="chip ${activeField===''?'on':''}" data-f="">전체 분야</button>`+
+    FIELDS.map(f=>`<button class="chip ${activeField===f?'on':''}" data-f="${f}"><span class="sw" style="background:${FIELD_HEX[f]}"></span>${f}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{activeField=c.dataset.f;buildChips();render();});
+}
+function filtered(){
+  const g=$('#fGrade').value,q=$('#fSearch').value.trim().toLowerCase();
+  return apps.filter(a=>(!g||a.grade===g)&&(!activeField||a.field===activeField)&&
+    (!q||(a.title+a.desc+(a.dev||'')+a.field).toLowerCase().includes(q))).sort((a,b)=>b.t-a.t);
+}
+function updateStats(){$('#statTotal').textContent=apps.length;$('#statField').textContent=new Set(apps.map(a=>a.field)).size||0;}
+
+/* preview block: live iframe for url; field cover for file/fallback */
+function previewHtml(a){
+  const cover=`<div class="cover">${coverSvg(a.field)}</div>`;
+  if(a.src==='url' && /^https:\/\//.test(a.url)){
+    // iframe live preview layered over cover (cover shows until/if iframe paints)
+    return `${cover}<iframe loading="lazy" src="${esc(a.url)}" sandbox="allow-scripts allow-same-origin" title="${esc(a.title)} 미리보기"></iframe>`;
+  }
+  return cover; // html file or no url -> illustrated cover
+}
+
+function render(){
+  const r=filtered();updateStats();
+  $('#resultline').innerHTML=`<b>${r.length}</b>개의 실험${activeField?` · <b>${esc(activeField)}</b>`:''}`;
+  const grid=$('#grid'),list=$('#list');
+  if(!r.length){
+    grid.innerHTML=`<div class="empty"><div class="e-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h3>실험이 없습니다</h3><div>필터를 바꾸거나 새 실험을 올려 보세요.</div></div>`;
+    list.innerHTML='';return;
+  }
+  grid.innerHTML=r.map(a=>{
+    const ac=FIELD_COLOR[a.field]||'var(--phys)';
+    const tag=a.src==='file'?'<span class="source-tag">파일</span>':'';
+    return `<article class="card" style="--ac:${ac}" data-open="${a.id}">
+      <div class="admin-tools"><button class="edit" data-edit="${a.id}" title="수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="del" data-del="${a.id}" title="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>
+      <div class="pv">${previewHtml(a)}<span class="badge">${esc(a.field)}</span><div class="play"><span class="go">▶ 실험 실행</span></div></div>
+      <div class="cbody"><div class="ceyebrow"><span class="dot"></span>${esc(a.grade)} · ${esc(a.field)}</div>
+      <h3 class="ctitle">${esc(a.title)}</h3><p class="cdesc">${esc(a.desc)}</p>
+      <div class="cfoot"><span class="cdev">Made by <b>${esc(a.dev||'익명')}</b></span>${tag}</div></div>
+    </article>`;
+  }).join('');
+  list.innerHTML=r.map(a=>{
+    const ac=FIELD_COLOR[a.field]||'var(--phys)';
+    return `<div class="lrow" style="--ac:${ac}" data-open="${a.id}">
+      <div class="lthumb">${coverSvg(a.field)}</div>
+      <div class="lmain"><h3>${esc(a.title)}</h3><div class="ld">${esc(a.desc)}</div></div>
+      <div class="lmeta"><span class="minitag">${esc(a.grade)}</span><span class="minitag">${esc(a.field)}</span>
+      ${isAdmin()?`<button class="btn" data-edit="${a.id}" style="padding:7px 11px">수정</button><button class="btn ghost-danger" data-del="${a.id}" style="padding:7px 11px">삭제</button>`:''}</div>
+      <div class="lgo">실행 →</div></div>`;
+  }).join('');
+  document.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',e=>{
+    if(e.target.closest('[data-edit],[data-del]'))return;launch(el.dataset.open);
+  }));
+  document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openForm(b.dataset.edit);}));
+  document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();delApp(b.dataset.del);}));
+  refreshFooter();
+}
+
+function launch(id){
+  const a=apps.find(x=>x.id===id);if(!a)return;
+  if(a.src==='file'&&a.html){
+    const blob=new Blob([a.html],{type:'text/html'});
+    window.open(URL.createObjectURL(blob),'_blank','noopener');
+  }else if(/^https:\/\//.test(a.url||'')){
+    window.open(a.url,'_blank','noopener');
+  }else{toast('이 실험은 아직 실행할 자료가 없습니다',true);}
+}
+
+/* ---- Form ---- */
+let editId=null, mode='url', fileHtml=null, fileName='';
+function fillFields(){$('#iField').innerHTML=FIELDS.map(f=>`<option>${f}</option>`).join('');}
+function setMode(m){mode=m;$('#modeUrl').classList.toggle('on',m==='url');$('#modeFile').classList.toggle('on',m==='file');
+  $('#urlBox').style.display=m==='url'?'block':'none';$('#fileBox').style.display=m==='file'?'block':'none';}
+$('#modeUrl').onclick=()=>setMode('url');$('#modeFile').onclick=()=>setMode('file');
+
+function openForm(id){
+  if(!isAdmin()){toast('관리자 모드에서만 올릴 수 있습니다',true);openAdmin();return;}
+  editId=id||null;fillFields();fileHtml=null;fileName='';resetDrop();
+  if(id){const a=apps.find(x=>x.id===id);
+    $('#formTitle').textContent='실험 수정';$('#saveBtn').textContent='수정 저장';
+    $('#iTitle').value=a.title;$('#iGrade').value=a.grade;$('#iField').value=a.field;$('#iDesc').value=a.desc;$('#iDev').value=a.dev||'';
+    setMode(a.src||'url');
+    if(a.src==='url'){$('#iUrl').value=a.url||'';}
+    else{fileHtml=a.html||null;fileName=a.fileName||'기존 파일';if(fileHtml)markDrop(fileName);}
+  }else{
+    $('#formTitle').textContent='새 실험 올리기';$('#saveBtn').textContent='실험 올리기';
+    $('#iTitle').value='';$('#iUrl').value='';$('#iGrade').value='중2';$('#iField').value=FIELDS[0];$('#iDesc').value='';$('#iDev').value='';
+    setMode('url');
+  }
+  $('#descCount').textContent=$('#iDesc').value.length+'자';
+  ['eTitle','eUrl','eFile'].forEach(x=>$('#'+x).style.display='none');
+  $('#formMask').classList.add('open');
+}
+$('#iDesc').addEventListener('input',e=>$('#descCount').textContent=e.target.value.length+'자');
+
+/* drop zone */
+const drop=$('#drop');
+function resetDrop(){drop.classList.remove('has');$('#dropText').textContent='HTML 파일을 끌어다 놓거나 클릭';$('#dropSub').textContent='.html 파일 · 한 파일로 된 실험에 권장';}
+function markDrop(name){drop.classList.add('has');$('#dropText').textContent='✓ '+name;$('#dropSub').textContent='파일이 첨부되었습니다 · 다시 선택하려면 클릭';}
+function readFile(f){
+  if(!f)return;
+  if(f.size>4.5*1024*1024){toast('파일이 너무 큽니다 (4MB 이하 권장)',true);return;}
+  const rd=new FileReader();rd.onload=()=>{fileHtml=rd.result;fileName=f.name;markDrop(f.name);};rd.readAsText(f);
+}
+drop.onclick=()=>$('#iFile').click();
+$('#iFile').addEventListener('change',e=>readFile(e.target.files[0]));
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>readFile(e.dataTransfer.files[0]));
+
+$('#saveBtn').onclick=()=>{
+  const title=$('#iTitle').value.trim();let ok=true;
+  $('#eTitle').style.display=title?'none':(ok=false,'block');
+  let url='',html=null,fname='';
+  if(mode==='url'){const u=$('#iUrl').value.trim();$('#eUrl').style.display=/^https:\/\/.+\..+/.test(u)?'none':(ok=false,'block');url=u;}
+  else{if(!fileHtml){$('#eFile').style.display='block';ok=false;}else{html=fileHtml;fname=fileName;}}
+  if(!ok)return;
+  const base={title,grade:$('#iGrade').value,field:$('#iField').value,desc:$('#iDesc').value.trim(),dev:$('#iDev').value.trim()||'익명',src:mode};
+  if(mode==='url')base.url=url;else{base.html=html;base.fileName=fname;}
+  if(editId){const a=apps.find(x=>x.id===editId);['url','html','fileName'].forEach(k=>delete a[k]);Object.assign(a,base);toast('실험을 수정했습니다');}
+  else{apps.unshift({id:uid(),t:Date.now(),...base});toast('실험을 올렸습니다');}
+  persist();$('#formMask').classList.remove('open');
+  $('#fGrade').value='';$('#fSearch').value='';activeField='';buildChips();render();
+};
+function delApp(id){if(!isAdmin())return;const a=apps.find(x=>x.id===id);
+  if(!confirm(`"${a.title}" 실험을 삭제할까요? 되돌릴 수 없습니다.`))return;
+  apps=apps.filter(x=>x.id!==id);persist();render();toast('실험을 삭제했습니다');}
+
+/* ---- Admin ---- */
+function openAdmin(){
+  $('#adminMask').classList.add('open');$('#ePw').style.display='none';$('#iPw').value='';
+  $('#adminPanel').style.display=isAdmin()?'block':'none';
+  $('#pwArea').style.display=isAdmin()?'none':'block';
+  $('#adminMsg').textContent=isAdmin()?'관리자 모드가 켜져 있습니다. 카드에 마우스를 올리면 수정·삭제 버튼이 보입니다.':'관리자 모드로 들어가면 실험을 추가·수정·삭제하고, 전체 목록을 파일로 백업·복원할 수 있습니다.';
+  $('#adminTitle').textContent=isAdmin()?'관리자 도구':'관리자 모드';
+}
+$('#adminBtn').onclick=openAdmin;
+$('#pwBtn').onclick=()=>{if($('#iPw').value===getPw()){document.body.classList.add('admin');openAdmin();render();toast('관리자 모드를 켰습니다');}else $('#ePw').style.display='block';};
+$('#logoutBtn').onclick=()=>{document.body.classList.remove('admin');$('#adminMask').classList.remove('open');render();toast('관리자 모드를 껐습니다');};
+$('#pwChangeBtn').onclick=()=>{const a=prompt('새 비밀번호 (4자 이상)');if(a===null)return;if(a.trim().length<4){toast('4자 이상이어야 합니다',true);return;}localStorage.setItem(PW_KEY,a.trim());toast('비밀번호를 변경했습니다');};
+$('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(apps,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='과학실험실_백업_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('백업 파일을 내보냈습니다');};
+$('#importBtn').onclick=()=>$('#importFile').click();
+$('#importFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!Array.isArray(d))throw 0;
+    const overwrite=confirm('불러온 목록으로 [덮어쓰기] 하려면 확인,\n기존 목록에 [추가 합치기] 하려면 취소를 누르세요.');
+    const clean=d.filter(x=>x&&x.title).map(x=>({id:x.id||uid(),title:x.title,src:x.src||'url',url:x.url||'',html:x.html||null,fileName:x.fileName||'',grade:x.grade||'중2',field:FIELDS.includes(x.field)?x.field:'물리',desc:x.desc||'',dev:x.dev||'익명',t:x.t||Date.now()}));
+    apps=overwrite?clean:apps.concat(clean);persist();render();$('#adminMask').classList.remove('open');toast('목록을 불러왔습니다 ('+clean.length+'개)');
+  }catch(err){toast('파일 형식이 올바르지 않습니다',true);}};rd.readAsText(f);e.target.value='';});
+
+/* view + misc */
+$('#gridBtn').onclick=()=>{document.body.classList.remove('listview');$('#gridBtn').classList.add('on');$('#listBtn').classList.remove('on');};
+$('#listBtn').onclick=()=>{document.body.classList.add('listview');$('#listBtn').classList.add('on');$('#gridBtn').classList.remove('on');render();};
+$('#addBtn').onclick=()=>openForm(null);
+$('#fGrade').onchange=render;$('#fSearch').oninput=render;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.mask').classList.remove('open'));
+document.querySelectorAll('.mask').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.mask.open').forEach(m=>m.classList.remove('open'));});
+function refreshFooter(){$('#footTools').textContent=isAdmin()?'관리자 모드 · 자동 저장됨':'';}
+
+let tT;function toast(msg,bad){const t=$('#toast');$('#toastMsg').textContent=msg;t.querySelector('.tdot').style.background=bad?'var(--bio)':'var(--chem)';t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2600);}
+
+fillFields();buildChips();render();
+</script>
+</body>
+</html>
