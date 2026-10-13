@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>중력 가상실험실</title>
+<style>
+  :root{
+    --color-primary:#2f6fed;
+    --color-primary-dark:#1f4fbf;
+    --color-secondary:#00b894;
+    --color-accent:#ff9f43;
+    --color-grav:#e0523d;
+    --color-bg:#f4f7fb;
+    --color-surface:#ffffff;
+    --color-text:#1c2536;
+    --color-text-light:#5b6478;
+    --color-success:#1e9e6b;
+    --color-error:#e0523d;
+    --radius:18px;
+    --shadow:0 8px 24px rgba(28,37,54,0.08);
+    --font:'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--color-bg);font-family:var(--font);color:var(--color-text);}
+  button{font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  #app{max-width:940px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:20px 18px 90px;}
+
+  /* 진행 표시 */
+  .step-indicator{display:flex;gap:6px;margin-bottom:22px;}
+  .step-item{flex:1;text-align:center;}
+  .step-dot{height:8px;border-radius:4px;background:#dbe3f0;transition:background .3s;}
+  .step-item.done .step-dot{background:var(--color-secondary);}
+  .step-item.active .step-dot{background:var(--color-primary);}
+  .step-label{font-size:11px;margin-top:4px;color:var(--color-text-light);}
+  .step-item.active .step-label{color:var(--color-primary);font-weight:700;}
+
+  .screen{display:none;flex:1;flex-direction:column;animation:fadeIn .35s ease;}
+  .screen.active{display:flex;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  h1{font-size:clamp(22px,4.4vw,32px);margin:0 0 8px;}
+  h2{font-size:clamp(19px,3.4vw,24px);margin:0 0 12px;}
+  h3{font-size:17px;margin:0 0 8px;}
+  p{line-height:1.65;color:var(--color-text-light);margin:0 0 10px;}
+  .card{background:var(--color-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;}
+  .btn{border:none;border-radius:14px;padding:14px 24px;font-size:17px;font-weight:700;color:#fff;background:var(--color-primary);min-height:52px;}
+  .btn:active{background:var(--color-primary-dark);}
+  .btn.secondary{background:var(--color-surface);color:var(--color-primary);border:2px solid var(--color-primary);}
+  .btn.small{min-height:48px;padding:10px 16px;font-size:15px;}
+  .btn:disabled{opacity:.45;}
+  .btn-row{display:flex;gap:12px;margin-top:auto;padding-top:20px;flex-wrap:wrap;}
+  .badge{display:inline-block;background:#e8efff;color:var(--color-primary-dark);font-size:13px;font-weight:700;border-radius:999px;padding:6px 12px;margin:2px 4px 2px 0;}
+
+  /* 1. 도입 */
+  #screen-intro{text-align:center;justify-content:center;gap:6px;}
+  .goal-list{text-align:left;max-width:560px;margin:14px auto;padding:0;list-style:none;}
+  .goal-list li{background:var(--color-surface);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);line-height:1.5;}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0 4px;}
+  .flow span{background:#fff;border-radius:999px;padding:8px 14px;font-size:14px;box-shadow:var(--shadow);}
+  .hero-svg{width:min(360px,80%);margin:0 auto 4px;display:block;}
+
+  /* 2. 개념 */
+  .core-idea{background:linear-gradient(135deg,#2f6fed,#6a4fd8);color:#fff;border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .core-idea .tag{display:inline-block;background:rgba(255,255,255,.22);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;margin-bottom:8px;}
+  .core-idea p{color:#fff;font-size:18px;font-weight:700;line-height:1.6;margin:0;}
+  .concept-card{padding:0;overflow:hidden;}
+  .concept-head{width:100%;text-align:left;background:none;border:none;padding:18px;font-size:17px;font-weight:700;color:var(--color-text);display:flex;justify-content:space-between;align-items:center;min-height:56px;}
+  .concept-head .chev{transition:transform .25s;color:var(--color-primary);}
+  .concept-card.open .chev{transform:rotate(180deg);}
+  .concept-body{display:none;padding:0 18px 18px;}
+  .concept-card.open .concept-body{display:block;animation:fadeIn .3s ease;}
+  .fig{width:100%;max-width:560px;display:block;margin:8px auto;}
+  table.cmp{width:100%;border-collapse:separate;border-spacing:6px;font-size:15px;}
+  table.cmp th{background:#eef3fc;border-radius:10px;padding:10px 8px;font-size:14px;}
+  table.cmp td{background:#fafcff;border-radius:10px;padding:8px;text-align:center;vertical-align:middle;}
+  .mis{display:grid;gap:8px;margin-bottom:10px;}
+  .mis .bad{background:#fff0ee;border-left:5px solid var(--color-error);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.5;}
+  .mis .good{background:#eafff5;border-left:5px solid var(--color-success);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.5;}
+
+  /* 3. 탐구 */
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;}
+  .tab-btn{flex:0 0 auto;border:2px solid #dbe3f0;background:#fff;color:var(--color-text);border-radius:12px;padding:10px 16px;font-size:15px;font-weight:700;min-height:48px;}
+  .tab-btn.active{background:var(--color-primary);border-color:var(--color-primary);color:#fff;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;animation:fadeIn .3s ease;}
+  .exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:720px){.exp-grid{grid-template-columns:1fr;}}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px;}
+  .chip{border:2px solid #dbe3f0;background:#fff;border-radius:999px;padding:8px 14px;font-size:15px;font-weight:700;min-height:44px;color:var(--color-text);}
+  .chip.on{background:var(--color-primary);border-color:var(--color-primary);color:#fff;}
+  input[type=range]{width:100%;height:44px;accent-color:var(--color-primary);}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .read-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0;}
+  .read{background:#eef3fc;border-radius:12px;padding:10px 6px;text-align:center;}
+  .read small{display:block;color:var(--color-text-light);font-size:12px;}
+  .read b{font-size:19px;}
+  .svgbox{background:#eef3fc;border-radius:14px;overflow:hidden;}
+  .svgbox svg,.svgbox canvas{width:100%;height:auto;display:block;}
+  .observation-log{width:100%;min-height:70px;border-radius:12px;border:1px solid #cfd8e8;padding:10px;font-family:var(--font);font-size:15px;resize:vertical;}
+  table.rec{width:100%;border-collapse:collapse;font-size:14px;}
+  table.rec th,table.rec td{border-bottom:1px solid #e3e8f2;padding:6px 4px;text-align:center;}
+  .rec-wrap{max-height:220px;overflow:auto;}
+  .note{background:#fff8e6;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.55;color:#6b5314;}
+  ol.steps{padding-left:22px;line-height:1.7;color:var(--color-text-light);margin:0;}
+  .bar-row{display:grid;grid-template-columns:62px 1fr 78px;gap:8px;align-items:center;margin:8px 0;font-size:14px;}
+  .bar-track{background:#eef3fc;border-radius:8px;height:26px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:8px;transition:width .35s;}
+
+  /* 4. 스티커 */
+  .sticker-status{display:flex;gap:14px;font-size:14px;color:var(--color-text-light);margin-bottom:8px;flex-wrap:wrap;}
+  .sticker-board{position:relative;}
+  .sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:76px;align-items:center;}
+  .sticker{border:none;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;min-height:48px;background:#fff3c4;color:#3a2f00;box-shadow:0 3px 0 rgba(0,0,0,.13);transform:rotate(var(--tilt,0deg));transition:transform .15s,box-shadow .15s;}
+  .sticker.picked{transform:rotate(0) scale(1.08);box-shadow:0 8px 18px rgba(0,0,0,.22);outline:3px solid var(--color-primary);}
+  .slot{min-height:54px;min-width:92px;border:2px dashed #b9c4d8;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:4px;position:relative;background:#fff;text-align:center;}
+  .slot.ready{border-color:var(--color-primary);background:#eef3fc;}
+  .slot.ok{border-style:solid;border-color:var(--color-success);background:#eafff5;}
+  .slot.no{border-style:solid;border-color:var(--color-error);background:#fff0ee;}
+  .slot.ok::after{content:'✔';position:absolute;top:-10px;right:-8px;background:var(--color-success);color:#fff;border-radius:50%;width:22px;height:22px;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .slot.no::after{content:'✖';position:absolute;top:-10px;right:-8px;background:var(--color-error);color:#fff;border-radius:50%;width:22px;height:22px;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .slot .hint{font-size:12px;color:var(--color-text-light);line-height:1.35;}
+  .slot .sticker{min-height:40px;padding:6px 8px;font-size:14px;}
+  .fig-board{position:relative;width:100%;max-width:640px;margin:0 auto;aspect-ratio:3/2;}
+  .fig-board svg{position:absolute;inset:0;width:100%;height:100%;}
+  .fig-board .slot{position:absolute;transform:translate(-50%,-50%);width:26%;gap:4px;}
+  .slot-num{flex:0 0 auto;background:#2f6fed;color:#fff;border-radius:50%;width:22px;height:22px;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
+  @media(max-width:600px){
+    .fig-board{aspect-ratio:auto;}
+    .fig-board svg{position:static;height:auto;aspect-ratio:3/2;}
+    .fig-board .slot{position:static;transform:none;width:100%;margin-top:8px;justify-content:flex-start;padding:6px 10px;}
+  }
+  .stamp{display:none;text-align:center;font-size:22px;font-weight:800;color:var(--color-success);border:4px solid var(--color-success);border-radius:14px;padding:6px 14px;margin:8px auto;width:max-content;transform:rotate(-4deg);}
+  .stamp.show{display:block;animation:pop .4s ease;}
+  @keyframes pop{from{transform:scale(1.6) rotate(-4deg);opacity:0;}to{transform:scale(1) rotate(-4deg);opacity:1;}}
+
+  /* 5. 실생활 */
+  .life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;}
+  .life-grid .card{margin:0;}
+  .life-grid .ico{font-size:30px;}
+  .life-grid .link{font-size:13px;color:var(--color-primary-dark);background:#e8efff;border-radius:8px;padding:6px 10px;display:inline-block;margin-top:2px;line-height:1.45;}
+
+  /* 6. 문제 */
+  .quiz-progress{height:8px;border-radius:4px;background:#dbe3f0;overflow:hidden;margin-bottom:16px;}
+  .quiz-progress-bar{height:100%;background:var(--color-secondary);width:0%;transition:width .3s;}
+  #quizQuestionText{white-space:pre-line;color:var(--color-text);font-size:17px;font-weight:600;}
+  .choice{display:block;width:100%;text-align:left;background:var(--color-surface);border:2px solid #e3e8f2;border-radius:12px;padding:14px 16px;margin-bottom:10px;font-size:16px;min-height:52px;color:var(--color-text);line-height:1.45;}
+  .choice.correct{border-color:var(--color-success);background:#eafff5;}
+  .choice.wrong{border-color:var(--color-error);background:#fff0ee;}
+  .explanation{display:none;background:#eef3fc;border-radius:12px;padding:14px 16px;margin-top:10px;font-size:15px;line-height:1.6;}
+  .explanation.show{display:block;}
+  #screen-result{text-align:center;}
+  .score-big{font-size:48px;font-weight:800;color:var(--color-primary);}
+  .wrong-list{text-align:left;font-size:14px;line-height:1.55;}
+  .wrong-list li{margin-bottom:8px;}
+  .check-list{text-align:left;list-style:none;padding:0;margin:0;}
+  .check-list li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #eef1f7;font-size:15px;line-height:1.5;}
+  .check-list input{width:24px;height:24px;flex:0 0 auto;margin-top:2px;}
+
+  footer{position:fixed;left:0;right:0;bottom:0;text-align:center;font-size:12px;color:var(--color-text-light);padding:8px 0;background:linear-gradient(to top, var(--color-bg) 60%, transparent);pointer-events:none;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="step-indicator" id="stepIndicator"></div>
+
+  <!-- 1. 도입 -->
+  <section class="screen active" id="screen-intro">
+    <svg class="hero-svg" viewBox="0 0 360 170" aria-hidden="true">
+      <circle cx="180" cy="300" r="200" fill="#4aa3df"/>
+      <ellipse cx="120" cy="150" rx="46" ry="14" fill="#4caf6a"/>
+      <ellipse cx="250" cy="146" rx="60" ry="12" fill="#4caf6a"/>
+      <circle cx="180" cy="38" r="13" fill="#e0523d"><animate attributeName="cy" values="30;105;30" keyTimes="0;0.55;1" dur="2.6s" repeatCount="indefinite"/></circle>
+      <rect x="178" y="14" width="4" height="8" fill="#6b4b2a"><animate attributeName="y" values="6;81;6" keyTimes="0;0.55;1" dur="2.6s" repeatCount="indefinite"/></rect>
+    </svg>
+    <div>
+      <span class="badge">Ⅴ. 힘의 작용</span><span class="badge">1. 여러 가지 힘</span><span class="badge">③ 중력</span><span class="badge">중학교 과학 1</span>
+    </div>
+    <h1>중력 가상실험실</h1>
+    <p>사과는 왜 아래로 떨어질까요? 달에서는 왜 높이 뛸 수 있을까요?<br>직접 조작하며 중력과 무게의 비밀을 밝혀 봐요.</p>
+    <ul class="goal-list">
+      <li>🎯 <b>학습목표 1</b> · 중력이 무엇인지, 지구 어느 곳에서나 중력이 어느 방향으로 작용하는지 설명할 수 있다.</li>
+      <li>🎯 <b>학습목표 2</b> · 질량과 무게를 단위, 측정 도구, 장소에 따른 변화로 구분할 수 있다.</li>
+      <li>🎯 <b>학습목표 3</b> · 용수철저울 실험 결과로 질량과 무게의 관계를 설명하고, 달에서의 무게를 예측할 수 있다.</li>
+    </ul>
+    <div class="flow"><span>① 도입</span><span>② 개념</span><span>③ 탐구</span><span>④ 스티커</span><span>⑤ 실생활</span><span>⑥ 확인</span></div>
+    <div class="btn-row" style="justify-content:center;"><button class="btn" onclick="goTo(1)">시작하기</button></div>
+  </section>
+
+  <!-- 2. 개념 -->
+  <section class="screen" id="screen-concept">
+    <h2>개념 알아보기</h2>
+    <div class="core-idea">
+      <span class="tag">💡 핵심 아이디어</span>
+      <p>중력은 지구가 물체를 끌어당기는 힘이에요. 중력의 크기가 곧 무게이고, 질량은 어디서나 같지만 무게는 천체마다 달라요.</p>
+    </div>
+
+    <div class="card concept-card open">
+      <button class="concept-head" onclick="toggleCard(this)">① 중력이란? <span class="chev">▾</span></button>
+      <div class="concept-body">
+        <svg class="fig" viewBox="0 0 360 190" role="img" aria-label="사과를 지구가 끌어당기는 그림">
+          <circle cx="180" cy="330" r="200" fill="#4aa3df"/><ellipse cx="90" cy="170" rx="50" ry="12" fill="#4caf6a"/><ellipse cx="270" cy="168" rx="56" ry="11" fill="#4caf6a"/>
+          <line x1="180" y1="62" x2="180" y2="128" stroke="#e0523d" stroke-width="5"/><polygon points="180,140 170,124 190,124" fill="#e0523d"/>
+          <circle cx="180" cy="40" r="15" fill="#e0523d" stroke="#8a2d1f" stroke-width="2"/>
+          <text x="196" y="96" font-size="15" font-weight="700" fill="#e0523d">중력</text>
+          <text x="180" y="22" font-size="12" text-anchor="middle" fill="#1c2536">사과</text>
+        </svg>
+        <p>지구는 지구 위의 모든 물체를 지구 쪽으로 끌어당겨요. 이 힘을 <b>중력</b>이라고 해요. 손에 든 공을 놓으면 떨어지는 것도, 우리가 땅 위에 서 있을 수 있는 것도 중력 때문이에요.</p>
+        <p>중력은 지구뿐 아니라 달, 화성 같은 <b>모든 천체</b>가 가지고 있어요. 천체마다 끌어당기는 세기가 달라요.</p>
+      </div>
+    </div>
+
+    <div class="card concept-card">
+      <button class="concept-head" onclick="toggleCard(this)">② 중력의 방향 — 늘 지구 중심으로! <span class="chev">▾</span></button>
+      <div class="concept-body">
+        <div id="conceptEarth"></div>
+        <p>중력은 지구 어느 곳에서나 <b>지구 중심 방향</b>으로 작용해요. 우리가 말하는 "아래쪽"은 사실 지구 중심 쪽이에요. 그래서 지구 반대편(브라질)에 있는 사람도 우주로 떨어지지 않고 땅에 서 있을 수 있어요.</p>
+      </div>
+    </div>
+
+    <div class="card concept-card">
+      <button class="concept-head" onclick="toggleCard(this)">③ 중력도 힘의 3요소로 나타내요 <span class="chev">▾</span></button>
+      <div class="concept-body">
+        <table class="cmp">
+          <tr><th>힘의 3요소</th><th>중력의 경우</th></tr>
+          <tr><td><b>작용점</b></td><td>물체의 중심 부근 (물체 전체가 중력을 받아요)</td></tr>
+          <tr><td><b>방향</b></td><td>지구 중심 방향 (우리가 보기엔 아래쪽)</td></tr>
+          <tr><td><b>크기</b></td><td>그 물체의 <b>무게</b> (단위: N)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card concept-card">
+      <button class="concept-head" onclick="toggleCard(this)">④ 질량과 무게는 달라요 <span class="chev">▾</span></button>
+      <div class="concept-body">
+        <table class="cmp">
+          <tr><th></th><th>질량</th><th>무게</th></tr>
+          <tr><th>의미</th><td>물질의 양</td><td>물체에 작용하는 <b>중력의 크기</b></td></tr>
+          <tr><th>단위</th><td>kg, g</td><td>N (뉴턴)</td></tr>
+          <tr><th>측정 도구</th><td>윗접시저울</td><td>용수철저울</td></tr>
+          <tr><th>장소에 따라</th><td><b>변하지 않아요</b></td><td><b>달라져요</b></td></tr>
+        </table>
+        <p>지구에서 질량이 <b>1 kg</b>인 물체의 무게는 약 <b>9.8 N</b>이에요. 질량이 100 g인 물체의 무게는 약 1 N이에요.</p>
+      </div>
+    </div>
+
+    <div class="card concept-card">
+      <button class="concept-head" onclick="toggleCard(this)">⑤ 천체마다 중력의 세기가 달라요 <span class="chev">▾</span></button>
+      <div class="concept-body">
+        <table class="cmp">
+          <tr><th>천체</th><th>질량 1 kg의 무게</th><th>지구와 비교</th></tr>
+          <tr><td>🌍 지구</td><td>약 9.8 N</td><td>기준</td></tr>
+          <tr><td>🌙 달</td><td>약 1.6 N</td><td>약 1/6</td></tr>
+          <tr><td>🔴 화성</td><td>약 3.7 N</td><td>약 0.4배</td></tr>
+          <tr><td>🟠 목성</td><td>약 24.8 N</td><td>약 2.5배</td></tr>
+        </table>
+        <p>달은 지구보다 작고 가벼워서 끌어당기는 힘이 약해요. 그래서 달에서는 같은 물체의 무게가 지구의 약 <b>1/6</b>이에요. 하지만 물질의 양인 질량은 그대로예요!</p>
+      </div>
+    </div>
+
+    <div class="card concept-card">
+      <button class="concept-head" onclick="toggleCard(this)">⑥ 이런 생각, 맞을까요? (오개념 바로잡기) <span class="chev">▾</span></button>
+      <div class="concept-body">
+        <div class="mis"><div class="bad">❌ 질량과 무게는 같은 말이에요.</div><div class="good">✅ 질량은 물질의 양(kg), 무게는 중력의 크기(N)로 서로 다른 양이에요.</div></div>
+        <div class="mis"><div class="bad">❌ 달에 가면 몸의 질량이 줄어들어요.</div><div class="good">✅ 달에서도 질량은 그대로예요. 줄어드는 것은 무게예요.</div></div>
+        <div class="mis"><div class="bad">❌ 우주에는 중력이 없어요.</div><div class="good">✅ 우주정거장에서도 중력은 있어요. 우주인은 지구 중력을 받으며 지구 둘레를 돌고 있어서 떠 있는 것처럼 보일 뿐이에요.</div></div>
+        <div class="mis"><div class="bad">❌ 중력은 항상 그림의 아래쪽으로 작용해요.</div><div class="good">✅ 중력은 지구 중심 방향이에요. 지구 반대편에서는 중력이 우리 기준의 위쪽을 향해요.</div></div>
+        <div class="mis"><div class="bad">❌ "몸무게 50 kg"에서 kg은 무게의 단위예요.</div><div class="good">✅ 일상에서는 몸무게를 kg으로 말하지만, 과학에서 kg은 질량의 단위예요. 무게(중력)는 N으로 나타내요.</div></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn secondary" onclick="goTo(0)">이전</button>
+      <button class="btn" onclick="goTo(2)">탐구하러 가기</button>
+    </div>
+  </section>
+
+  <!-- 3. 탐구 -->
+  <section class="screen" id="screen-experiment">
+    <h2>탐구 활동</h2>
+    <div class="tabs" id="expTabs">
+      <button class="tab-btn active" onclick="showTab(0)">📝 탐구 계획서</button>
+      <button class="tab-btn" onclick="showTab(1)">⚖️ ① 질량과 무게</button>
+      <button class="tab-btn" onclick="showTab(2)">🌍 ② 중력의 방향</button>
+      <button class="tab-btn" onclick="showTab(3)">🌙 ③ 천체별 중력</button>
+    </div>
+
+    <!-- 탭 0: 탐구 계획서 -->
+    <div class="tab-panel active" id="tab-0">
+      <div class="card"><h3>1. 문제 인식</h3><p>달에서는 우주인이 지구에서보다 훨씬 높이 뛸 수 있어요. 달에 가면 물체의 <b>질량</b>과 <b>무게</b>는 각각 어떻게 달라질까요? 질량과 무게는 어떤 관계가 있을까요?</p></div>
+      <div class="card"><h3>2. 나의 가설</h3>
+        <p>"질량이 커지면 무게는 (      ), 달에서는 질량이 (      ), 무게가 (      )." 처럼 써 보세요.</p>
+        <textarea class="observation-log" id="hypo" placeholder="내 가설을 적어 보세요" data-save="hypo"></textarea>
+      </div>
+      <div class="card"><h3>3. 변인 통제</h3>
+        <table class="cmp">
+          <tr><th>조작 변인</th><td>추의 질량(g), 천체(지구·달·화성·목성)</td></tr>
+          <tr><th>통제 변인</th><td>같은 용수철저울 사용, 추를 가만히 매단 뒤 눈금 읽기</td></tr>
+          <tr><th>종속 변인</th><td>용수철저울의 눈금(무게, N), 윗접시저울의 눈금(질량, g)</td></tr>
+        </table>
+      </div>
+      <div class="card"><h3>4. 준비물</h3><p>용수철저울, 윗접시저울, 100 g 추 10개, 기록표 (모두 가상으로 준비되어 있어요)</p></div>
+      <div class="card"><h3>5. 실험 과정</h3>
+        <ol class="steps">
+          <li><b>실험 ①</b>에서 지구를 고르고 추를 100 g씩 늘리며 [기록하기]를 눌러요.</li>
+          <li>천체를 달·화성·목성으로 바꿔 같은 방법으로 반복해요.</li>
+          <li>그래프에서 질량과 무게의 관계, 천체별 차이를 찾아요.</li>
+          <li><b>실험 ②</b>에서 지구 곳곳의 중력 방향을 확인해요.</li>
+          <li><b>실험 ③</b>에서 내 질량으로 천체별 무게를 비교해요.</li>
+        </ol>
+      </div>
+      <div class="card"><h3>6. 예상 결과</h3><textarea class="observation-log" placeholder="그래프 모양이 어떻게 나올지 예상해서 적어 보세요" data-save="expect"></textarea></div>
+      <div class="btn-row"><button class="btn" onclick="showTab(1)">실험 시작 ▶</button></div>
+    </div>
+
+    <!-- 탭 1: 질량과 무게 -->
+    <div class="tab-panel" id="tab-1">
+      <div class="card">
+        <h3>⚖️ 실험 ① 질량과 무게의 관계</h3>
+        <p>천체를 고르고 추를 매달아 보세요. 용수철저울은 <b>무게(N)</b>, 윗접시저울은 <b>질량(g)</b>을 나타내요.</p>
+        <div class="chips" id="bodyChips"></div>
+        <div class="row"><b id="massLabel">추의 질량: 0 g</b></div>
+        <div class="row">
+          <button class="btn secondary small" onclick="stepMass(-100)">− 100 g</button>
+          <input type="range" id="massSlider" min="0" max="1000" step="100" value="0" style="flex:1;min-width:140px;" oninput="setMass(+this.value)">
+          <button class="btn secondary small" onclick="stepMass(100)">+ 100 g</button>
+        </div>
+        <div class="svgbox"><svg id="springSVG" viewBox="0 0 360 380" role="img" aria-label="용수철저울과 윗접시저울"></svg></div>
+        <div class="read-grid">
+          <div class="read"><small>질량 (윗접시저울)</small><b id="rdMass">0 g</b></div>
+          <div class="read"><small>무게 (용수철저울)</small><b id="rdW" style="color:var(--color-grav)">0.00 N</b></div>
+          <div class="read"><small>이 천체의 중력</small><b id="rdG">9.8 N/kg</b></div>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <button class="btn small" onclick="recordRow()">📌 기록하기</button>
+          <button class="btn secondary small" onclick="autoRecord()">자동 기록 (100~500 g)</button>
+          <button class="btn secondary small" onclick="clearRows()">기록 지우기</button>
+        </div>
+      </div>
+      <div class="exp-grid">
+        <div class="card"><h3>기록표</h3><div class="rec-wrap"><table class="rec"><thead><tr><th>천체</th><th>질량(g)</th><th>무게(N)</th></tr></thead><tbody id="recBody"></tbody></table></div></div>
+        <div class="card"><h3>질량–무게 그래프</h3>
+          <label class="row" style="font-size:14px;"><input type="checkbox" id="fitChk" checked onchange="drawGraph()" style="width:22px;height:22px;"> 천체별 직선 보기</label>
+          <div class="svgbox"><canvas id="graphCv" width="520" height="340"></canvas></div>
+        </div>
+      </div>
+      <div class="card"><h3>📝 관찰 기록</h3>
+        <p>① 질량이 2배, 3배가 되면 무게는? ② 같은 질량인데 천체마다 무게가 다르다면? ③ 윗접시저울의 눈금은 천체를 바꾸면 달라졌나요?</p>
+        <textarea class="observation-log" data-save="obs1" placeholder="관찰한 내용을 적어 보세요"></textarea>
+      </div>
+    </div>
+
+    <!-- 탭 2: 중력의 방향 -->
+    <div class="tab-panel" id="tab-2">
+      <div class="card">
+        <h3>🌍 실험 ② 지구 곳곳의 중력 방향</h3>
+        <p>슬라이더나 버튼으로 사람의 위치를 바꾸고, <b>공 놓기</b>를 눌러 공이 어느 쪽으로 떨어지는지 관찰해요.</p>
+        <div class="chips">
+          <button class="chip" onclick="setTheta(0)">🇰🇷 우리나라(위쪽)</button>
+          <button class="chip" onclick="setTheta(90)">오른쪽 옆</button>
+          <button class="chip" onclick="setTheta(180)">🇧🇷 지구 반대편</button>
+          <button class="chip" onclick="setTheta(270)">왼쪽 옆</button>
+        </div>
+        <div class="row"><b>사람의 위치:</b><span id="thetaTxt">0°</span></div>
+        <input type="range" id="thetaSlider" min="0" max="359" step="1" value="0" oninput="setTheta(+this.value)">
+        <div class="svgbox"><canvas id="gCanvas" width="600" height="420"></canvas></div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn small" onclick="dropBall()">⬇ 공 놓기</button>
+          <button class="btn secondary small" onclick="resetBall()">↺ 다시 들기</button>
+          <label class="row" style="font-size:14px;"><input type="checkbox" id="allArrows" onchange="drawG()" style="width:22px;height:22px;"> 모든 위치의 중력 화살표 보기</label>
+        </div>
+        <div class="note" id="gInfo" style="margin-top:10px;"></div>
+      </div>
+      <div class="card"><h3>📝 관찰 기록</h3>
+        <p>① 사람의 위치가 달라져도 공은 항상 어디를 향해 떨어졌나요? ② 지구 반대편에 있는 사람에게 "아래쪽"은 어느 쪽인가요?</p>
+        <textarea class="observation-log" data-save="obs2" placeholder="관찰한 내용을 적어 보세요"></textarea>
+      </div>
+    </div>
+
+    <!-- 탭 3: 천체별 중력 -->
+    <div class="tab-panel" id="tab-3">
+      <div class="card">
+        <h3>🌙 실험 ③ 내가 다른 천체에 간다면?</h3>
+        <p>내 질량을 정하고 천체별 무게를 비교해 보세요. (질량은 변할까요, 무게는 변할까요?)</p>
+        <div class="row"><b id="myMassTxt">내 질량: 40 kg</b></div>
+        <input type="range" id="myMass" min="20" max="100" step="1" value="40" oninput="drawBars()">
+        <div id="bars"></div>
+        <div class="note">질량은 모든 천체에서 같고, 무게(중력의 크기)만 달라요. 무게 = 질량(kg) × 그 천체의 중력(N/kg)</div>
+      </div>
+      <div class="card">
+        <h3>🦘 참고 체험: 같은 힘으로 점프하면?</h3>
+        <p>지구에서 약 0.5 m 뛰는 힘으로 다른 천체에서 점프해 봐요. (공기 저항은 생각하지 않아요.)</p>
+        <div class="chips" id="jumpChips"></div>
+        <div class="svgbox"><canvas id="jumpCv" width="600" height="300"></canvas></div>
+        <div class="row" style="margin-top:8px;"><button class="btn small" onclick="startJump()">🦘 점프!</button><span id="jumpInfo" style="font-size:14px;color:var(--color-text-light);"></span></div>
+      </div>
+      <div class="card"><h3>📝 관찰 기록</h3>
+        <p>① 달에서 내 질량과 무게는 각각 지구와 비교해 어떤가요? ② 같은 힘으로 점프했을 때 달에서 더 높이 뛰는 까닭은?</p>
+        <textarea class="observation-log" data-save="obs3" placeholder="관찰한 내용을 적어 보세요"></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn secondary" onclick="goTo(1)">이전</button>
+      <button class="btn" onclick="goTo(3)">스티커 정리하러 가기</button>
+    </div>
+  </section>
+
+  <!-- 4. 스티커 -->
+  <section class="screen" id="screen-sticker">
+    <h2>스티커 붙이기: 개념 정리 노트</h2>
+    <p>스티커를 눌러 고른 뒤, 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 <b>확인하기</b>! 어디에도 붙지 않는 스티커도 있어요.</p>
+    <div class="tabs" id="boardTabs"></div>
+    <div class="sticker-status"><span>붙인 스티커 <b id="stkCount">0 / 0</b></span><span>시도 <b id="stkTry">0</b>회</span></div>
+    <div class="card sticker-board" id="stkBoard"></div>
+    <div class="stamp" id="stkStamp">✔ 완성!</div>
+    <div class="note" id="stkSummary" style="display:none;margin-bottom:12px;"></div>
+    <div class="card"><h3>스티커 보관함</h3><div class="sticker-tray" id="stkTray"></div></div>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="goTo(2)">이전</button>
+      <button class="btn secondary" onclick="resetStickers()">처음부터</button>
+      <button class="btn" onclick="checkStickers()">확인하기</button>
+      <button class="btn" id="stkNext" style="display:none" onclick="goTo(4)">실생활로 ▶</button>
+    </div>
+  </section>
+
+  <!-- 5. 실생활 -->
+  <section class="screen" id="screen-life">
+    <h2>우리 생활 속에서는?</h2>
+    <div class="life-grid" id="lifeGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="goTo(3)">이전</button>
+      <button class="btn" onclick="startQuiz()">개념 확인 문제 풀기</button>
+    </div>
+  </section>
+
+  <!-- 6. 문제 -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-progress"><div class="quiz-progress-bar" id="quizProgressBar"></div></div>
+    <h2 id="quizQuestionNum">문제 1 / 10</h2>
+    <p id="quizQuestionText"></p>
+    <div id="quizChoices"></div>
+    <div class="explanation" id="quizExplanation"></div>
+    <div class="btn-row"><button class="btn" id="quizNextBtn" style="display:none;" onclick="nextQuestion()">다음 문제</button></div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result">
+    <h2>수고했어요! 🎉</h2>
+    <div class="score-big"><span id="finalScore">0</span> / 10</div>
+    <p id="finalTime"></p>
+    <p id="finalMessage"></p>
+    <div class="card" id="wrongCard" style="display:none;text-align:left;"><h3>다시 확인할 문제</h3><ol class="wrong-list" id="wrongList"></ol></div>
+    <div class="card" style="text-align:left;"><h3>✅ 학습목표 자가 점검</h3>
+      <ul class="check-list">
+        <li><input type="checkbox" data-chk="c1"><span>중력이 무엇인지, 지구 어느 곳에서나 지구 중심 방향으로 작용함을 설명할 수 있다.</span></li>
+        <li><input type="checkbox" data-chk="c2"><span>질량과 무게를 단위, 측정 도구, 장소에 따른 변화로 구분할 수 있다.</span></li>
+        <li><input type="checkbox" data-chk="c3"><span>질량과 무게의 관계를 설명하고, 달에서의 무게를 예측할 수 있다.</span></li>
+      </ul>
+    </div>
+    <p>📸 이 화면을 캡처해서 선생님께 제출하세요.</p>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn secondary" onclick="retryQuiz()">틀린 문제 다시 풀기</button>
+      <button class="btn" onclick="startQuiz()">처음부터 다시</button>
+      <button class="btn secondary" onclick="goTo(0)">처음 화면으로</button>
+    </div>
+  </section>
+</div>
+<footer>Made by Lee Jae Kwang</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+/* ===================== 화면 전환 ===================== */
+const screens = ['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const stepNames = ['도입','개념','탐구','스티커','실생활','확인'];
+const stepCount = 6;
+function renderIndicator(active){
+  const w = $('stepIndicator'); w.innerHTML='';
+  for(let i=0;i<stepCount;i++){
+    const d=document.createElement('div');
+    d.className='step-item'+(i<active?' done':'')+(i===active?' active':'');
+    d.innerHTML='<div class="step-dot"></div><div class="step-label">'+stepNames[i]+'</div>';
+    w.appendChild(d);
+  }
+}
+function goTo(idx){
+  screens.forEach((id,i)=>$(id).classList.toggle('active', i===idx));
+  renderIndicator(Math.min(idx, stepCount-1));
+  window.scrollTo(0,0);
+  if(idx===2) onTabShown(curTab);
+  if(idx===3) renderStickers();
+}
+function toggleCard(btn){ btn.parentElement.classList.toggle('open'); }
+
+/* ===================== 공통 SVG: 지구와 사람 ===================== */
+function personSVG(x,y,rot,col){
+  return '<g transform="translate('+x+' '+y+') rotate('+rot+')"><circle cx="0" cy="-34" r="6.5" fill="#ffd9a8" stroke="#33415c" stroke-width="1.5"/>'+
+  '<line x1="0" y1="-27" x2="0" y2="-12" stroke="'+col+'" stroke-width="5" stroke-linecap="round"/>'+
+  '<line x1="-9" y1="-22" x2="9" y2="-22" stroke="'+col+'" stroke-width="3" stroke-linecap="round"/>'+
+  '<line x1="0" y1="-12" x2="-5" y2="0" stroke="#33415c" stroke-width="3" stroke-linecap="round"/>'+
+  '<line x1="0" y1="-12" x2="5" y2="0" stroke="#33415c" stroke-width="3" stroke-linecap="round"/></g>';
+}
+function earthFigure(showArrows, idp){
+  const cx=300, cy=208, R=78;
+  let s='<svg viewBox="0 0 600 400" class="fig" role="img" aria-label="지구와 지구 위의 사람들"><defs>'+
+    '<radialGradient id="'+idp+'eg" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#1f6fb5"/></radialGradient>'+
+    '<marker id="'+idp+'ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#e0523d"/></marker></defs>'+
+    '<rect width="600" height="400" fill="#0f1b3d" rx="14"/>';
+  const stars=[[40,40],[120,330],[520,60],[560,300],[80,180],[500,200],[200,40],[420,360],[560,150],[30,290]];
+  stars.forEach(p=>{ s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="2" fill="#fff" opacity=".7"/>'; });
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="url(#'+idp+'eg)"/>';
+  s+='<ellipse cx="270" cy="185" rx="26" ry="14" fill="#4caf6a"/><ellipse cx="335" cy="235" rx="22" ry="12" fill="#4caf6a"/><ellipse cx="255" cy="240" rx="14" ry="8" fill="#4caf6a"/>';
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#fff"/><text x="'+(cx+8)+'" y="'+(cy+4)+'" font-size="12" fill="#fff">지구 중심</text>';
+  if(idp==='s'){
+    [[332,104,'①'],[396,170,'②'],[332,320,'③']].forEach(n=>{
+      s+='<circle cx="'+n[0]+'" cy="'+n[1]+'" r="13" fill="#2f6fed" stroke="#fff" stroke-width="2"/><text x="'+n[0]+'" y="'+(n[1]+5)+'" font-size="15" font-weight="800" text-anchor="middle" fill="#fff">'+n[2]+'</text>';
+    });
+  }
+  const ppl=[[0,'#ff9f43'],[90,'#00b894'],[180,'#ff6b9a']];
+  ppl.forEach(p=>{
+    const a=p[0]*Math.PI/180, sx=Math.sin(a), sy=-Math.cos(a);
+    s+=personSVG((cx+R*sx).toFixed(1),(cy+R*sy).toFixed(1),p[0],p[1]);
+    if(showArrows){
+      const x1=cx+(R+66)*sx, y1=cy+(R+66)*sy, x2=cx+(R+18)*sx, y2=cy+(R+18)*sy;
+      const lx = x1+ (p[0]===90?10:(p[0]===0?36:36)), ly = y1 + (p[0]===0?4:(p[0]===180?4:-6));
+      s+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#e0523d" stroke-width="4" marker-end="url(#'+idp+'ar)"/>';
+      s+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" font-size="14" font-weight="700" fill="#ffb3a6">중력</text>';
+    }
+  });
+  s+='</svg>';
+  return s;
+}
+$('conceptEarth').innerHTML = earthFigure(true,'c');
+
+/* ===================== 탐구 탭 ===================== */
+let curTab = 0;
+function showTab(n){
+  curTab = n;
+  document.querySelectorAll('#expTabs .tab-btn').forEach((b,i)=>b.classList.toggle('active', i===n));
+  for(let i=0;i<4;i++) $('tab-'+i).classList.toggle('active', i===n);
+  onTabShown(n);
+  window.scrollTo(0,0);
+}
+function onTabShown(n){
+  if(n===1){ drawSpring(); drawGraph(); }
+  if(n===2){ drawG(); }
+  if(n===3){ drawBars(); drawJump(0,true); }
+}
+/* 관찰 기록 저장 */
+document.querySelectorAll('textarea[data-save]').forEach(t=>{
+  const k='vlab-gravity-note-'+t.dataset.save;
+  const v=lsGet(k); if(v) t.value=v;
+  t.addEventListener('input',()=>lsSet(k,t.value));
+});
+
+/* ===================== 실험 ①: 질량과 무게 ===================== */
+const BODIES = {
+  earth:  {n:'지구', g:9.8,  col:'#2f6fed', icon:'🌍', max:10, step:1,   tint:'#eaf3ff'},
+  moon:   {n:'달',   g:1.6,  col:'#6c7a96', icon:'🌙', max:2,  step:0.5, tint:'#f1f3f8'},
+  mars:   {n:'화성', g:3.7,  col:'#e0523d', icon:'🔴', max:4,  step:1,   tint:'#fff0ec'},
+  jupiter:{n:'목성', g:24.8, col:'#ff9f43', icon:'🟠', max:25, step:5,   tint:'#fff5e6'}
+};
+const E1_KEY='vlab-gravity-e1-v1';
+let e1 = {body:'earth', m:0, rows:[]};
+try{ const s=JSON.parse(lsGet(E1_KEY)||'null'); if(s&&s.rows){ e1.rows=s.rows; e1.body=BODIES[s.body]?s.body:'earth'; } }catch(e){}
+function saveE1(){ lsSet(E1_KEY, JSON.stringify({rows:e1.rows, body:e1.body})); }
+function weightOf(m, body){ return m/1000*BODIES[body].g; }
+function fmtN(v){ return v.toFixed(2); }
+
+function buildBodyChips(){
+  const w=$('bodyChips'); w.innerHTML='';
+  Object.keys(BODIES).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='chip'+(e1.body===k?' on':'');
+    b.textContent=BODIES[k].icon+' '+BODIES[k].n;
+    b.onclick=()=>{ e1.body=k; saveE1(); buildBodyChips(); drawSpring(); };
+    w.appendChild(b);
+  });
+}
+function setMass(m){ e1.m=m; $('massSlider').value=m; drawSpring(); }
+function stepMass(d){ setMass(Math.max(0,Math.min(1000,e1.m+d))); }
+
+function cnt0(m){ return m>0; }
+function drawSpring(){
+  const B=BODIES[e1.body], m=e1.m, W=weightOf(m,e1.body);
+  $('massLabel').textContent='추의 질량: '+m+' g';
+  $('rdMass').textContent=m+' g';
+  $('rdW').textContent=fmtN(W)+' N';
+  $('rdG').textContent=B.g+' N/kg';
+  const y0=45, span=160, yp=y0+(W/B.max)*span;
+  let s='<rect width="360" height="380" fill="'+B.tint+'"/>';
+  s+='<text x="100" y="16" font-size="12" text-anchor="middle" font-weight="700" fill="#1c2536">용수철저울(무게)</text>';
+  s+='<text x="272" y="16" font-size="12" text-anchor="middle" font-weight="700" fill="#1c2536">윗접시저울(질량)</text>';
+  s+='<text x="272" y="34" font-size="12" text-anchor="middle" fill="#5b6478">'+B.icon+' '+B.n+'에서</text>';
+  s+='<rect x="70" y="30" width="60" height="190" rx="6" fill="#fff" stroke="#8793ab" stroke-width="2"/>';
+  s+='<rect x="80" y="22" width="40" height="10" rx="3" fill="#8793ab"/>';
+  const n=Math.round(B.max/B.step);
+  for(let i=0;i<=n;i++){
+    const v=i*B.step, y=y0+(v/B.max)*span;
+    s+='<line x1="108" y1="'+y.toFixed(1)+'" x2="128" y2="'+y.toFixed(1)+'" stroke="#8793ab" stroke-width="2"/>';
+    s+='<text x="104" y="'+(y+4).toFixed(1)+'" font-size="11" text-anchor="end" fill="#5b6478">'+(B.step<1?v.toFixed(1):v)+'</text>';
+  }
+  s+='<text x="76" y="212" font-size="10" fill="#5b6478">N</text>';
+  let pts='100,32';
+  const segs=16;
+  for(let i=1;i<=segs;i++){ const y=32+(yp-32)*i/segs; const x=100+(i%2?-9:9); pts+=' '+x+','+y.toFixed(1); }
+  s+='<polyline points="'+pts+' 100,'+yp.toFixed(1)+'" fill="none" stroke="#6c7a96" stroke-width="2.5"/>';
+  s+='<line x1="70" y1="'+yp.toFixed(1)+'" x2="130" y2="'+yp.toFixed(1)+'" stroke="#e0523d" stroke-width="3"/>';
+  s+='<polygon points="134,'+(yp-6).toFixed(1)+' 134,'+(yp+6).toFixed(1)+' 124,'+yp.toFixed(1)+'" fill="#e0523d"/>';
+  s+='<text x="140" y="'+(yp+5).toFixed(1)+'" font-size="13" font-weight="700" fill="#e0523d">'+fmtN(W)+' N</text>';
+  const wy0=228;
+  s+='<line x1="100" y1="'+yp.toFixed(1)+'" x2="100" y2="'+(cnt0(m)?wy0:yp+6).toFixed(1)+'" stroke="#6c7a96" stroke-width="2.5"/>';
+  const cnt=m/100;
+  for(let i=0;i<cnt;i++){
+    const y=wy0+i*14;
+    s+='<rect x="78" y="'+y.toFixed(1)+'" width="44" height="14" rx="3" fill="#b9c4d8" stroke="#6c7a96"/><text x="100" y="'+(y+10.5).toFixed(1)+'" font-size="9" text-anchor="middle" fill="#1c2536">100 g</text>';
+  }
+  s+='<rect x="205" y="326" width="140" height="44" rx="8" fill="#6c7a96"/>';
+  s+='<rect x="217" y="332" width="116" height="26" rx="5" fill="#16213a"/><text x="275" y="351" font-size="16" text-anchor="middle" font-weight="700" fill="#7CFFB2">'+m+' g</text>';
+  s+='<rect x="215" y="316" width="120" height="10" rx="4" fill="#8793ab"/>';
+  for(let i=0;i<cnt;i++){
+    const y=316-(i+1)*14;
+    s+='<rect x="253" y="'+y+'" width="44" height="14" rx="3" fill="#b9c4d8" stroke="#6c7a96"/><text x="275" y="'+(y+10.5)+'" font-size="9" text-anchor="middle" fill="#1c2536">100 g</text>';
+  }
+  $('springSVG').innerHTML=s;
+}
+function recordRow(){
+  const m=e1.m;
+  if(m<=0){ return; }
+  const W=+weightOf(m,e1.body).toFixed(3);
+  const idx=e1.rows.findIndex(r=>r.b===e1.body&&r.m===m);
+  if(idx>=0) e1.rows[idx].w=W; else e1.rows.push({b:e1.body,m:m,w:W});
+  saveE1(); renderRows(); drawGraph();
+}
+function autoRecord(){
+  for(let m=100;m<=500;m+=100){
+    const W=+weightOf(m,e1.body).toFixed(3);
+    const idx=e1.rows.findIndex(r=>r.b===e1.body&&r.m===m);
+    if(idx>=0) e1.rows[idx].w=W; else e1.rows.push({b:e1.body,m:m,w:W});
+  }
+  saveE1(); renderRows(); drawGraph();
+}
+function clearRows(){ e1.rows=[]; saveE1(); renderRows(); drawGraph(); }
+function renderRows(){
+  const t=$('recBody'); t.innerHTML='';
+  if(!e1.rows.length){ t.innerHTML='<tr><td colspan="3" style="color:#5b6478">아직 기록이 없어요</td></tr>'; return; }
+  e1.rows.slice().sort((a,b)=>a.b===b.b?a.m-b.m:Object.keys(BODIES).indexOf(a.b)-Object.keys(BODIES).indexOf(b.b)).forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+BODIES[r.b].icon+' '+BODIES[r.b].n+'</td><td>'+r.m+'</td><td>'+fmtN(r.w)+'</td>';
+    t.appendChild(tr);
+  });
+}
+function drawGraph(){
+  const cv=$('graphCv'); if(!cv) return;
+  const c=cv.getContext('2d'); const W=cv.width,H=cv.height;
+  c.clearRect(0,0,W,H); c.fillStyle='#fff'; c.fillRect(0,0,W,H);
+  const L=56,Rg=W-16,T=16,Bm=H-46;
+  let maxW=1; e1.rows.forEach(r=>{ if(r.w>maxW) maxW=r.w; });
+  const cands=[2,4,5,10,25]; let ymax=25; for(const v of cands){ if(v>=maxW*1.05){ ymax=v; break; } }
+  c.font='12px sans-serif'; c.strokeStyle='#e3e8f2'; c.fillStyle='#5b6478'; c.lineWidth=1;
+  const yTicks=5;
+  for(let i=0;i<=yTicks;i++){
+    const v=ymax*i/yTicks, y=Bm-(Bm-T)*i/yTicks;
+    c.beginPath(); c.moveTo(L,y); c.lineTo(Rg,y); c.stroke();
+    c.textAlign='right'; c.fillText(v%1? v.toFixed(1):v, L-6, y+4);
+  }
+  for(let i=0;i<=5;i++){
+    const m=200*i, x=L+(Rg-L)*m/1000;
+    c.beginPath(); c.moveTo(x,T); c.lineTo(x,Bm); c.stroke();
+    c.textAlign='center'; c.fillText(m, x, Bm+16);
+  }
+  c.strokeStyle='#1c2536'; c.lineWidth=2; c.beginPath(); c.moveTo(L,T); c.lineTo(L,Bm); c.lineTo(Rg,Bm); c.stroke();
+  c.fillStyle='#1c2536'; c.font='bold 13px sans-serif'; c.textAlign='center'; c.fillText('질량 (g)', (L+Rg)/2, H-8);
+  c.save(); c.translate(14,(T+Bm)/2); c.rotate(-Math.PI/2); c.fillText('무게 (N)',0,0); c.restore();
+  if(!e1.rows.length){ c.fillStyle='#8793ab'; c.font='14px sans-serif'; c.textAlign='center'; c.fillText('기록하면 그래프가 그려져요', (L+Rg)/2,(T+Bm)/2); return; }
+  const px=m=>L+(Rg-L)*m/1000, py=w=>Bm-(Bm-T)*w/ymax;
+  Object.keys(BODIES).forEach(k=>{
+    const rs=e1.rows.filter(r=>r.b===k).sort((a,b)=>a.m-b.m);
+    if(!rs.length) return;
+    if($('fitChk').checked){
+      c.strokeStyle=BODIES[k].col; c.lineWidth=2; c.setLineDash([6,4]);
+      c.beginPath(); c.moveTo(px(0),py(0)); c.lineTo(px(1000),py(Math.min(ymax,weightOf(1000,k)))); c.stroke(); c.setLineDash([]);
+    }
+    rs.forEach(r=>{ c.fillStyle=BODIES[k].col; c.beginPath(); c.arc(px(r.m),py(r.w),5.5,0,Math.PI*2); c.fill(); c.strokeStyle='#fff'; c.lineWidth=1.5; c.stroke(); });
+  });
+  let lx=L+10; c.font='12px sans-serif'; c.textAlign='left';
+  Object.keys(BODIES).forEach(k=>{
+    if(!e1.rows.some(r=>r.b===k)) return;
+    c.fillStyle=BODIES[k].col; c.fillRect(lx,T+4,12,12); c.fillStyle='#1c2536'; c.fillText(BODIES[k].n, lx+16, T+14); lx+=58;
+  });
+}
+buildBodyChips(); renderRows();
+
+/* ===================== 실험 ②: 중력의 방향 ===================== */
+const gc=$('gCanvas'), gx=gc.getContext('2d');
+const GCX=300, GCY=215, GR=95;
+const gStars=[]; for(let i=0;i<40;i++) gStars.push([(i*97)%600,(i*53+17)%420,(i%3)+1]);
+let gs={theta:0, r:GR+46, vel:0, falling:false, landed:false};
+const ballOff=14;
+function setTheta(t){
+  t=((t%360)+360)%360; gs.theta=t; $('thetaSlider').value=t;
+  $('thetaTxt').textContent=t+'°';
+  resetBall(true);
+}
+function resetBall(noDraw){ gs.r=GR+46; gs.vel=0; gs.falling=false; gs.landed=false; if(!noDraw) drawG(); else drawG(); }
+function dropBall(){ if(gs.falling) return; gs.r=GR+46; gs.vel=0; gs.falling=true; gs.landed=false; requestAnimationFrame(stepBall); }
+function stepBall(){
+  if(!gs.falling) return;
+  gs.vel+=0.45; gs.r-=gs.vel;
+  if(gs.r<=GR+9){ gs.r=GR+9; gs.falling=false; gs.landed=true; }
+  drawG();
+  if(gs.falling) requestAnimationFrame(stepBall);
+}
+function gArrowChar(theta){
+  const a=theta*Math.PI/180, vx=-Math.sin(a), vy=Math.cos(a);
+  const ang=Math.atan2(vy,vx); const idx=((Math.round(ang/(Math.PI/4))%8)+8)%8;
+  return ['→','↘','↓','↙','←','↖','↑','↗'][idx];
+}
+function arrowLine(ctx,x1,y1,x2,y2,col,wd){
+  ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=wd; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const a=Math.atan2(y2-y1,x2-x1), h=11;
+  ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-h*Math.cos(a-0.45),y2-h*Math.sin(a-0.45)); ctx.lineTo(x2-h*Math.cos(a+0.45),y2-h*Math.sin(a+0.45)); ctx.closePath(); ctx.fill();
+}
+function drawG(){
+  const c=gx; c.clearRect(0,0,600,420);
+  c.fillStyle='#0f1b3d'; c.fillRect(0,0,600,420);
+  c.fillStyle='#fff'; gStars.forEach(s=>{ c.globalAlpha=.6; c.fillRect(s[0],s[1],s[2],s[2]); }); c.globalAlpha=1;
+  const g=c.createRadialGradient(GCX-30,GCY-35,10,GCX,GCY,GR);
+  g.addColorStop(0,'#7fd0ff'); g.addColorStop(1,'#1f6fb5');
+  c.fillStyle=g; c.beginPath(); c.arc(GCX,GCY,GR,0,Math.PI*2); c.fill();
+  c.fillStyle='#4caf6a';
+  [[-30,-28,32,17],[40,22,27,14],[-38,30,17,10],[28,-40,16,9]].forEach(e=>{ c.beginPath(); c.ellipse(GCX+e[0],GCY+e[1],e[2],e[3],0,0,Math.PI*2); c.fill(); });
+  c.fillStyle='#fff'; c.beginPath(); c.arc(GCX,GCY,4,0,Math.PI*2); c.fill();
+  c.font='12px sans-serif'; c.textAlign='left'; c.fillText('지구 중심',GCX+8,GCY+16);
+  if($('allArrows').checked){
+    for(let k=0;k<12;k++){
+      const a=k*30*Math.PI/180, sx=Math.sin(a), sy=-Math.cos(a);
+      arrowLine(c,GCX+(GR+62)*sx,GCY+(GR+62)*sy,GCX+(GR+22)*sx,GCY+(GR+22)*sy,'#ff8a75',2.5);
+    }
+  }
+  // 사람
+  const th=gs.theta*Math.PI/180;
+  const fx=GCX+GR*Math.sin(th), fy=GCY-GR*Math.cos(th);
+  c.save(); c.translate(fx,fy); c.rotate(th);
+  c.strokeStyle='#33415c'; c.lineCap='round'; c.lineWidth=3;
+  c.beginPath(); c.moveTo(0,-12); c.lineTo(-5,0); c.moveTo(0,-12); c.lineTo(5,0); c.stroke();
+  c.strokeStyle='#ff9f43'; c.lineWidth=5; c.beginPath(); c.moveTo(0,-27); c.lineTo(0,-12); c.stroke();
+  c.lineWidth=3; c.beginPath(); c.moveTo(-9,-22); c.lineTo(9,-22); c.stroke();
+  c.fillStyle='#ffd9a8'; c.strokeStyle='#33415c'; c.lineWidth=1.5; c.beginPath(); c.arc(0,-34,6.5,0,Math.PI*2); c.fill(); c.stroke();
+  c.restore();
+  // 공
+  const bt=th+ballOff*Math.PI/180;
+  const bx=GCX+gs.r*Math.sin(bt), by=GCY-gs.r*Math.cos(bt);
+  const dx=GCX-bx, dy=GCY-by, dl=Math.hypot(dx,dy);
+  if(gs.falling||gs.landed){ c.strokeStyle='rgba(255,255,255,.35)'; c.setLineDash([5,5]); c.lineWidth=1.5; c.beginPath(); c.moveTo(bx,by); c.lineTo(GCX,GCY); c.stroke(); c.setLineDash([]); }
+  const alen=Math.min(56,dl-12);
+  if(alen>10) arrowLine(c,bx,by,bx+dx/dl*alen,by+dy/dl*alen,'#ff5a45',4);
+  c.fillStyle='#ff6b6b'; c.strokeStyle='#fff'; c.lineWidth=2; c.beginPath(); c.arc(bx,by,8,0,Math.PI*2); c.fill(); c.stroke();
+  c.fillStyle='#ffb3a6'; c.font='bold 14px sans-serif'; c.textAlign='center';
+  const lx=bx+dx/dl*Math.min(36,alen*0.6)+Math.cos(bt)*24, ly=by+dy/dl*Math.min(36,alen*0.6)+Math.sin(bt)*24;
+  if(alen>20) c.fillText('중력',lx,ly+4);
+  c.font='13px sans-serif'; c.fillStyle='#cfd8ee'; c.textAlign='left';
+  c.fillText('(발이 닿은 곳이 "아래", 머리 쪽이 "위")',12,408);
+  const arrow=gArrowChar(gs.theta);
+  $('gInfo').innerHTML='사람이 서 있는 위치 <b>'+gs.theta+'°</b> · 화면에서 중력의 방향 <b>'+arrow+'</b> · 그 사람 기준으로는 늘 <b>발 아래(지구 중심)</b> 방향이에요.'+(gs.landed?'<br>공은 <b>지구 중심 쪽</b>으로 떨어져 땅에 닿았어요.':'');
+}
+setTheta(0);
+
+/* ===================== 실험 ③: 천체별 중력 ===================== */
+function drawBars(){
+  const m=+$('myMass').value; $('myMassTxt').textContent='내 질량: '+m+' kg';
+  const ws=Object.keys(BODIES).map(k=>({k:k,w:m*BODIES[k].g}));
+  const mx=Math.max.apply(null,ws.map(x=>x.w));
+  let h='';
+  ws.forEach(x=>{
+    h+='<div class="bar-row"><span>'+BODIES[x.k].icon+' '+BODIES[x.k].n+'</span><div class="bar-track"><div class="bar-fill" style="width:'+(x.w/mx*100).toFixed(1)+'%;background:'+BODIES[x.k].col+'"></div></div><span><b>'+x.w.toFixed(0)+' N</b></span></div>';
+  });
+  h+='<table class="cmp" style="margin-top:8px;"><tr><th>천체</th><th>내 질량</th><th>내 무게</th></tr>';
+  ws.forEach(x=>{ h+='<tr><td>'+BODIES[x.k].icon+' '+BODIES[x.k].n+'</td><td>'+m+' kg (그대로)</td><td>'+x.w.toFixed(0)+' N</td></tr>'; });
+  h+='</table>';
+  $('bars').innerHTML=h;
+}
+const jc=$('jumpCv'), jx=jc.getContext('2d');
+let jump={body:'earth', running:false, t0:0, maxH:0, last:0};
+function buildJumpChips(){
+  const w=$('jumpChips'); w.innerHTML='';
+  Object.keys(BODIES).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='chip'+(jump.body===k?' on':''); b.textContent=BODIES[k].icon+' '+BODIES[k].n;
+    b.onclick=()=>{ if(jump.running) return; jump.body=k; jump.maxH=0; $('jumpInfo').textContent=''; buildJumpChips(); drawJump(0,true); };
+    w.appendChild(b);
+  });
+}
+const V0=Math.sqrt(2*9.8*0.5);
+function drawJump(y, idle){
+  const B=BODIES[jump.body], c=jx, gy=262, pxm=62;
+  c.clearRect(0,0,600,300);
+  c.fillStyle='#0f1b3d'; c.fillRect(0,0,600,300);
+  c.fillStyle='#fff'; for(let i=0;i<24;i++){ c.globalAlpha=.55; c.fillRect((i*83)%600,(i*47+9)%230,2,2); } c.globalAlpha=1;
+  c.fillStyle=B.col; c.fillRect(0,gy,600,38);
+  c.fillStyle='rgba(255,255,255,.2)'; for(let i=0;i<8;i++){ c.beginPath(); c.arc(40+i*75,gy+19,6,0,Math.PI*2); c.fill(); }
+  c.strokeStyle='rgba(255,255,255,.25)'; c.setLineDash([4,6]); c.lineWidth=1; c.fillStyle='#cfd8ee'; c.font='11px sans-serif'; c.textAlign='left';
+  [1,2,3].forEach(m=>{ const yy=gy-m*pxm; if(yy>10){ c.beginPath(); c.moveTo(30,yy); c.lineTo(590,yy); c.stroke(); c.fillText(m+' m',4,yy+4); } });
+  c.setLineDash([]);
+  if(jump.maxH>0){ const yy=gy-jump.maxH*pxm; c.strokeStyle='#ffd166'; c.lineWidth=2; c.beginPath(); c.moveTo(250,yy); c.lineTo(350,yy); c.stroke(); c.fillStyle='#ffd166'; c.font='bold 13px sans-serif'; c.fillText('최고 '+jump.maxH.toFixed(1)+' m',356,yy+4); }
+  const x=300, fy=gy-y*pxm;
+  c.strokeStyle='#33415c'; c.lineCap='round'; c.lineWidth=3;
+  c.beginPath(); c.moveTo(x,fy-14); c.lineTo(x-6,fy); c.moveTo(x,fy-14); c.lineTo(x+6,fy); c.stroke();
+  c.strokeStyle='#ff9f43'; c.lineWidth=6; c.beginPath(); c.moveTo(x,fy-30); c.lineTo(x,fy-14); c.stroke();
+  c.lineWidth=3; c.beginPath(); c.moveTo(x-11,fy-26); c.lineTo(x+11,fy-26-(idle?0:6)); c.stroke();
+  c.fillStyle='#ffd9a8'; c.strokeStyle='#33415c'; c.lineWidth=1.5; c.beginPath(); c.arc(x,fy-38,8,0,Math.PI*2); c.fill(); c.stroke();
+}
+function startJump(){
+  if(jump.running) return;
+  jump.running=true; jump.t0=performance.now(); jump.maxH=0; $('jumpInfo').textContent='';
+  requestAnimationFrame(stepJump);
+}
+function stepJump(now){
+  const g=BODIES[jump.body].g, t=(now-jump.t0)/1000;
+  const y=V0*t-0.5*g*t*t;
+  if(y<=0&&t>0.02){
+    jump.running=false; const H=V0*V0/(2*g), T=2*V0/g; jump.maxH=H;
+    drawJump(0,true);
+    $('jumpInfo').textContent=BODIES[jump.body].n+'에서 최고 '+H.toFixed(2)+' m · 공중에 있던 시간 '+T.toFixed(1)+'초';
+    return;
+  }
+  if(y>jump.maxH) jump.maxH=Math.max(jump.maxH,0);
+  drawJump(Math.max(0,y),false);
+  requestAnimationFrame(stepJump);
+}
+buildJumpChips();
+
+/* ===================== 4. 스티커 붙이기 ===================== */
+const BOARDS = [
+  {
+    title:'판 1 · 질량과 무게 비교표',
+    summary:'질량은 물질의 양(kg, g)이라 윗접시저울로 재고 어디서나 같아요. 무게는 중력의 크기(N)라 용수철저울로 재고, 달에서는 지구의 약 1/6이에요.',
+    build:function(){
+      const S=id=>'<div class="slot" data-slot="'+id+'"></div>';
+      return '<table class="cmp"><thead><tr><th style="width:22%"></th><th>질량</th><th>무게</th></tr></thead><tbody>'+
+        '<tr><th>의미</th><td>'+S('m-mean')+'</td><td>'+S('w-mean')+'</td></tr>'+
+        '<tr><th>단위</th><td>'+S('m-unit')+'</td><td>'+S('w-unit')+'</td></tr>'+
+        '<tr><th>측정 도구</th><td>'+S('m-tool')+'</td><td>'+S('w-tool')+'</td></tr>'+
+        '<tr><th>달에 가면</th><td>'+S('m-moon')+'</td><td>'+S('w-moon')+'</td></tr></tbody></table>';
+    },
+    slots:{
+      'm-mean':['질량은 무엇의 양일까요?','물질이 얼마나 들어 있는지를 나타내요.'],
+      'w-mean':['무게는 어떤 힘의 크기일까요?','지구가 물체를 끌어당기는 힘이에요.'],
+      'm-unit':['kg, g로 나타내는 것은?','실험 ①에서 윗접시저울의 눈금 단위를 떠올려요.'],
+      'w-unit':['힘의 단위예요.','용수철저울의 눈금 단위를 떠올려요.'],
+      'm-tool':['실험 ①의 오른쪽 저울이에요.','저울 접시 위에 추를 올렸어요.'],
+      'w-tool':['실험 ①의 왼쪽 저울이에요.','추를 매달면 용수철이 늘어났어요.'],
+      'm-moon':['달에 가도 물질의 양은?','실험에서 천체를 바꿔도 윗접시저울 눈금은 그대로였어요.'],
+      'w-moon':['달의 중력은 지구보다 약해요.','실험 ③에서 달의 무게 막대가 짧았어요.']
+    },
+    stickers:[
+      {id:'a1',label:'물질의 양',answer:'m-mean'},{id:'a2',label:'중력의 크기',answer:'w-mean'},
+      {id:'a3',label:'kg, g',answer:'m-unit'},{id:'a4',label:'N (뉴턴)',answer:'w-unit'},
+      {id:'a5',label:'윗접시저울',answer:'m-tool'},{id:'a6',label:'용수철저울',answer:'w-tool'},
+      {id:'a7',label:'변하지 않는다',answer:'m-moon'},{id:'a8',label:'지구의 약 1/6',answer:'w-moon'},
+      {id:'t1',label:'우주에서는 0',answer:null},{id:'t2',label:'질량이 1/6로 줄어든다',answer:null}
+    ]
+  },
+  {
+    title:'판 2 · 지구 곳곳의 중력 방향',
+    nums:{'p-top':'①','p-right':'②','p-bottom':'③'},
+    summary:'중력은 지구 어디서나 지구 중심 방향이에요. 그림에서 위·오른쪽·아래에 선 사람의 중력은 각각 ↓, ←, ↑ 방향이지만, 모두 그 사람의 발 아래쪽이에요.',
+    build:function(){
+      const S=(id,x,y)=>'<div class="slot" data-slot="'+id+'" style="left:'+x+'%;top:'+y+'%"></div>';
+      return '<div class="fig-board">'+earthFigure(false,'s').replace(' class="fig"','')+S('p-top',50,9)+S('p-right',85,52)+S('p-bottom',50,92)+'</div>'+
+        '<p style="text-align:center;font-size:14px;margin-top:6px;">①②③ 세 사람이 받는 중력의 방향을 그림 기준으로 붙여 보세요. (그림의 위쪽이 하늘이라고 생각하지 마세요!)</p>';
+    },
+    slots:{
+      'p-top':['위쪽에 선 사람이 받는 중력은?','지구 중심은 이 사람의 어느 쪽에 있나요?'],
+      'p-right':['오른쪽에 선 사람이 받는 중력은?','지구 중심은 이 사람의 왼쪽에 있어요.'],
+      'p-bottom':['아래쪽에 선 사람이 받는 중력은?','지구 반대편 사람이에요. 중력은 지구 중심 방향이에요.']
+    },
+    stickers:[
+      {id:'b1',label:'↓ 아래쪽',answer:'p-top'},{id:'b2',label:'← 왼쪽',answer:'p-right'},{id:'b3',label:'↑ 위쪽',answer:'p-bottom'},
+      {id:'t3',label:'→ 오른쪽',answer:null},{id:'t4',label:'중력이 없다',answer:null}
+    ]
+  }
+];
+const STK_KEY='vlab-gravity-sticker-v1';
+let stk={cur:0, boards:BOARDS.map(()=>({placed:{},tries:0,done:false,hint:{},mark:{}}))};
+try{ const s=JSON.parse(lsGet(STK_KEY)||'null'); if(s&&s.boards&&s.boards.length===BOARDS.length){ stk=s; stk.cur=0; stk.boards.forEach(b=>{ b.mark=b.mark||{}; b.hint=b.hint||{}; }); } }catch(e){}
+function saveStk(){ lsSet(STK_KEY, JSON.stringify(stk)); }
+let picked=null;
+
+function renderBoardTabs(){
+  const w=$('boardTabs'); w.innerHTML='';
+  BOARDS.forEach((b,i)=>{
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(stk.cur===i?' active':'');
+    btn.textContent=(stk.boards[i].done?'✔ ':'')+b.title;
+    btn.onclick=()=>{ stk.cur=i; picked=null; saveStk(); renderStickers(); };
+    w.appendChild(btn);
+  });
+}
+function renderStickers(){
+  renderBoardTabs();
+  const b=BOARDS[stk.cur], st=stk.boards[stk.cur];
+  const boardEl=$('stkBoard');
+  boardEl.innerHTML=b.build();
+  const used=new Set(Object.values(st.placed));
+  // 슬롯 채우기
+  boardEl.querySelectorAll('[data-slot]').forEach(el=>{
+    const id=el.dataset.slot, sid=st.placed[id], s=b.stickers.find(x=>x.id===sid);
+    el.classList.toggle('ready', !!picked && !st.done);
+    if(b.nums && b.nums[id]){ const nm=document.createElement('span'); nm.className='slot-num'; nm.textContent=b.nums[id]; el.appendChild(nm); }
+    if(st.mark[id]==='ok'||st.done) el.classList.add('ok');
+    else if(st.mark[id]==='no') el.classList.add('no');
+    if(s){
+      const btn=document.createElement('button'); btn.className='sticker'; btn.textContent=s.label;
+      btn.onclick=e=>{ e.stopPropagation(); if(st.done) return; delete st.placed[id]; delete st.mark[id]; saveStk(); renderStickers(); };
+      el.appendChild(btn);
+    } else {
+      const lv=st.hint[id]||0;
+      const sp=document.createElement('span'); sp.className='hint';
+      sp.textContent= lv? '💡 '+b.slots[id][lv-1] : '여기에 붙이기';
+      el.appendChild(sp);
+    }
+    el.onclick=()=>{
+      if(st.done||!picked) return;
+      st.placed[id]=picked; picked=null; delete st.mark[id]; saveStk(); renderStickers();
+    };
+  });
+  // 보관함
+  const tray=$('stkTray'); tray.innerHTML='';
+  const tilts=[-3,2,-1.5,3,-2.5,1,-3,2.5,0,-1];
+  b.stickers.filter(s=>!used.has(s.id)).forEach((s,i)=>{
+    const btn=document.createElement('button'); btn.className='sticker'+(picked===s.id?' picked':'');
+    btn.style.setProperty('--tilt', tilts[i%tilts.length]+'deg'); btn.textContent=s.label;
+    btn.onclick=()=>{ if(st.done) return; picked=(picked===s.id?null:s.id); renderStickers(); };
+    tray.appendChild(btn);
+  });
+  if(!tray.children.length) tray.innerHTML='<span style="color:#5b6478;font-size:14px;">보관함이 비었어요</span>';
+  const need=Object.keys(b.slots).length;
+  $('stkCount').textContent=Object.keys(st.placed).length+' / '+need;
+  $('stkTry').textContent=st.tries;
+  $('stkStamp').classList.toggle('show', st.done);
+  const sm=$('stkSummary'); sm.style.display=st.done?'block':'none'; sm.textContent='📒 정리: '+b.summary;
+  $('stkNext').style.display = stk.boards.every(x=>x.done) ? 'inline-block' : 'none';
+}
+function checkStickers(){
+  const b=BOARDS[stk.cur], st=stk.boards[stk.cur];
+  if(st.done) return;
+  st.tries++; let allOk=true; const wrongSlots=[];
+  Object.keys(b.slots).forEach(id=>{
+    const s=b.stickers.find(x=>x.id===st.placed[id]);
+    const ok=!!s && s.answer===id;
+    if(ok){ st.mark[id]='ok'; }
+    else{
+      allOk=false; st.hint[id]=Math.min((st.hint[id]||0)+1, b.slots[id].length);
+      if(s){ st.mark[id]='no'; wrongSlots.push(id); } else delete st.mark[id];
+    }
+  });
+  if(allOk){ st.done=true; }
+  saveStk(); renderStickers();
+  if(wrongSlots.length){
+    setTimeout(()=>{
+      wrongSlots.forEach(id=>{ if(st.mark[id]==='no'){ delete st.placed[id]; delete st.mark[id]; } });
+      saveStk(); renderStickers();
+    },800);
+  }
+}
+function resetStickers(){
+  stk.boards[stk.cur]={placed:{},tries:0,done:false,hint:{},mark:{}}; picked=null; saveStk(); renderStickers();
+}
+
+/* ===================== 5. 실생활 ===================== */
+const LIFE=[
+  ['🍎','사과가 떨어져요','나무에서 사과가 땅으로 떨어지는 것은 지구가 사과를 끌어당기기 때문이에요.','중력은 지구 중심 방향으로 작용해요.'],
+  ['⚖️','체중계의 숫자','체중계는 우리가 누르는 힘(무게)을 재서 kg 값으로 바꿔 보여 줘요. 달에 가져가면 같은 사람도 숫자가 작게 나와요.','질량은 같고, 무게는 달라져요.'],
+  ['🧑‍🚀','달 위의 우주인','달에서는 우주인이 무거운 장비를 메고도 가볍게 뛰어요. 달의 중력이 지구의 약 1/6이기 때문이에요.','천체마다 중력이 달라요. 질량은 변하지 않아요.'],
+  ['💧','폭포와 수돗물','물이 높은 곳에서 낮은 곳으로 흐르는 것도 중력 때문이에요. 옥상 물탱크의 물이 아래층 수도꼭지로 내려오는 것도 같아요.','중력은 물체를 아래(지구 중심)로 끌어당겨요.'],
+  ['🛰️','우주정거장의 우주인','우주정거장에서도 지구 중력은 있어요. 우주인은 정거장과 함께 지구 둘레를 돌며 계속 떨어지고 있어서 둥둥 떠 있는 것처럼 보여요.','우주에 중력이 없는 것은 아니에요.'],
+  ['🎢','자유 낙하 놀이기구','꼭대기에서 놓으면 중력 때문에 아래로 빠르게 떨어져요. 떨어지는 동안 몸이 붕 뜨는 느낌도 들어요.','중력은 늘 아래쪽으로 작용해요.'],
+  ['🌊','밀물과 썰물','바닷물은 달의 중력에도 끌려요. 달이 바닷물을 끌어당겨 하루에 두 번쯤 바닷물의 높이가 오르내려요.','중력은 지구뿐 아니라 모든 천체가 가져요.'],
+  ['🧪','저울 고르기','주방 저울(g)은 질량을, 용수철저울(N)은 무게를 재요. 어떤 양을 재는지에 따라 저울을 골라야 해요.','질량은 윗접시저울, 무게는 용수철저울이에요.']
+];
+(function(){
+  const g=$('lifeGrid');
+  LIFE.forEach(x=>{
+    const d=document.createElement('div'); d.className='card';
+    d.innerHTML='<div class="ico">'+x[0]+'</div><h3>'+x[1]+'</h3><p>'+x[2]+'</p><span class="link">🔗 이 단원의 개념: '+x[3]+'</span>';
+    g.appendChild(d);
+  });
+})();
+
+/* ===================== 6. 개념 확인 문제 ===================== */
+/* 각 문항의 첫 번째 보기(c[0])가 정답이며 풀 때 보기 순서가 섞여요 */
+const QUIZ=[
+  {q:'중력에 대한 설명으로 옳은 것은?', c:['지구(천체)가 물체를 끌어당기는 힘','물체의 운동을 방해하는 힘','물속에서 물체를 위로 밀어 올리는 힘','늘어난 용수철이 원래대로 돌아가려는 힘'], e:'중력은 지구를 포함한 천체가 물체를 끌어당기는 힘이에요. 나머지는 다른 종류의 힘이에요.'},
+  {q:'나무에서 떨어지는 사과가 받는 중력의 방향은?', c:['지구 중심 방향','수평 방향','하늘(지구 바깥) 방향','사과가 움직이는 반대 방향'], e:'중력은 어디서나 지구 중심 방향으로 작용해요. 우리가 "아래쪽"이라고 부르는 방향이 지구 중심 방향이에요.'},
+  {q:'지구에서 질량이 50 kg인 학생이 달에 가면 질량은 얼마일까요?', c:['50 kg 그대로','약 8.3 kg','약 300 kg','0 kg'], e:'질량은 물질의 양이라 장소가 바뀌어도 변하지 않아요. 달에서 줄어드는 것은 무게(약 1/6)예요.'},
+  {q:'무게의 단위와 측정 도구가 바르게 짝지어진 것은?', c:['N(뉴턴) – 용수철저울','kg – 용수철저울','N – 윗접시저울','g – 용수철저울'], e:'무게는 중력의 크기라서 단위는 N이고 용수철저울로 재요. kg, g은 질량의 단위이고 윗접시저울로 재요.'},
+  {q:'지구에서 질량이 600 g인 물체의 무게는 약 얼마일까요?\n(지구에서 질량 1 kg의 무게는 약 9.8 N)', c:['약 5.9 N','약 0.6 N','약 59 N','약 600 N'], e:'600 g = 0.6 kg이므로 0.6 × 9.8 ≈ 5.9 N이에요.'},
+  {q:'지구에서 무게가 60 N인 물체를 달에 가져갔어요. 달에서의 무게는 약 얼마일까요?\n(달의 중력은 지구의 약 1/6)', c:['약 10 N','약 360 N','약 60 N','약 0 N'], e:'달에서의 무게는 지구의 약 1/6이므로 60 ÷ 6 = 10 N이에요. 질량은 변하지 않아요.'},
+  {q:'지구에서 용수철저울에 추를 매달아 다음 결과를 얻었어요.\n질량(g): 100 / 200 / 300 / 400\n무게(N): 0.98 / 1.96 / 2.94 / 3.92\n이 결과로 알 수 있는 것은?', c:['질량이 2배, 3배가 되면 무게도 2배, 3배가 된다','질량이 늘어날수록 무게는 줄어든다','질량과 무게는 서로 관계가 없다','질량이 늘어나도 무게는 일정하다'], e:'질량과 무게는 정비례해요. 그래프로 그리면 원점을 지나는 직선이 돼요.'},
+  {q:'같은 추를 같은 용수철저울에 매달았을 때 용수철이 가장 많이 늘어나는 곳은?', c:['목성','지구','달','모두 같다'], e:'중력이 클수록 무게가 커서 용수철이 많이 늘어나요. 목성(약 24.8 N/kg) > 지구(약 9.8 N/kg) > 달(약 1.6 N/kg) 순이에요.'},
+  {q:'국제우주정거장 안에서 우주인이 둥둥 떠 있는 것처럼 보이는 까닭으로 옳은 것은?', c:['중력이 없어진 것이 아니라 지구 중력을 받으며 정거장과 함께 지구 둘레를 돌고 있기 때문이다','우주에는 중력이 전혀 없기 때문이다','우주에서는 질량이 0이 되기 때문이다','지구에서 멀어서 몸의 질량이 사라지기 때문이다'], e:'우주정거장이 있는 높이에서도 지구 중력은 지표면의 약 90%나 돼요. 우주인은 정거장과 함께 계속 떨어지고 있어서 떠 있는 것처럼 보여요.'},
+  {q:'지구 반대편(브라질)에 서 있는 사람이 받는 중력의 방향은?', c:['그 사람의 발 아래쪽, 곧 지구 중심 방향','그 사람의 머리 위쪽 방향','우리나라가 있는 방향','중력을 받지 않는다'], e:'중력은 어디서나 지구 중심을 향해요. 지구 반대편 사람에게도 지구 중심은 발 아래쪽이라서 땅에 서 있을 수 있어요.'}
+];
+let qSet=[], qIdx=0, qScore=0, qWrong=[], qAnswered=false, qStart=0, qFirstRun=true;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function buildSet(items){ return shuffle(items).map(it=>({q:it.q,e:it.e,choices:shuffle(it.c.map((t,i)=>({t:t,ok:i===0})))})); }
+function startQuiz(){
+  qSet=buildSet(QUIZ); qIdx=0; qScore=0; qWrong=[]; qFirstRun=true; qStart=Date.now();
+  goTo(5); renderQuestion();
+}
+function renderQuestion(){
+  qAnswered=false; const it=qSet[qIdx];
+  $('quizQuestionNum').textContent='문제 '+(qIdx+1)+' / '+qSet.length;
+  $('quizQuestionText').textContent=it.q;
+  $('quizProgressBar').style.width=(qIdx/qSet.length*100)+'%';
+  const w=$('quizChoices'); w.innerHTML='';
+  it.choices.forEach((ch,i)=>{
+    const b=document.createElement('button'); b.className='choice'; b.textContent=ch.t; b.onclick=()=>selectAnswer(i); w.appendChild(b);
+  });
+  $('quizExplanation').className='explanation'; $('quizExplanation').textContent='';
+  $('quizNextBtn').style.display='none';
+}
+function selectAnswer(i){
+  if(qAnswered) return; qAnswered=true;
+  const it=qSet[qIdx];
+  document.querySelectorAll('#quizChoices .choice').forEach((b,idx)=>{
+    if(it.choices[idx].ok){ b.classList.add('correct'); b.textContent='✔ '+it.choices[idx].t; }
+    else if(idx===i){ b.classList.add('wrong'); b.textContent='✖ '+it.choices[idx].t; }
+  });
+  const ok=it.choices[i].ok;
+  if(ok){ qScore++; } else { qWrong.push(it); }
+  const ex=$('quizExplanation'); ex.textContent=(ok?'정답이에요! ':'아쉬워요. ')+it.e; ex.classList.add('show');
+  $('quizNextBtn').style.display='inline-block';
+  $('quizNextBtn').textContent = (qIdx===qSet.length-1)?'결과 보기':'다음 문제';
+}
+function nextQuestion(){
+  qIdx++;
+  if(qIdx>=qSet.length) showResult(); else renderQuestion();
+}
+function showResult(){
+  $('quizProgressBar').style.width='100%';
+  const total=qSet.length;
+  if(qFirstRun){ $('finalScore').textContent=qScore; $('finalTime').textContent='걸린 시간 '+Math.floor((Date.now()-qStart)/60000)+'분 '+(Math.floor((Date.now()-qStart)/1000)%60)+'초'; }
+  else { $('finalScore').textContent=qScore; $('finalTime').textContent='다시 풀기 결과'; }
+  document.querySelector('.score-big').lastChild.textContent=' / '+total;
+  $('finalMessage').textContent = qScore>=total*0.8 ? '핵심 개념을 잘 이해했어요! 🌟' : qScore>=total*0.5 ? '조금만 더 복습하면 완벽해요. 💪' : '개념과 가상실험을 다시 살펴볼까요? 📖';
+  const wl=$('wrongList'); wl.innerHTML='';
+  qWrong.forEach(it=>{
+    const li=document.createElement('li'); const ans=it.choices.find(c=>c.ok).t;
+    li.innerHTML='<b>'+it.q.split('\n')[0]+'</b><br>정답: '+ans; wl.appendChild(li);
+  });
+  $('wrongCard').style.display=qWrong.length?'block':'none';
+  goTo(6);
+}
+function retryQuiz(){
+  if(!qWrong.length){ startQuiz(); return; }
+  const items=qWrong.map(w=>({q:w.q,e:w.e,c:[w.choices.find(c=>c.ok).t].concat(w.choices.filter(c=>!c.ok).map(c=>c.t))}));
+  qSet=buildSet(items); qIdx=0; qScore=0; qWrong=[]; qFirstRun=false; qStart=Date.now();
+  goTo(5); renderQuestion();
+}
+/* 자가 점검 저장 */
+document.querySelectorAll('input[data-chk]').forEach(c=>{
+  const k='vlab-gravity-chk-'+c.dataset.chk; c.checked=lsGet(k)==='1';
+  c.addEventListener('change',()=>lsSet(k,c.checked?'1':'0'));
+});
+
+renderIndicator(0);
+drawSpring();
+</script>
+</body>
+</html>
