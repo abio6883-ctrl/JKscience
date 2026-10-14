@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가상실험실 제작 지침서 (2026. 10. 15.)</title>
+<style>
+:root{--p:#b8324b;--p2:#0f8a7e;--bg:#f7f3f4;--card:#fff;--t:#22202a;--tl:#5f5a68;--line:#e6dfe2;--code:#2d2a35;}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--bg);color:var(--t);font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.75;font-size:16px;overflow-x:hidden;}
+header{background:linear-gradient(135deg,#b8324b,#d9485f 55%,#3d63c9);color:#fff;padding:40px 16px 34px;}
+header .in{max-width:900px;margin:0 auto;}
+header .tag{font-size:14px;font-weight:700;opacity:.9;}
+header h1{font-size:clamp(26px,5vw,38px);margin:6px 0 10px;line-height:1.3;}
+header .meta{display:flex;flex-wrap:wrap;gap:8px;}
+header .meta span{background:rgba(255,255,255,.18);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:700;}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 80px;}
+nav.toc{background:var(--card);border-radius:16px;box-shadow:0 8px 24px rgba(60,20,30,.07);padding:16px 20px;margin:-34px 0 20px;position:relative;}
+nav.toc b{display:block;margin-bottom:6px;}
+nav.toc ul{margin:0;padding-left:0;list-style:none;columns:2;column-gap:28px;}
+nav.toc a{color:var(--t);text-decoration:none;}
+nav.toc a:hover{color:var(--p);}
+main{background:var(--card);border-radius:16px;box-shadow:0 8px 24px rgba(60,20,30,.07);padding:8px 24px 24px;}
+h2{font-size:23px;margin:34px 0 10px;padding-top:12px;border-top:2px solid var(--line);color:var(--p);scroll-margin-top:12px;}
+main>h2:first-of-type{border-top:none;}
+h3{font-size:18px;margin:22px 0 6px;}
+p,li{color:var(--t);}
+a{color:var(--p2);}
+strong{color:#000;}
+hr{display:none;}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:10px 0;display:block;overflow-x:auto;}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+th{background:#f7eef1;white-space:nowrap;}
+code{background:#f3eef0;border-radius:6px;padding:1px 6px;font-size:.9em;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;}
+pre{background:var(--code);color:#f1eef3;border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.55;}
+pre code{background:none;padding:0;color:inherit;word-break:normal;}
+.note{background:#fbf6f0;border-left:4px solid #f08c00;border-radius:10px;padding:12px 14px;margin:16px 0;font-size:15px;}
+footer{text-align:center;font-size:13px;color:var(--tl);margin-top:24px;}
+.top{position:fixed;right:16px;bottom:16px;background:var(--p);color:#fff;border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:900;box-shadow:0 6px 16px rgba(0,0,0,.2);}
+@media (max-width:600px){nav.toc ul{columns:1;} main{padding:4px 14px 18px;}}
+@media print{header{background:#b8324b !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;} .top{display:none;} pre{white-space:pre-wrap;}}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <div class="tag">광과학 · 공통 자료실</div>
+  <h1>과학 가상실험실 제작 지침서</h1>
+  <div class="meta"><span>📅 2026. 10. 15. 판</span><span>6단계 + GitHub 배포</span><span>Lee Jae Kwang</span></div>
+</div></header>
+<div class="wrap">
+  <nav class="toc"><b>목차</b><ul><li><a href="#0">0. 시작 전에 확인할 것</a></li>
+<li><a href="#1-6">1. 결과물 구조 — 6단계 (반드시 이 순서)</a></li>
+<li><a href="#2_1">2. 스티커 붙이기 단계 설계</a></li>
+<li><a href="#3_1">3. 디자인 원칙 (태블릿, 세련되고 깔끔하게)</a></li>
+<li><a href="#4_1">4. 구현 기준</a></li>
+<li><a href="#5_1">5. 검증 (배포 전 필수)</a></li>
+<li><a href="#6-github">6. GitHub 배포와 웹주소 제공</a></li>
+<li><a href="#7">7. 전달과 기록</a></li>
+<li><a href="#8">8. 예시</a></li></ul></nav>
+  <main>
+  <div class="note">이 지침서는 중학교 과학 <b>조작형 가상실험실</b>을 만들고, GitHub Pages에 올려 <b>학생에게 나눠 줄 웹주소</b>까지 제공하는 전 과정을 정리한 것입니다. (2026. 10. 15. 기준)</div>
+  <p>중학교 과학 교사(이재광)가 태블릿으로 학생에게 배포하는 <strong>조작형 가상실험실</strong>을 만드는 지침이다. 학생은 <strong>웹주소 하나만 열면</strong> "왜 그런지 이해 → 직접 조작하며 확인 → 스티커로 개념 정리 → 내 삶과 연결 → 배운 것 확인"까지 끝낼 수 있어야 한다. 정보를 나열하는 슬라이드가 아니라, 학생이 값을 바꾸고 누르고 붙이며 결과를 관찰하는 경험이 핵심이다.</p>
+<p><strong>작업의 끝은 "학생에게 바로 나눠 줄 수 있는 웹주소"다.</strong> 제작 → 검증 → GitHub 업로드 → 게시 확인 → 웹주소 제공까지 한 번에 진행한다.</p>
+<pre><code>0. 확인 → 1~4. 제작 → 5. 검증 → 6. GitHub 배포·웹주소 확인 → 7. 전달과 기록
+</code></pre>
+<hr />
+<h2 id="0">0. 시작 전에 확인할 것</h2>
+<p>대화·메모리·프로젝트 문서에 이미 있으면 다시 묻지 않는다. 없으면 한 번에 짧게 묻는다. 프로젝트에 교과서·지도서 PDF가 있으면 해당 차시 쪽을 먼저 읽고 반영한다.</p>
+<ol>
+<li><strong>학년 / 단원 / 차시 주제</strong> — 예: "1학년 Ⅳ단원 입자의 운동과 물질의 상태"</li>
+<li><strong>교과서와 쪽수</strong> — 기본은 미래엔. 교과서 탐구·[해 보기] 활동명과 쪽수, 지도서 쪽수를 알면 그대로 반영한다.</li>
+<li><strong>성취기준</strong> — 예: [9과12-03]. 모르면 교육과정에서 해당 성취기준을 찾아 도입 화면에 적는다.</li>
+<li><strong>교과서 붙임딱지(스티커) 활동 여부</strong> — 교과서 부록 붙임딱지를 쓰는 활동이 있으면 그것을 스티커 단계로 재현한다. 없으면 이 지침의 "스티커 판 유형"에서 단원에 맞는 것을 골라 설계한다.</li>
+<li><strong>학생들이 어려워하는 부분 / 지도서 오개념</strong> — 개념 단계와 스티커 단계에서 공들여 다룬다.</li>
+<li><strong>출판사 표기</strong> — 기본은 교과서·지도서 쪽수 배지를 넣는다. 사용자가 "출판사명은 넣지 말고"라고 하면 <strong>출판사명과 쪽수를 모두 빼고</strong> 성취기준만 표시한다. 용어가 교과서마다 다르면 함께 적는다(예: 허파순환(폐순환이라고도 해요)). 쪽수는 제작 노트에만 남긴다.</li>
+</ol>
+<p>교과서 실험명을 정확히 모르면 해당 개념의 표준 실험을 기본값으로 삼고, 어떤 실험을 기준으로 했는지 결과 보고에서 밝힌다.</p>
+<p>GitHub 배포는 따로 묻지 않고 기본으로 진행한다. 사용자가 "파일만 줘", "올리지 마"라고 하면 6장을 건너뛴다.</p>
+<hr />
+<h2 id="1-6">1. 결과물 구조 — 6단계 (반드시 이 순서)</h2>
+<p>단일 HTML 파일에 아래 6단계를 담는다. 상단 스텝 인디케이터(6칸, 단계 이름 표시)로 현재 위치를 보여준다. 결과 화면은 인디케이터에서 제외한다.</p>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>화면 id</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. 도입</td>
+<td><code>screen-intro</code></td>
+<td>단원·차시 제목, 교과서 쪽수·성취기준, 학습목표 2~3개, 생각 열기, "시작하기"·"이어서 하기"</td>
+</tr>
+<tr>
+<td>2. 개념</td>
+<td><code>screen-concept</code></td>
+<td><strong>핵심 아이디어</strong> 박스 + <strong>개념</strong> 아코디언 카드 + 오개념 바로잡기</td>
+</tr>
+<tr>
+<td>3. 탐구</td>
+<td><code>screen-experiment</code></td>
+<td>탭: <strong>탐구 계획서</strong> / <strong>가상실험</strong>(필요 시 실험 탭 여러 개)</td>
+</tr>
+<tr>
+<td>4. 스티커 붙이기</td>
+<td><code>screen-sticker</code></td>
+<td>붙임딱지를 골라 개념 판의 빈칸에 붙여 정리, 확인·재도전</td>
+</tr>
+<tr>
+<td>5. 실생활</td>
+<td><code>screen-life</code></td>
+<td>일상 사례 카드 6~8개</td>
+</tr>
+<tr>
+<td>6. 개념 확인</td>
+<td><code>screen-quiz</code> → <code>screen-result</code></td>
+<td>10문항, 즉시 해설, 오답 재도전, 자가 점검</td>
+</tr>
+</tbody>
+</table>
+<p>모든 화면 하단 푸터에 작게 <strong>"Made by Lee Jae Kwang"</strong>.</p>
+<h3 id="1">1단계 도입</h3>
+<ul>
+<li>제목, 한 줄 소개, 교과서 쪽수 / 지도서 쪽수 / 성취기준 배지 (0-6 출판사 표기 규칙을 따른다)</li>
+<li>학습목표 2~3개 ("~을 설명할 수 있다" 형태)</li>
+<li>이번 시간 흐름 미리보기(6단계 아이콘 한 줄)</li>
+<li>교과서 "들어가기" 질문이 있으면 <strong>생각 열기</strong> 카드(입력칸 + 예시 답안 보기)로 넣는다.</li>
+<li>진행 위치를 localStorage에 저장하고 "이어서 하기" 버튼을 둔다.</li>
+</ul>
+<h3 id="2">2단계 개념</h3>
+<ul>
+<li><strong>핵심 아이디어(필수)</strong>: 화면 맨 위, 눈에 띄는 박스에 이 차시의 큰 개념을 1~2문장으로. 모든 실험실에 반드시 넣는다.</li>
+<li><strong>개념(필수)</strong>: 아코디언 카드로 하나씩 연다. 교과서 문장 복사가 아니라 "왜 그런가"를 비유·SVG 그림·Canvas 애니메이션으로 설명한다. 그림은 부분을 탭하면 설명이 나오는 방식이 좋다.</li>
+<li><strong>오개념 바로잡기</strong>: 지도서가 짚은 오개념을 "❌ 흔한 생각 → ✅ 실제로는" 카드로. (예: 융해 vs 용해, 김은 수증기가 아니다, 식물은 밤에 광합성하지 않는다, 심장 소리는 판막이 닫히는 소리다)</li>
+</ul>
+<h3 id="3">3단계 탐구</h3>
+<ul>
+<li><strong>탐구 계획서 탭</strong>: 문제 인식 → 가설 → 변인(조작·통제·종속) → 준비물 → 실험 과정(단계별) → 예상 결과. 학생이 가설·예상 결과를 직접 입력할 칸을 둔다(자동 저장).</li>
+<li><strong>가상실험 탭</strong>: 교과서 실험 장치를 SVG/Canvas로 그리고, 조작하면 같은 화면에서 즉시 결과가 바뀌게 한다.</li>
+<li>변수 조절형(슬라이더) / 배치·연결형 / 단계 진행형(버튼) / 비교 관찰형(대조군·실험군) 중 골라 쓴다.</li>
+<li>시작·일시정지·초기화, 실험 기록표, 조건별 결과 그래프 <strong>겹쳐 보기</strong>를 기본으로 한다.</li>
+<li>관찰 기록 입력칸 (localStorage 저장).</li>
+<li>교과서 범위를 넘는 수치·조작은 <strong>"확장" 배지</strong>와 "가상 값" 안내를 붙인다. 지도서가 "다루지 않는다"고 한 원리는 넣지 않는다.</li>
+<li><strong>시뮬레이션 모델은 과학적으로 타당한 식</strong>으로 만들고, 교과서 결과와 같은 경향이 나오는지 확인한다. 핵심 조건별 예상 수치를 표로 뽑아 두면 제작 노트에 그대로 쓸 수 있다.</li>
+</ul>
+<h3 id="4">4단계 스티커 붙이기 (정리 활동)</h3>
+<p>교과서의 <strong>붙임딱지 활동</strong>을 디지털로 재현한 단계다. 학생이 개념과 실험 결과를 스스로 "붙여서" 정리하게 해, 읽고 넘어가는 대신 한 번 더 판단하게 만든다. 자세한 설계는 아래 <strong>2장</strong>을 따른다.</p>
+<h3 id="5">5단계 실생활</h3>
+<ul>
+<li>6~8개 사례 카드. 학생이 "아, 그거였구나" 할 수 있는 구체적 장면 (예: 급식실 냄새가 교실까지 오는 이유, 겨울 비닐하우스 보광).</li>
+<li>각 카드 끝에 "이 단원의 어떤 개념?" 한 줄 연결.</li>
+</ul>
+<h3 id="6-10">6단계 개념 확인 10문항</h3>
+<ul>
+<li>개념이해형·적용형·자료해석형(그래프·표·그림)·통합형을 섞는다. 스티커 단계에서 정리한 내용과 가상실험 결과를 묻는 문항을 1~2개씩 넣는다.</li>
+<li>문제 순서·보기 순서 무작위, 선택 즉시 정답/오답 + 해설, 틀린 문제만 다시 풀기.</li>
+<li>결과 화면: 점수, 걸린 시간, 틀린 문제 목록, 격려 메시지, <strong>학습목표 자가 점검 체크리스트</strong>("이제 나는 ~할 수 있다"), 캡처해 제출하라는 안내.</li>
+</ul>
+<hr />
+<h2 id="2_1">2. 스티커 붙이기 단계 설계</h2>
+<h3 id="2-1">2-1. 스티커 판 유형 (단원에 맞게 하나 이상 선택)</h3>
+<table>
+<thead>
+<tr>
+<th>유형</th>
+<th>판의 모습</th>
+<th>적합한 단원 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>그림 이름표형</strong></td>
+<td>SVG 그림(기관·장치·모형) 위 빈 칸에 이름 스티커</td>
+<td>식물 구조, 심장·혈관 모식도, 눈·귀 구조, 실험 장치 이름</td>
+</tr>
+<tr>
+<td><strong>순서 배열형</strong></td>
+<td>1→2→3→4 빈 칸에 과정 스티커</td>
+<td>광합성 산물의 생성→이동→저장→사용, 혈액 순환 경로</td>
+</tr>
+<tr>
+<td><strong>분류판형</strong></td>
+<td>2~5개 칸(예: 융해·응고·기화·액화·승화)에 현상 스티커</td>
+<td>상태 변화, 물리변화/화학변화, 원소/화합물</td>
+</tr>
+<tr>
+<td><strong>표 채우기형</strong></td>
+<td>비교표의 빈 셀에 스티커</td>
+<td>고체·액체·기체 성질 비교, 동맥·모세혈관·정맥 비교</td>
+</tr>
+<tr>
+<td><strong>관계도형</strong></td>
+<td>원인→결과 화살표 도식의 빈 칸</td>
+<td>빛의 세기↑ → 광합성량↑ → CO₂↓</td>
+</tr>
+<tr>
+<td><strong>실험 결과형</strong></td>
+<td>실험에서 얻은 결과 그래프·표 옆에 결론 스티커</td>
+<td>보상점·광포화점 찾기, 온도와 확산 속도</td>
+</tr>
+</tbody>
+</table>
+<p>교과서에 붙임딱지 활동이 있으면 <strong>그 판 모양과 딱지 문구를 최대한 그대로</strong> 따른다. 내용이 많으면 판을 2~4개로 나누고, 앞 판을 완성해야 다음 판이 열리게 한다.</p>
+<h3 id="2-2">2-2. 스티커 구성 원칙</h3>
+<ul>
+<li>판마다 스티커 6~12장. 정답 스티커 + <strong>오개념 함정 스티커 1~3장</strong>(예: '용해'를 상태 변화 판에 섞기). 함정은 어디에도 붙지 않는 게 정답이다.</li>
+<li>스티커 문구는 짧게(2~8자). 설명형이면 한 줄 이내.</li>
+<li>스티커 모양은 둥근 모서리 + 살짝 그림자 + 약간의 기울기(−3°~3°)로 "딱지" 느낌을 준다. 색은 개념 범주별로 구분하되, <strong>색만으로 구분하지 않고 아이콘/글자도 함께</strong> 쓴다(색약 배려). 함정 스티커는 정답 스티커와 같은 색으로 한다.</li>
+</ul>
+<h3 id="2-3">2-3. 조작 방식 (태블릿 우선)</h3>
+<ul>
+<li><strong>기본은 "탭해서 고르고 → 빈칸 탭해서 붙이기"</strong>. 고른 스티커는 들어 올린 효과(확대·그림자·테두리)로 표시하고, 붙일 수 있는 빈칸은 점선 테두리로 강조한다.</li>
+<li>드래그 앤 드롭은 보조로만 제공한다(Pointer Events 사용, 스크롤과 충돌하지 않게 <code>touch-action:none</code>은 드래그를 쓸 때만 스티커에).</li>
+<li>이미 붙은 스티커를 다시 탭하면 떼어져 스티커 보관함으로 돌아간다.</li>
+<li>빈칸에 이미 스티커가 있으면 새 스티커로 교체하고 기존 것은 보관함으로 돌려보낸다.</li>
+</ul>
+<h3 id="2-4">2-4. 확인과 피드백</h3>
+<ul>
+<li><strong>"확인하기" 버튼</strong>을 눌러야 채점한다(붙이는 즉시 정답을 알려주지 않는다 → 학생이 끝까지 스스로 판단).</li>
+<li>맞은 칸: ✔ 표시 + 고정. 틀린 칸: ✖ 표시 후 0.8초 뒤 스티커가 보관함으로 돌아가고, 해당 칸에 <strong>단계적 힌트</strong>(1차: 개념 단서, 2차: 실험 결과 단서)를 보여준다. 그림 위 빈칸이 작으면 힌트는 아래 메시지 영역에 기호별로 보여준다.</li>
+<li>모두 맞히면 완성된 정리판을 크게 보여주고 "완성!" 도장 효과 + 한 줄 요약. 이 완성판이 곧 학생의 <strong>개념 정리 노트</strong>가 된다.</li>
+<li>상단에 "붙인 스티커 n / 전체", "시도 횟수"를 표시한다.</li>
+<li>붙인 상태는 localStorage에 저장해 새로고침해도 유지한다. "처음부터 다시" 버튼도 둔다.</li>
+</ul>
+<h3 id="2-5">2-5. 구현 뼈대</h3>
+<p>화면 배열과 인디케이터를 6단계로 둔다.</p>
+<pre><code class="language-js">const screens = ['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const stepCount = 6;   // goTo 인덱스: 스티커 3, 실생활 4, 문제 5, 결과 6
+</code></pre>
+<p>HTML</p>
+<pre><code class="language-html">&lt;section class=&quot;screen&quot; id=&quot;screen-sticker&quot;&gt;
+  &lt;h2&gt;스티커 붙이기: [정리 활동 제목]&lt;/h2&gt;
+  &lt;p&gt;스티커를 골라 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 &lt;b&gt;확인하기&lt;/b&gt;!&lt;/p&gt;
+  &lt;div class=&quot;sticker-status&quot;&gt;&lt;span id=&quot;stkCount&quot;&gt;0 / 0&lt;/span&gt; · 시도 &lt;span id=&quot;stkTry&quot;&gt;0&lt;/span&gt;회&lt;/div&gt;
+  &lt;div class=&quot;sticker-board card&quot; id=&quot;stkBoard&quot;&gt;&lt;!-- div.slot#slot-a … 또는 SVG 위에 슬롯 겹치기 --&gt;&lt;/div&gt;
+  &lt;div class=&quot;sticker-tray card&quot; id=&quot;stkTray&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;btn-row&quot;&gt;
+    &lt;button class=&quot;btn secondary&quot; onclick=&quot;goTo(2)&quot;&gt;이전&lt;/button&gt;
+    &lt;button class=&quot;btn secondary&quot; onclick=&quot;resetStickers()&quot;&gt;처음부터&lt;/button&gt;
+    &lt;button class=&quot;btn&quot; onclick=&quot;checkStickers()&quot;&gt;확인하기&lt;/button&gt;
+    &lt;button class=&quot;btn&quot; id=&quot;stkNext&quot; style=&quot;display:none&quot; onclick=&quot;goTo(4)&quot;&gt;실생활로&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+</code></pre>
+<p>CSS</p>
+<pre><code class="language-css">.sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:72px;}
+.sticker{border:none;border-radius:12px;padding:12px 16px;font-size:16px;font-weight:700;min-height:48px;
+  background:#fff7d6;box-shadow:0 3px 0 rgba(0,0,0,.12);transform:rotate(var(--tilt,0deg));transition:transform .15s,box-shadow .15s;}
+.sticker.picked{transform:rotate(0) scale(1.08);box-shadow:0 8px 18px rgba(0,0,0,.2);outline:3px solid var(--color-primary);}
+.slot{min-height:56px;min-width:110px;border:2px dashed #b9c4d8;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:6px;position:relative;}
+.slot.ready{border-color:var(--color-primary);background:#eef3fc;}
+.slot.ok{border-style:solid;border-color:var(--color-success);} .slot.ok::after{content:'✔';position:absolute;top:-10px;right:-8px;}
+.slot.no{border-style:solid;border-color:var(--color-error);}   .slot.no::after{content:'✖';position:absolute;top:-10px;right:-8px;}
+.slot .hint{font-size:13px;color:var(--color-text-light);}
+</code></pre>
+<p>JS</p>
+<pre><code class="language-js">/* 단원별로 이 두 배열만 교체한다. answer:null 인 스티커는 오개념 함정 */
+const STICKERS = [ {id:'s1', label:'융해', answer:'a'}, {id:'s9', label:'용해', answer:null} /* … */ ];
+const SLOTS    = [ {id:'a', title:'고체 → 액체', hints:['열을 흡수해요','얼음이 녹는 현상']} /* … */ ];
+const STK_KEY = 'vlab-sticker-[단원코드]';
+let picked = null, placed = {}, tries = 0, hintLv = {};
+
+function loadStk(){ try{ const s=JSON.parse(localStorage.getItem(STK_KEY)||'{}'); placed=s.placed||{}; tries=s.tries||0; }catch(e){} }
+function saveStk(){ try{ localStorage.setItem(STK_KEY, JSON.stringify({placed,tries})); }catch(e){} }
+
+function renderStickers(){
+  const used = new Set(Object.values(placed));
+  const tray = document.getElementById('stkTray'); tray.innerHTML='';
+  STICKERS.filter(s=&gt;!used.has(s.id)).forEach((s,i)=&gt;{
+    const b=document.createElement('button'); b.className='sticker'+(picked===s.id?' picked':'');
+    b.style.setProperty('--tilt', ((i%5)-2)*1.2+'deg'); b.textContent=s.label;
+    b.onclick=()=&gt;{ picked = picked===s.id?null:s.id; renderStickers(); };
+    tray.appendChild(b);
+  });
+  SLOTS.forEach(sl=&gt;{
+    const el=document.getElementById('slot-'+sl.id); el.classList.toggle('ready', !!picked);
+    const s=STICKERS.find(x=&gt;x.id===placed[sl.id]);
+    el.innerHTML = s ? '' : `&lt;span class=&quot;hint&quot;&gt;${hintLv[sl.id]?sl.hints[hintLv[sl.id]-1]:''}&lt;/span&gt;`;
+    if(s){ const b=document.createElement('button'); b.className='sticker'; b.textContent=s.label;
+           b.onclick=e=&gt;{ e.stopPropagation(); delete placed[sl.id]; el.classList.remove('ok','no'); saveStk(); renderStickers(); };
+           el.appendChild(b); }
+    el.onclick=()=&gt;{ if(!picked) return; placed[sl.id]=picked; picked=null; el.classList.remove('ok','no'); saveStk(); renderStickers(); };
+  });
+  const need = STICKERS.filter(s=&gt;s.answer).length;
+  document.getElementById('stkCount').textContent = Object.keys(placed).length+' / '+need;
+  document.getElementById('stkTry').textContent = tries;
+}
+
+function checkStickers(){
+  tries++; let allOk = true;
+  SLOTS.forEach(sl=&gt;{
+    const el=document.getElementById('slot-'+sl.id), s=STICKERS.find(x=&gt;x.id===placed[sl.id]);
+    const ok = !!s &amp;&amp; s.answer===sl.id; el.classList.toggle('ok', ok); el.classList.toggle('no', !!s &amp;&amp; !ok);
+    if(!ok){ allOk=false; hintLv[sl.id]=Math.min((hintLv[sl.id]||0)+1, sl.hints.length);
+             if(s) setTimeout(()=&gt;{ delete placed[sl.id]; el.classList.remove('no'); saveStk(); renderStickers(); }, 800); }
+  });
+  saveStk(); renderStickers();
+  if(allOk){ document.getElementById('stkNext').style.display='inline-block'; /* 완성판 강조 + '완성!' 도장 효과 */ }
+}
+function resetStickers(){ placed={}; tries=0; hintLv={}; picked=null; saveStk();
+  document.querySelectorAll('.slot').forEach(e=&gt;e.classList.remove('ok','no')); renderStickers(); }
+
+loadStk(); renderStickers();
+</code></pre>
+<ul>
+<li>슬롯은 <code>id="slot-a"</code> 형태로 판 안에 배치한다. 그림 이름표형이면 SVG 위에 절대 위치 <code>div.slot</code>을 겹친다(퍼센트 좌표로 반응형 유지).</li>
+<li>한 슬롯에 여러 스티커가 들어가는 분류판형이면 <code>placed</code>를 <code>{stickerId: slotId}</code>로 뒤집어 저장하도록 바꾼다.</li>
+<li>판이 여러 개면 <code>BOARDS</code> 배열(판마다 slots·traps·summary)로 묶고, 상태를 <code>{placed:[…], tries:[…], done:[…]}</code>로 저장한다(소화계·순환계 실험실이 선례).</li>
+</ul>
+<hr />
+<h2 id="3_1">3. 디자인 원칙 (태블릿, 세련되고 깔끔하게)</h2>
+<ul>
+<li><strong>터치 우선</strong>: 버튼·슬라이더·스티커 최소 48px. hover에만 의존하는 상호작용 금지.</li>
+<li><strong>과밀 금지</strong>: 세로·가로 모두 고려한 여백과 카드 레이아웃. 교실 뒷자리에서도 읽히는 글자 크기. Canvas 글자는 휴대폰 폭에서 줄어드는 것을 고려해 크게(26px 이상) 그린다.</li>
+<li><strong>일관된 색·타이포</strong>: 6단계 모두 같은 팔레트·폰트·아이콘. 한글은 Noto Sans KR 계열(시스템 폰트 폴백, 외부 폰트 로딩 없이도 깨지지 않게).</li>
+<li><strong>의미 있는 색 체계</strong>: 단원 개념과 연결된 색을 쓴다(예: 온도 → 차가운 파랑~뜨거운 주황, 산소 많은 혈액 빨강 / 적은 혈액 파랑).</li>
+<li><strong>움직임에는 의미를</strong>: 장식 애니메이션보다 조작 결과를 이해시키는 전환(그래프가 부드럽게 갱신, 스티커가 제자리로 돌아감).</li>
+<li><strong>색약 배려</strong>: 정답/오답·상태를 색만으로 구분하지 않고 ✔✖ 아이콘과 글자, 실선/점선을 함께.</li>
+<li><code>assets/template.html</code>이 있으면 CSS 변수와 구조의 출발점으로 삼고, 없으면 2-5 뼈대와 이 원칙으로 직접 구성한다.</li>
+</ul>
+<hr />
+<h2 id="4_1">4. 구현 기준</h2>
+<ul>
+<li><strong>단일 HTML 파일</strong>(CSS/JS 인라인), 프레임워크 없이 순수 HTML/CSS/JS. 보통 60~140KB.</li>
+<li><strong>외부 의존 0, 완전 오프라인 동작</strong> — 학교 네트워크와 무관하게 동작하고 GitHub Pages에 그대로 올라간다.</li>
+<li>그림은 SVG(개념 도식·실험 장치·스티커 판), 움직이는 입자·시뮬레이션은 Canvas 2D. 같은 그림을 개념·실험·스티커에서 함께 쓰면 SVG 생성 함수를 하나로 만들어 재사용한다.</li>
+<li>외부 이미지 임베드 금지(저작권). 사진이 필요하면 출처 안내만.</li>
+<li>localStorage로 관찰 기록·스티커 상태·진행 위치 저장(키 접두어 <code>vlab-[단원코드]-</code>, 항상 try/catch로 감싸 저장이 막혀도 동작).</li>
+<li>코드 골격 재사용: <code>goTo()</code> 화면 전환 + 스텝 인디케이터, 탭, 관찰 기록 저장, <code>STICKERS/SLOTS</code>(또는 <code>BOARDS</code>) 배열, <code>QUIZ</code> 배열. 새 단원은 실험 로직·스티커 배열·문항 배열만 교체한다.</li>
+</ul>
+<hr />
+<h2 id="5_1">5. 검증 (배포 전 필수)</h2>
+<p>Playwright(설치된 Chromium 사용, <code>playwright install</code> 금지)로 자동 검증한다. 검증을 통과해야 6장 배포로 넘어간다.</p>
+<ol>
+<li>뷰포트 3종: 태블릿 세로(768×1024), 태블릿 가로(1180×820), 휴대폰(390×844)</li>
+<li>6단계 모든 화면·모든 탭을 실제로 클릭해 이동</li>
+<li>가상실험: 슬라이더·버튼 조작 후 결과 값이 예상 경향(제작 노트 표의 값)과 맞는지 확인</li>
+<li>스티커: 정답 배치 → 확인 → 완성 표시 / 오답 배치 → ✖ 후 보관함 복귀·힌트 표시 / 함정 스티커가 보관함에 남아도 완성 처리되는지 / 새로고침 후 상태 유지</li>
+<li>퀴즈: 10문항 끝까지 풀기, 오답 재도전 동작</li>
+<li><strong>콘솔 오류 0건</strong>, 가로 스크롤 없음</li>
+<li>주요 화면 스크린샷을 직접 보고 겹침·잘림 확인</li>
+</ol>
+<hr />
+<h2 id="6-github">6. GitHub 배포와 웹주소 제공</h2>
+<p>검증을 통과한 실험실을 GitHub Pages에 올리고, 학생에게 나눠 줄 <strong>웹주소가 실제로 열리는 것까지 확인</strong>한 뒤 제공한다.</p>
+<h3 id="6-1">6-1. 배포 정보 (고정값)</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GitHub 계정</td>
+<td><code>abio6883-ctrl</code></td>
+</tr>
+<tr>
+<td>저장소</td>
+<td><code>JKscience</code> — <code>main</code> 브랜치 루트가 GitHub Pages로 게시됨</td>
+</tr>
+<tr>
+<td>올리는 위치</td>
+<td><code>&lt;폴더명&gt;/index.html</code> (기존 <code>gravity/</code>, <code>sound-map/</code>, <code>circulatory-system/</code>과 같은 방식)</td>
+</tr>
+<tr>
+<td>웹주소 형식</td>
+<td><code>https://abio6883-ctrl.github.io/JKscience/&lt;폴더명&gt;/</code> — 저장소 이름은 대소문자 그대로 <code>JKscience</code></td>
+</tr>
+<tr>
+<td>커밋 작성자</td>
+<td>이름 <code>abio6883-ctrl</code>, 이메일 <code>abio6883@gmail.com</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-2">6-2. 폴더 이름 정하기</h3>
+<ul>
+<li><strong>영어 소문자 + 하이픈(kebab-case)</strong>, 차시 주제를 나타내는 2~3단어. 예: <code>circulatory-system</code>, <code>digestive-system</code>, <code>nutrients</code>, <code>phase-change</code>, <code>force-equilibrium</code>, <code>photosynthesis-light</code>.</li>
+<li>한글·공백·대문자 금지(주소가 깨지거나 학생이 입력하기 어렵다).</li>
+<li>같은 이름 폴더가 이미 있으면:</li>
+<li><strong>같은 실험실의 수정본</strong> → 그 폴더의 <code>index.html</code>을 덮어쓴다. 웹주소가 그대로 유지되어 학생에게 다시 안내할 필요가 없다.</li>
+<li><strong>다른 실험실</strong> → <code>-2</code>를 붙이지 말고 더 구체적인 이름을 짓는다(예: <code>photosynthesis</code> → <code>photosynthesis-storage</code>).</li>
+<li>저장소 루트의 기존 파일(<code>과학실험실.html</code> 등)과 다른 폴더는 건드리지 않는다.</li>
+</ul>
+<h3 id="6-3">6-3. 올리는 절차</h3>
+<ol>
+<li><strong>저장소 연결</strong> — <code>add_repo</code>(owner <code>abio6883-ctrl</code>, repo <code>JKscience</code>, access <code>push</code>). 미리 curl·<code>gh repo view</code>로 존재 여부를 확인하지 않는다.</li>
+<li><strong>복제</strong> — 한 번만, 넉넉한 시간 제한(약 10분)으로:
+   <code>git clone --depth 1 https://github.com/abio6883-ctrl/jkscience /home/claude/jkscience</code>
+   이미 복제본이 있으면(<code>git -C /home/claude/jkscience rev-parse HEAD</code> 성공) 다시 복제하지 않고 그대로 쓴다.</li>
+<li><strong>파일 배치</strong> —
+   <code>mkdir -p &lt;폴더명&gt; &amp;&amp; cp &lt;완성본&gt;.html &lt;폴더명&gt;/index.html</code></li>
+<li><strong>커밋</strong> — 새 실험실은 <code>Add &lt;실험실 이름&gt; 가상실험실 (중&lt;학년&gt; &lt;단원&gt;)</code>, 수정본은 <code>Update &lt;실험실 이름&gt; 가상실험실: &lt;바뀐 점&gt;</code>. 세션이 지정한 attribution 줄을 메시지 끝에 붙인다.
+   <code>git -c user.name="abio6883-ctrl" -c user.email="abio6883@gmail.com" commit -m "..."</code></li>
+<li><strong>푸시</strong> — 최신 상태에 맞춘 뒤 main에 바로 올린다:
+   <code>git fetch origin main &amp;&amp; git rebase origin/main &amp;&amp; git push origin HEAD:main</code></li>
+<li><strong>게시 확인</strong> — GitHub Pages 반영에 1~2분 걸린다. 작업 환경의 셸은 github.io에 접속할 수 없으므로 curl이 아니라 <strong>WebFetch로 웹주소를 열어</strong> 페이지 제목이 실험실 제목과 같은지 확인한다. 404거나 이전 버전이면 1분 기다렸다 한 번 더 확인한다.</li>
+<li><strong>웹주소 제공</strong> — 확인된 주소를 결과 보고의 맨 앞에 굵게 적는다.</li>
+</ol>
+<h3 id="6-4">6-4. 문제가 생기면</h3>
+<ul>
+<li><code>add_repo</code> 권한 오류 → 도구가 알려준 이유를 그대로 전하고(GitHub 연결은 claude.ai 설정의 커넥터에서), 파일 전달과 미리보기까지만 하고 마친다. 같은 저장소로 재시도하지 않는다.</li>
+<li>clone·push 중 HTTP 429 → 이 세션의 동시 작업 제한이다. 10초 기다렸다 <strong>한 번만</strong> 다시 시도한다.</li>
+<li>push가 413으로 거부 → <code>git fetch origin main</code> 후 rebase하고 다시 push한다.</li>
+<li>두 번 확인해도 404 → 업로드는 됐으니 저장소 Settings → Pages에서 <code>main</code> / <code>(root)</code> 게시가 켜져 있는지 확인해 달라고 안내한다.</li>
+</ul>
+<hr />
+<h2 id="7">7. 전달과 기록</h2>
+<ol>
+<li><strong>결과 보고 순서</strong>: ① 웹주소(학생 배포용, 확인 완료) → ② 구성 요약 → ③ 검증 결과 한 줄. 완성 HTML 파일도 보내고, 미리보기용 아티팩트로도 게시한다.</li>
+<li>사용자 컴퓨터가 연결돼 있고 수업자료 폴더가 열려 있으면 그 폴더에도 저장한다.</li>
+<li>프로젝트 문서에 <strong>제작 노트</strong>(<code>claude/[단원]_가상실험실_제작노트.md</code>)를 남긴다: 대상·교과서 쪽수, 6단계 구성, 시뮬레이션 식과 검증된 예상 결과 표, 스티커 판 구성(정답·함정), 재사용 메모, <strong>배포(폴더명·웹주소·커밋)</strong>. 수정 배포 때는 배포 항목에 날짜와 바뀐 점을 한 줄 추가한다.</li>
+<li>학년·단원별 사이트(stunning-visuals-kit.lovable.app)에 등록하려면 웹주소를 그대로 넣으면 된다고 한 줄 안내한다.</li>
+</ol>
+<hr />
+<h2 id="8">8. 예시</h2>
+<p><strong>입력</strong>: "1학년 상태 변화 가상실험실 만들어줘"
+<strong>출력</strong>: 도입(미래엔 쪽수·성취기준·학습목표) → 개념(핵심 아이디어 + 융해·응고·기화·액화·승화 카드, '융해 vs 용해' 오개념) → 탐구(탐구 계획서 + 드라이아이스 승화 실험) → <strong>스티커 붙이기</strong>(분류판형: 5개 칸에 현상 스티커 10장 + 함정 '용해' 1장) → 실생활 8개 → 10문항 → "Made by Lee Jae Kwang" → 검증 → <code>phase-change/index.html</code> 업로드 → <strong>https://abio6883-ctrl.github.io/JKscience/phase-change/</strong> 제공.</p>
+<p><strong>입력</strong>: "2학년 순환계의 구조와 기능 가상실험실 만들어줘, 출판사명은 넣지 말고"
+<strong>출력</strong>: 출판사명·쪽수 없이 성취기준 [9과13-02]만 표시, "허파순환(폐순환)" 병기 → 탐구 5탭(심장 펌프와 판막, 혈관 비교, 혈액 관찰, 순환 경로 잇기·적혈구 따라가기) → 스티커 4판(심장·혈관 이름표, 혈관 비교표, 혈액 구성표, 순환 경로 순서) → 검증 → <code>circulatory-system/index.html</code> 업로드 → <strong>https://abio6883-ctrl.github.io/JKscience/circulatory-system/</strong> 제공.</p>
+<p><strong>입력</strong>: "순환계 실험실에서 퀴즈 3번 해설 고쳐줘"
+<strong>출력</strong>: 같은 파일 수정 → 검증 → 같은 폴더에 덮어쓰기(<code>Update …</code> 커밋) → 같은 웹주소에서 바뀐 내용 확인 후 "주소는 그대로예요"라고 안내.</p>
+  </main>
+  <footer>Made by Lee Jae Kwang · 2026. 10. 15.</footer>
+</div>
+<a class="top" href="#" aria-label="맨 위로">↑</a>
+</body>
+</html>
