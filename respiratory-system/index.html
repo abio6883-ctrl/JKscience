@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>호흡계의 구조와 기능 가상실험실</title>
+<style>
+:root{
+  --color-primary:#3361e8;
+  --color-primary-dark:#1f43b8;
+  --color-secondary:#0fb59b;
+  --color-accent:#ff8a3d;
+  --color-bg:#eef3ff;
+  --color-surface:#ffffff;
+  --color-text:#16204a;
+  --color-text-light:#56607f;
+  --color-success:#12a874;
+  --color-error:#e5484d;
+  --o2:#ff4d6d;
+  --co2:#7a4ff0;
+  --air:#45b3ff;
+  --muscle:#d9480f;
+  --bone:#c3cde3;
+  --lung:#ff9fb2;
+  --line:#dfe6f5;
+  --radius:20px;
+  --shadow:0 10px 30px rgba(28,52,130,.10);
+  --shadow-s:0 4px 12px rgba(28,52,130,.10);
+  --font:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;font-family:var(--font);color:var(--color-text);}
+body{overflow-x:hidden;background:radial-gradient(1200px 600px at 10% -10%,#dfe8ff 0,transparent 60%),radial-gradient(900px 500px at 110% 10%,#d9fbf3 0,transparent 55%),var(--color-bg);min-height:100vh;}
+button{font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#bgBubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+#bgBubbles span{position:absolute;bottom:-80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(120,170,255,.25) 60%,rgba(120,170,255,.05));animation:rise linear infinite;}
+@keyframes rise{to{transform:translateY(-120vh) translateX(30px);}}
+#fx{position:fixed;inset:0;width:100vw !important;height:100vh;pointer-events:none;z-index:9000;background:transparent !important;border-radius:0 !important;}
+#app{position:relative;z-index:1;max-width:980px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:12px 16px 70px;}
+/* 상단 바 */
+.topbar{position:sticky;top:0;z-index:50;margin:0 -16px 14px;padding:10px 16px 8px;background:rgba(238,243,255,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.topbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brand{font-weight:800;font-size:15px;color:var(--color-primary-dark);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brand i{font-style:normal;margin-right:4px;}
+.icon-btn{border:none;background:#fff;border-radius:14px;min-width:48px;height:48px;font-size:21px;box-shadow:var(--shadow-s);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.icon-btn:active{transform:scale(.92);}
+.step-indicator{display:flex;gap:6px;}
+.step-dot{flex:1;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:12px;color:var(--color-text-light);min-width:0;background:none;border:none;padding:0;min-height:40px;}
+.step-dot i{display:block;width:100%;height:8px;border-radius:5px;background:#d7e0f5;position:relative;overflow:hidden;}
+.step-dot i::after{content:'';position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--color-secondary),#3ad1b8);border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.step-dot.done i::after{width:100%;}
+.step-dot.active i::after{width:100%;background:linear-gradient(90deg,var(--color-primary),#6a8cff);}
+.step-dot.active{color:var(--color-primary);font-weight:800;}
+.step-dot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* 화면 전환 */
+.screen{display:none;flex:1;flex-direction:column;}
+.screen.active{display:flex;animation:screenIn .5s cubic-bezier(.2,.8,.2,1);}
+.screen.active.back{animation:screenInBack .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes screenIn{from{opacity:0;transform:translateX(40px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes screenInBack{from{opacity:0;transform:translateX(-40px) scale(.985);}to{opacity:1;transform:none;}}
+.screen.active .rise-in{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 80ms);}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+h1{font-size:clamp(28px,5.4vw,42px);margin:6px 0 8px;line-height:1.25;letter-spacing:-.02em;}
+h2{font-size:clamp(21px,3.6vw,27px);margin:0 0 10px;letter-spacing:-.01em;}
+h3{font-size:18px;margin:0 0 8px;}
+p{line-height:1.7;color:var(--color-text-light);margin:6px 0;}
+b,strong{color:var(--color-text);}
+.grad-text{background:linear-gradient(100deg,#2448d8,#3a8bff 45%,#13b8a0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.card{background:var(--color-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.7);}
+.btn{position:relative;overflow:hidden;border:none;border-radius:16px;padding:14px 24px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,#3d6cff,#2448d8);min-height:52px;box-shadow:0 6px 0 #1a37a3,0 10px 20px rgba(36,72,216,.25);transition:transform .12s,box-shadow .12s;}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1a37a3,0 4px 10px rgba(36,72,216,.2);}
+.btn.secondary{background:#fff;color:var(--color-primary);box-shadow:0 5px 0 #c6d3f5,0 8px 16px rgba(36,72,216,.08);}
+.btn.secondary:active{box-shadow:0 1px 0 #c6d3f5;}
+.btn.mint{background:linear-gradient(135deg,#21c9a9,#0d9e86);box-shadow:0 6px 0 #0a7a67,0 10px 20px rgba(13,158,134,.25);}
+.btn.small{padding:10px 16px;font-size:15px;min-height:48px;border-radius:14px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none;}
+.btn.secondary .ripple{background:rgba(51,97,232,.2);}
+@keyframes ripple{to{transform:scale(4);opacity:0;}}
+.pulse{animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 6px 0 #1a37a3,0 0 0 0 rgba(61,108,255,.45);}50%{box-shadow:0 6px 0 #1a37a3,0 0 0 14px rgba(61,108,255,0);}}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:20px;}
+.btn-row.center{justify-content:center;}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 10px;}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#e3eaff;color:var(--color-primary-dark);font-size:13px;font-weight:800;}
+.badge.teal{background:#d8f6ef;color:#0a7f6c;}
+.badge.ext{background:#fff0e2;color:#b35300;font-size:12px;padding:3px 9px;vertical-align:middle;}
+.muted{font-size:13px;color:var(--color-text-light);}
+.row{display:flex;gap:14px;flex-wrap:wrap;}
+.row>*{flex:1 1 300px;min-width:0;}
+.hidden{display:none !important;}
+.gas-o2{color:var(--o2);font-weight:800;}
+.gas-co2{color:var(--co2);font-weight:800;}
+/* 도입 */
+#screen-intro{text-align:center;}
+.unit-tag{display:inline-block;font-size:14px;font-weight:800;color:#0a7f6c;background:#d8f6ef;padding:6px 14px;border-radius:999px;}
+.hero{width:min(260px,62vw);margin:4px auto 0;}
+.hero svg{width:100%;height:auto;display:block;overflow:visible;}
+.hero .lungs{transform-origin:130px 70px;animation:breathe 4s ease-in-out infinite;}
+.hero .dia{animation:diaMove 4s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:scale(.94);}50%{transform:scale(1.06);}}
+@keyframes diaMove{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
+.hero .puff{animation:puff 4s ease-in-out infinite;transform-origin:130px 10px;}
+@keyframes puff{0%,40%{opacity:0;transform:translateY(-14px) scale(.6);}50%{opacity:1;}90%,100%{opacity:0;transform:translateY(40px) scale(1);}}
+.goal-list{text-align:left;max-width:600px;margin:14px auto;padding:0;list-style:none;}
+.goal-list li{background:var(--color-surface);border-radius:14px;padding:13px 14px 13px 50px;margin-bottom:9px;box-shadow:var(--shadow-s);position:relative;line-height:1.55;}
+.goal-list li::before{content:attr(data-n);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:640px;margin:12px auto;}
+.flow div{background:var(--color-surface);border-radius:14px;padding:8px 2px;font-size:12px;box-shadow:var(--shadow-s);font-weight:700;color:var(--color-text-light);}
+.flow div b{display:block;font-size:22px;margin-bottom:2px;}
+.think{max-width:640px;margin:12px auto;text-align:left;}
+.breath-guide{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:8px 0 12px;}
+.breath-ball{width:96px;height:96px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffffff,#8fc6ff 45%,#3361e8);box-shadow:0 10px 30px rgba(51,97,232,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;transform:scale(.7);transition:transform 4s ease-in-out;}
+/* 개념 */
+.core-idea{position:relative;overflow:hidden;background:linear-gradient(130deg,#2448d8,#3a8bff 55%,#13b8a0);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:0 14px 30px rgba(36,72,216,.28);}
+.core-idea::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{50%{transform:translate(-12px,14px) scale(1.08);}}
+.core-idea .lbl{font-size:13px;font-weight:800;opacity:.92;letter-spacing:.06em;}
+.core-idea p{color:#fff;font-size:18px;margin:6px 0 0;line-height:1.65;position:relative;z-index:1;}
+.core-idea b{color:#fff;background:rgba(255,255,255,.18);padding:0 4px;border-radius:6px;}
+.concept-card>.head{display:flex;align-items:center;gap:12px;cursor:pointer;min-height:52px;}
+.concept-card>.head .num{flex:none;width:38px;height:38px;border-radius:12px;background:#e3eaff;color:var(--color-primary);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.concept-card>.head strong{flex:1;font-size:17px;}
+.concept-card>.head .chev{transition:transform .3s;color:var(--color-text-light);font-size:18px;}
+.concept-card.open>.head .chev{transform:rotate(180deg);}
+.concept-card.seen>.head .num{background:var(--color-secondary);color:#fff;}
+.concept-card .concept-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1);}
+.concept-card.open .concept-body{grid-template-rows:1fr;}
+.concept-card .concept-body>div{overflow:hidden;}
+.concept-card .concept-body>div>*:first-child{margin-top:12px;}
+.analogy{background:#fff7ee;border-left:5px solid var(--color-accent);border-radius:12px;padding:11px 13px;margin:8px 0;font-size:15px;line-height:1.65;}
+.info-panel{background:#f1f5ff;border-radius:14px;padding:12px 14px;min-height:66px;font-size:15px;line-height:1.65;transition:background .3s;}
+.info-panel.flash{animation:flashBg .6s;}
+@keyframes flashBg{0%{background:#dce6ff;}100%{background:#f1f5ff;}}
+.info-panel b{color:var(--color-primary-dark);}
+.diagram-wrap{max-width:560px;margin:0 auto;position:relative;}
+.diagram-wrap svg{width:100%;height:auto;display:block;}
+svg .part{cursor:pointer;transition:filter .2s;}
+svg .part:hover{filter:brightness(1.06);}
+svg .part.sel{filter:drop-shadow(0 0 6px rgba(51,97,232,.9));}
+.tbl-wrap{overflow-x:auto;}
+table.tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:15px;min-width:420px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;text-align:center;vertical-align:middle;line-height:1.45;}
+table.tbl tr>*:last-child{border-right:none;}
+table.tbl tr:last-child>*{border-bottom:none;}
+table.tbl th{background:#eef3ff;}
+table.tbl td.rev{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#effcf8;font-weight:700;color:#0a6d5d;}
+table.tbl td.q{color:#a6b1cc;font-weight:800;}
+@keyframes popIn{0%{transform:scale(.4);opacity:0;}100%{transform:none;opacity:1;}}
+.myth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;}
+.myth{background:var(--color-surface);border-radius:16px;box-shadow:var(--shadow-s);padding:14px;cursor:pointer;min-height:110px;position:relative;}
+.myth .no{color:#b4232a;font-weight:800;margin-bottom:6px;line-height:1.5;}
+.myth .yes{color:#0a6d5d;line-height:1.6;font-size:15px;display:none;}
+.myth .tapme{font-size:13px;color:var(--color-text-light);}
+.myth.open .yes{display:block;animation:riseIn .45s both;}
+.myth.open .tapme{display:none;}
+.myth.open .no{text-decoration:line-through;text-decoration-color:rgba(180,35,42,.5);}
+.area-demo{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.area-demo canvas{flex:1 1 260px;max-width:340px;}
+.area-demo .area-ctrl{flex:1 1 220px;}
+.meter{height:16px;border-radius:9px;background:#e6ecf8;overflow:hidden;margin:4px 0 10px;}
+.meter>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#21c9a9,#3361e8);transition:width .4s cubic-bezier(.2,.8,.2,1);}
+/* 탐구 */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:10px;scrollbar-width:thin;}
+.tab{flex:none;border:none;border-radius:14px;padding:10px 15px;font-size:15px;font-weight:800;background:#fff;color:var(--color-text-light);min-height:48px;box-shadow:var(--shadow-s);transition:all .2s;}
+.tab.active{background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;transform:translateY(-1px);}
+.tabpane{display:none;}
+.tabpane.active{display:block;animation:riseIn .45s both;}
+.plan-step{display:flex;gap:12px;margin-bottom:12px;}
+.plan-step .k{flex:none;width:86px;font-weight:800;color:var(--color-primary);font-size:15px;padding-top:2px;}
+.plan-step .v{flex:1;line-height:1.65;color:var(--color-text);font-size:15px;min-width:0;}
+.plan-step ol{margin:0;padding-left:20px;}
+textarea,.inp{width:100%;border-radius:14px;border:1.5px solid #d3dcf0;padding:11px;font-family:var(--font);font-size:15px;resize:vertical;background:#fff;color:var(--color-text);transition:border .2s,box-shadow .2s;}
+textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 4px rgba(51,97,232,.15);}
+textarea{min-height:68px;}
+.saved{font-size:12px;color:var(--color-success);height:16px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.ctrl label{font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
+.ctrl label em{font-style:normal;color:var(--color-primary);}
+input[type=range]{width:100%;height:44px;accent-color:var(--color-primary);}
+.toggle{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{border:2px solid #d3dcf0;background:#fff;border-radius:999px;padding:9px 15px;font-size:15px;font-weight:800;min-height:46px;color:var(--color-text);transition:all .2s;}
+.chip.on{border-color:var(--color-primary);background:#e8eeff;color:var(--color-primary-dark);}
+.chip.warn.on{border-color:var(--color-error);background:#ffeced;color:#a3161b;}
+canvas{display:block;width:100%;border-radius:16px;background:#fff;touch-action:manipulation;}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:10px 0;}
+.readout div{background:#f1f5ff;border-radius:14px;padding:9px 11px;}
+.readout small{display:block;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.readout b{font-size:21px;font-variant-numeric:tabular-nums;}
+.state-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-weight:800;font-size:15px;background:#eef1f8;color:var(--color-text-light);transition:all .3s;}
+.state-pill.in{background:#e0f1ff;color:#0f62b8;}
+.state-pill.out{background:#f1e9ff;color:#5b2fc4;}
+.model-wrap{max-width:420px;margin:0 auto;position:relative;touch-action:none;}
+.model-wrap svg{width:100%;height:auto;display:block;}
+.hold-btn{width:100%;border:none;border-radius:22px;min-height:84px;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(135deg,#45b3ff,#3361e8);box-shadow:0 8px 0 #2245b5,0 14px 28px rgba(51,97,232,.3);user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .12s,box-shadow .12s,background .3s;}
+.hold-btn.holding{transform:translateY(6px);box-shadow:0 2px 0 #2245b5,0 6px 16px rgba(51,97,232,.3);background:linear-gradient(135deg,#2ec4a6,#0f8f7b);}
+.gauge{position:relative;height:22px;border-radius:12px;background:linear-gradient(90deg,#7a4ff0 0%,#e9e3ff 38%,#eef2f8 50%,#e0f1ff 62%,#45b3ff 100%);margin:6px 0 2px;}
+.gauge i{position:absolute;top:-5px;width:6px;height:32px;border-radius:3px;background:#16204a;left:50%;transform:translateX(-50%);transition:left .12s;}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.lock-note{font-size:13px;color:var(--color-text-light);}
+.rec-table td,.rec-table th{font-size:14px;padding:7px;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--color-text-light);font-weight:700;margin:6px 0;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;}
+.legend i.tri{border-radius:2px;transform:rotate(45deg);width:11px;height:11px;}
+/* 스티커 */
+.board-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;}
+.board-tab{flex:none;border:none;background:#fff;border-radius:14px;padding:9px 13px;min-height:48px;font-weight:800;font-size:14px;color:var(--color-text-light);box-shadow:var(--shadow-s);}
+.board-tab.active{background:linear-gradient(135deg,#ffb238,#ff7a2f);color:#fff;}
+.board-tab.locked{opacity:.55;}
+.board-tab.done::after{content:' ✔';}
+.sticker-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;}
+.sticker-status .pill{background:#fff;border-radius:999px;padding:7px 13px;font-weight:800;font-size:14px;box-shadow:var(--shadow-s);}
+.sticker-board{position:relative;}
+.sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:76px;background:repeating-linear-gradient(45deg,#fffaf0,#fffaf0 12px,#fff4de 12px,#fff4de 24px);border:2px dashed #f2c98a;}
+.sticker-tray .tray-lbl{width:100%;font-size:13px;font-weight:800;color:#b36b00;}
+.sticker{position:relative;border:none;border-radius:13px;padding:11px 15px;font-size:16px;font-weight:800;min-height:48px;color:#3b2a00;background:linear-gradient(160deg,#fff,#fff3c4);box-shadow:0 3px 0 rgba(0,0,0,.12),0 6px 12px rgba(150,100,0,.12);transform:rotate(var(--tilt,0deg));transition:transform .18s,box-shadow .18s;}
+.sticker::before{content:'';position:absolute;inset:3px;border:1.5px dashed rgba(180,130,0,.35);border-radius:10px;pointer-events:none;}
+.sticker.c1{background:linear-gradient(160deg,#fff,#d6ecff);color:#0d3f78;}
+.sticker.c2{background:linear-gradient(160deg,#fff,#ffdbe2);color:#7c1430;}
+.sticker.c3{background:linear-gradient(160deg,#fff,#dcf8ee);color:#0a5747;}
+.sticker.c4{background:linear-gradient(160deg,#fff,#ece3ff);color:#3c1f8f;}
+.sticker.picked{transform:rotate(0) scale(1.12) translateY(-4px);box-shadow:0 12px 22px rgba(0,0,0,.22);outline:3px solid var(--color-primary);outline-offset:2px;z-index:3;}
+.sticker.wiggle{animation:wiggle .9s ease-in-out infinite;}
+@keyframes wiggle{0%,100%{transform:rotate(-2deg) scale(1.12) translateY(-4px);}50%{transform:rotate(2deg) scale(1.12) translateY(-4px);}}
+.slot{min-height:50px;min-width:86px;border:2.5px dashed #b6c3e2;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:4px;position:relative;background:rgba(255,255,255,.92);transition:border-color .2s,background .2s,transform .2s;}
+.slot .sticker{padding:8px 10px;font-size:15px;min-height:40px;transform:none;}
+.slot.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+@keyframes slotGlow{50%{box-shadow:0 0 0 5px rgba(51,97,232,.18);}}
+.slot.ok{border-style:solid;border-color:var(--color-success);background:#ecfbf5;}
+.slot.ok::after{content:'✔';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-success);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;animation:popIn .4s cubic-bezier(.3,1.6,.5,1);z-index:2;}
+.slot.no{border-style:solid;border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.slot.no::after{content:'✖';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-error);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+.slot .hint{font-size:12px;color:var(--color-text-light);line-height:1.3;text-align:center;}
+.slot.abs{position:absolute;transform:translate(-50%,-50%);}
+.slot.abs.no{animation:shakeAbs .45s;}
+@keyframes shakeAbs{0%,100%{transform:translate(-50%,-50%);}25%{transform:translate(calc(-50% - 7px),-50%);}75%{transform:translate(calc(-50% + 7px),-50%);}}
+.svg-board{position:relative;max-width:540px;margin:0 auto;}
+.svg-board svg{width:100%;height:auto;display:block;}
+.stk-msg{min-height:26px;font-size:15px;line-height:1.6;margin-top:8px;}
+.stk-msg .h{display:block;color:#a35a00;}
+.complete-banner{position:relative;text-align:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,#fff7e6,#ffe8f0);margin-top:12px;overflow:hidden;}
+.complete-banner p{color:var(--color-text);font-weight:700;}
+.stamp{position:absolute;right:14px;top:10px;font-size:22px;font-weight:900;color:#e5484d;border:4px solid #e5484d;border-radius:12px;padding:3px 10px;transform:rotate(-14deg);opacity:.9;animation:stamp .6s cubic-bezier(.2,1.8,.4,1);background:rgba(255,255,255,.6);}
+@keyframes stamp{0%{transform:rotate(-14deg) scale(3);opacity:0;}100%{transform:rotate(-14deg) scale(1);opacity:.9;}}
+.gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;}
+.gx-panel{background:#f7f9ff;border-radius:16px;padding:12px;}
+.gx-panel h4{margin:0 0 8px;font-size:15px;}
+.gx-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.gx-box{border-radius:16px;padding:14px 6px;text-align:center;font-weight:800;font-size:15px;color:#fff;min-height:118px;display:flex;align-items:center;justify-content:center;}
+.gx-box.alv{background:radial-gradient(circle at 35% 35%,#ffd0da,#ff8fa6);color:#6b1028;}
+.gx-box.cap{background:linear-gradient(180deg,#ff6b6b,#c92a4a);}
+.gx-box.cell{background:radial-gradient(circle at 40% 40%,#fff0c2,#f5c451);color:#5c3d00;}
+.gx-arrows{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.gx-arrows .arw{font-size:13px;font-weight:900;color:var(--color-text-light);line-height:1;}
+.gx-principle{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-weight:800;flex-wrap:wrap;}
+/* 실생활 */
+.life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.life-card{background:var(--color-surface);border-radius:18px;box-shadow:var(--shadow);padding:16px;cursor:pointer;transition:transform .2s;position:relative;overflow:hidden;}
+.life-card:active{transform:scale(.98);}
+.life-card .ic{font-size:40px;line-height:1;display:inline-block;transition:transform .4s cubic-bezier(.3,1.6,.5,1);}
+.life-card.open .ic{transform:scale(1.15) rotate(-8deg);}
+.life-card h3{margin:8px 0 6px;}
+.life-card .why{display:none;}
+.life-card.open .why{display:block;animation:riseIn .45s both;}
+.life-card .more{font-size:13px;font-weight:800;color:var(--color-primary);}
+.life-card.open .more{display:none;}
+.link-tag{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:#0a7f6c;background:#d8f6ef;border-radius:999px;padding:4px 10px;}
+/* 퀴즈 */
+.quiz-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.quiz-progress{flex:1;height:12px;border-radius:7px;background:#dde5f6;overflow:hidden;}
+.quiz-progress i{display:block;height:100%;background:linear-gradient(90deg,#21c9a9,#3361e8);border-radius:7px;transition:width .5s cubic-bezier(.2,.8,.2,1);width:0;}
+.combo{font-weight:900;color:#ff6a00;min-width:70px;text-align:right;font-size:15px;}
+.combo.bump{animation:bump .5s cubic-bezier(.3,1.8,.5,1);}
+@keyframes bump{0%{transform:scale(1.8);}100%{transform:scale(1);}}
+.q-card{animation:qIn .45s cubic-bezier(.2,.8,.2,1);}
+@keyframes qIn{from{opacity:0;transform:translateX(30px) rotate(1deg);}to{opacity:1;transform:none;}}
+.q-type{display:inline-block;font-size:12px;font-weight:800;background:#e3eaff;color:var(--color-primary-dark);padding:4px 10px;border-radius:999px;margin-bottom:6px;}
+.q-text{font-size:18px;font-weight:800;line-height:1.6;margin:4px 0 12px;}
+.q-fig{margin:6px 0 12px;}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid #d3dcf0;background:#fff;border-radius:16px;padding:13px 14px;font-size:16px;margin-bottom:10px;min-height:54px;line-height:1.5;color:var(--color-text);transition:transform .12s,border-color .2s,background .2s;}
+.opt:active{transform:scale(.98);}
+.opt .n{flex:none;width:28px;height:28px;border-radius:9px;background:#eef2fb;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.opt.correct{border-color:var(--color-success);background:#e9fbf4;animation:correctPop .5s cubic-bezier(.3,1.6,.5,1);}
+.opt.correct .n{background:var(--color-success);color:#fff;}
+.opt.wrong{border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.opt.wrong .n{background:var(--color-error);color:#fff;}
+@keyframes correctPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+.feedback{border-radius:16px;padding:13px 15px;margin-top:6px;line-height:1.65;font-size:15px;animation:riseIn .4s both;}
+.feedback.ok{background:#e9fbf4;}
+.feedback.no{background:#fff3e8;}
+.feedback b.big{font-size:17px;}
+/* 결과 */
+.result-hero{text-align:center;}
+.trophy{font-size:84px;line-height:1;display:inline-block;animation:trophy 1s cubic-bezier(.3,1.6,.5,1) both;}
+@keyframes trophy{0%{transform:scale(0) rotate(-30deg);}100%{transform:none;}}
+.score-big{font-size:64px;font-weight:900;line-height:1.1;}
+.stars{font-size:38px;letter-spacing:6px;}
+.stars span{display:inline-block;opacity:.18;filter:grayscale(1);}
+.stars span.on{opacity:1;filter:none;animation:starIn .5s cubic-bezier(.3,1.8,.5,1) both;}
+@keyframes starIn{0%{transform:scale(0) rotate(-90deg);}100%{transform:none;}}
+.check-list label{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.55;cursor:pointer;min-height:48px;}
+.check-list input{width:24px;height:24px;flex:none;accent-color:var(--color-success);margin-top:1px;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120px);background:#16204a;color:#fff;padding:12px 20px;border-radius:999px;font-weight:800;z-index:9500;transition:transform .4s cubic-bezier(.3,1.5,.5,1);box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:92vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.float-txt{position:fixed;z-index:9600;pointer-events:none;font-weight:900;font-size:22px;animation:floatUp 1.1s ease-out forwards;text-shadow:0 2px 0 #fff,0 0 8px #fff;}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6);}20%{opacity:1;transform:translate(-50%,-14px) scale(1.15);}100%{opacity:0;transform:translate(-50%,-70px) scale(1);}}
+footer{text-align:center;font-size:12px;color:#8a94b2;padding:24px 0 6px;letter-spacing:.03em;}
+@media (max-width:560px){
+  #app{padding:8px 12px 60px;}
+  .topbar{margin:0 -12px 12px;padding:8px 12px 6px;}
+  .step-dot{font-size:11px;}
+  .card{padding:15px;}
+  .plan-step{flex-direction:column;gap:4px;}
+  .plan-step .k{width:auto;}
+  .flow div{font-size:11px;}
+  .slot{min-width:76px;min-height:44px;}
+  .slot .sticker{font-size:13px;padding:6px 7px;min-height:34px;}
+  .sticker{font-size:15px;padding:10px 12px;}
+  .q-text{font-size:17px;}
+  .gx-box{min-height:104px;font-size:14px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div id="bgBubbles" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand"><i>🫁</i>호흡계의 구조와 기능 가상실험실</div>
+      <button class="icon-btn" id="soundBtn" aria-label="효과음 켜기/끄기" title="효과음">🔊</button>
+    </div>
+    <nav class="step-indicator" id="stepIndicator" aria-label="학습 단계"></nav>
+  </div>
+
+  <!-- 1. 도입 -->
+  <section class="screen" id="screen-intro">
+    <div class="rise-in" style="--i:0"><span class="unit-tag">중2 · Ⅵ. 동물과 에너지 · 2. 호흡과 배설</span></div>
+    <div class="hero rise-in" style="--i:1">
+      <svg viewBox="0 0 260 210" aria-label="숨 쉬는 허파 그림">
+        <defs>
+          <linearGradient id="hLung" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc1cf"/><stop offset="1" stop-color="#ff7d98"/></linearGradient>
+        </defs>
+        <g class="puff"><circle cx="122" cy="8" r="5" fill="#9fd3ff"/><circle cx="136" cy="14" r="4" fill="#9fd3ff"/><circle cx="128" cy="22" r="3" fill="#9fd3ff"/></g>
+        <rect x="122" y="18" width="16" height="66" rx="8" fill="#a9c4f5"/>
+        <g class="lungs">
+          <path d="M126 80 C 92 60 52 82 46 132 C 40 172 70 186 104 178 C 122 174 124 160 124 140 Z" fill="url(#hLung)"/>
+          <path d="M134 80 C 168 60 208 82 214 132 C 220 172 190 186 156 178 C 138 174 136 160 136 140 Z" fill="url(#hLung)"/>
+          <path d="M130 80 L 112 104 L 98 126 M112 104 L 116 138 M130 80 L 148 104 L 162 126 M148 104 L 144 138" stroke="#e05578" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <circle cx="80" cy="140" r="5" fill="#fff" opacity=".6"/><circle cx="182" cy="128" r="4" fill="#fff" opacity=".6"/>
+        </g>
+        <path class="dia" d="M30 196 Q 130 150 230 196" stroke="#d9480f" stroke-width="9" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 class="rise-in" style="--i:2"><span class="grad-text">호흡계의 구조와 기능</span></h1>
+    <p class="rise-in" style="--i:3">근육이 없는 허파는 어떻게 숨을 쉴까? 모형을 직접 움직이고, 산소와 이산화 탄소를 따라가 보자!</p>
+    <div class="badges rise-in" style="--i:4">
+      <span class="badge">교과서 222~225쪽</span>
+      <span class="badge">지도서 356~359쪽</span>
+      <span class="badge teal">성취기준 [9과13-03]</span>
+    </div>
+    <p class="muted rise-in" style="--i:4">[9과13-03] 호흡계의 구조와 기능을 이해하고, 호흡운동의 원리를 나타내는 모형을 만들 수 있다.</p>
+    <ul class="goal-list rise-in" style="--i:5">
+      <li data-n="1">호흡계의 구조와 기능을 설명할 수 있다.</li>
+      <li data-n="2">호흡운동 모형을 만들어 호흡운동의 원리를 설명할 수 있다.</li>
+      <li data-n="3">허파꽈리와 조직세포에서의 기체 교환을 설명할 수 있다.</li>
+    </ul>
+    <div class="flow rise-in" style="--i:6">
+      <div><b>🚪</b>도입</div><div><b>💡</b>개념</div><div><b>🧪</b>탐구</div><div><b>🏷️</b>스티커</div><div><b>🏠</b>실생활</div><div><b>✅</b>확인</div>
+    </div>
+    <div class="card think rise-in" style="--i:7">
+      <h3>💭 생각 열기 — 숨을 들이쉬었다가 끝까지 내쉬어 보세요</h3>
+      <div class="breath-guide">
+        <div class="breath-ball" id="breathBall">준비</div>
+        <div style="flex:1;min-width:180px">
+          <p style="margin-top:0">공을 따라 천천히 숨을 쉬어 보세요. 가슴과 배는 어떻게 움직이나요?</p>
+          <button class="btn small mint" id="breathGuideBtn">따라 숨쉬기 (3회)</button>
+        </div>
+      </div>
+      <p><b>우리는 왜 숨을 들이쉬고 내쉴까요?</b> 생각을 적어 보세요.</p>
+      <textarea id="note-think" data-save="think" placeholder="예) 숨을 쉬어야 …을/를 얻을 수 있기 때문이다."></textarea>
+      <div class="saved" id="saved-think"></div>
+      <button class="btn small secondary" id="thinkAnsBtn">예시 답안 보기</button>
+      <p class="hidden" id="thinkAns" style="color:var(--color-text)">숨을 들이쉬고 내쉬는 것을 <b>호흡운동</b>이라고 하며, 호흡운동으로 몸에 필요한 <span class="gas-o2">산소</span>를 받아들이고 세포에서 생긴 <span class="gas-co2">이산화 탄소</span>를 내보낸다.</p>
+    </div>
+    <div class="btn-row center rise-in" style="--i:8">
+      <button class="btn secondary hidden" id="resumeBtn">이어서 하기</button>
+      <button class="btn pulse" id="startBtn">시작하기 →</button>
+    </div>
+  </section>
+
+  <!-- 2. 개념 -->
+  <section class="screen" id="screen-concept">
+    <h2>💡 핵심 아이디어와 개념</h2>
+    <div class="core-idea rise-in" style="--i:0">
+      <div class="lbl">KEY IDEA · 핵심 아이디어</div>
+      <p>허파는 <b>근육이 없어</b> 스스로 움직이지 못한다. <b>갈비뼈와 가로막</b>이 움직여 흉강의 부피가 변하면 허파 속 <b>압력</b>이 변해 공기가 드나들고, 허파꽈리와 조직세포에서는 <b>확산</b>으로 산소와 이산화 탄소가 교환된다.</p>
+    </div>
+    <div id="conceptCards"></div>
+    <h3 style="margin-top:8px">🔍 오개념 바로잡기 <span class="muted">— 카드를 눌러 확인해요</span></h3>
+    <div class="myth-grid" id="mythGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="0">← 이전</button>
+      <button class="btn" data-go="2" style="margin-left:auto">탐구하러 가기 →</button>
+    </div>
+  </section>
+
+  <!-- 3. 탐구 -->
+  <section class="screen" id="screen-experiment">
+    <h2>🧪 탐구하기</h2>
+    <div class="tabs" id="expTabs" role="tablist">
+      <button class="tab active" data-tab="plan">📝 탐구 계획서</button>
+      <button class="tab" data-tab="model">① 호흡운동 모형</button>
+      <button class="tab" data-tab="chest">② 들숨과 날숨</button>
+      <button class="tab" data-tab="gas">③ 기체 교환</button>
+    </div>
+
+    <div class="tabpane active" id="tab-plan">
+      <div class="card">
+        <h3>📝 탐구 계획서 — 호흡운동 모형 만들기 <span class="badge" style="font-size:12px">교과서 223쪽 해 보기</span></h3>
+        <div class="plan-step"><div class="k">문제 인식</div><div class="v">허파는 근육이 없어 스스로 움직이지 못한다. 그렇다면 공기는 어떻게 허파로 드나들 수 있을까?</div></div>
+        <div class="plan-step"><div class="k">가설</div><div class="v"><textarea id="note-hyp" data-save="hyp" placeholder="예) 가슴 속 공간의 부피가 커지면 …"></textarea><div class="saved" id="saved-hyp"></div></div></div>
+        <div class="plan-step"><div class="k">변인</div><div class="v">
+          <b>조작 변인</b>: 컵(갈비뼈)의 위치, 고무 막(가로막)의 위치<br>
+          <b>통제 변인</b>: 컵·풍선의 크기, 빨대 굵기, 틈을 막은 상태<br>
+          <b>종속 변인</b>: 작은 고무풍선(허파)의 크기 변화</div></div>
+        <div class="plan-step"><div class="k">준비물</div><div class="v">구멍 뚫린 플라스틱 컵 2개, 갈비뼈 붙임딱지, 구부러지는 빨대 2개, 작은 고무풍선 2개, 큰 고무풍선, 지퍼백, 고무찰흙, 고무줄, 칼, 가위, 셀로판테이프, 면장갑</div></div>
+        <div class="plan-step"><div class="k">실험 과정</div><div class="v"><ol>
+          <li>구멍 뚫린 컵 하나의 바닥을 자르고, 다른 컵을 절반쯤 덮은 뒤 위아래를 자른 지퍼백으로 연결한다.</li>
+          <li>빨대 2개를 Y자로 붙이고 각 끝에 작은 고무풍선을 끼워 고정한다.</li>
+          <li>빨대를 컵에 끼우고 틈을 <b>고무찰흙으로 빈틈없이</b> 막은 뒤 갈비뼈 붙임딱지를 붙인다.</li>
+          <li>큰 고무풍선의 입구 쪽을 잘라 컵 바닥에 씌워 고무 막을 만든다.</li>
+          <li>컵을 위로 올리며 고무 막을 당길 때와, 컵을 내리며 고무 막을 올릴 때 작은 고무풍선을 관찰한다.</li>
+        </ol><p class="muted">⚠️ 칼을 쓸 때 손을 다치지 않게 주의해요. 가상실험에서는 ① 탭에서 바로 해 볼 수 있어요.</p></div></div>
+        <div class="plan-step"><div class="k">예상 결과</div><div class="v"><textarea id="note-pred" data-save="pred" placeholder="컵을 올리고 고무 막을 당기면 작은 고무풍선은 …"></textarea><div class="saved" id="saved-pred"></div></div></div>
+      </div>
+      <div class="btn-row"><button class="btn" data-tabgo="model" style="margin-left:auto">① 모형 실험 시작 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-model">
+      <div class="card">
+        <h3>① 호흡운동 모형 <span class="muted">— 고무 막 손잡이를 끌거나 슬라이더를 움직여 보세요</span></h3>
+        <div class="row">
+          <div>
+            <div class="model-wrap" id="modelWrap"></div>
+            <div style="text-align:center;margin-top:6px"><span class="state-pill" id="modelState">● 멈춤</span></div>
+          </div>
+          <div>
+            <div class="ctrl"><label>🥤 컵 위치 (갈비뼈) <em id="cupVal">아래</em></label><input type="range" id="cupSl" min="0" max="100" value="0"></div>
+            <div class="ctrl"><label>🎈 고무 막 (가로막) <em id="memVal">가운데</em></label><input type="range" id="memSl" min="-100" max="100" value="0"></div>
+            <div class="toggle" style="margin-bottom:10px">
+              <button class="chip" id="autoBtn">🔁 자동 호흡</button>
+              <button class="chip warn" id="leakBtn">🕳️ 고무찰흙 틈 있음</button>
+              <button class="chip" id="modelReset">↺ 처음으로</button>
+            </div>
+            <div class="readout">
+              <div><small>컵 속 공간(흉강) 부피</small><b id="rdVc">400</b> mL</div>
+              <div><small>컵 속 압력 (대기압과 차이)</small><b id="rdPc">0.0</b> hPa</div>
+              <div><small>작은 고무풍선(허파) 부피</small><b id="rdVb">30</b> mL</div>
+              <div><small>공기 흐름</small><b id="rdFlow" style="font-size:17px">–</b></div>
+            </div>
+            <div class="gauge" aria-hidden="true"><i id="pGauge"></i></div>
+            <div class="gauge-lbl"><span>압력 높음 ↑ (공기 나감)</span><span>대기압</span><span>압력 낮음 ↓ (공기 들어옴)</span></div>
+          </div>
+        </div>
+        <div class="info-panel" id="modelInfo" style="margin-top:12px">💡 모형의 <b>컵, 빨대, 작은 고무풍선, 고무 막, 컵 속 공간</b>을 눌러 보세요. 우리 몸의 어느 부분인지 알려 줘요.</div>
+      </div>
+      <div class="card">
+        <h3>📈 실시간 그래프 <span class="muted">— 파랑: 풍선 부피 / 보라 점선: 컵 속 압력</span></h3>
+        <canvas id="modelGraph" height="190"></canvas>
+      </div>
+      <div class="card">
+        <h3>⚖️ 비교 실험: 틈을 막은 모형 vs 틈이 있는 모형 <span class="badge ext">확장 · 가상 값</span></h3>
+        <p>같은 조작(컵 끝까지 올리기 + 고무 막 끝까지 당기기)을 자동으로 해서 풍선이 얼마나 부푸는지 비교해요. 교과서에서 왜 <b>고무찰흙으로 빈틈없이</b> 막으라고 했을까요?</p>
+        <div class="toggle" style="margin:8px 0">
+          <button class="btn small" id="trialSeal">▶ 틈 막은 모형 실험</button>
+          <button class="btn small secondary" id="trialLeak">▶ 틈 있는 모형 실험</button>
+        </div>
+        <canvas id="trialGraph" height="200"></canvas>
+        <div class="tbl-wrap" style="margin-top:10px"><table class="tbl rec-table"><thead><tr><th>회</th><th>모형</th><th>풍선 부피 변화</th><th>컵 속 압력 최저</th></tr></thead><tbody id="trialBody"><tr><td colspan="4" class="muted">실험 버튼을 눌러 기록해요</td></tr></tbody></table></div>
+        <p class="muted">✏️ 관찰 기록</p>
+        <textarea id="note-model" data-save="model" placeholder="컵을 올리고 고무 막을 당기면 … 그 까닭은 …"></textarea><div class="saved" id="saved-model"></div>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="plan">← 계획서</button><button class="btn" data-tabgo="chest" style="margin-left:auto">② 들숨과 날숨 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-chest">
+      <div class="card">
+        <h3>② 들숨과 날숨 분석하기 <span class="badge" style="font-size:12px">교과서 224쪽 분석해 보기</span></h3>
+        <div class="row">
+          <div>
+            <div class="diagram-wrap" id="chestWrap" style="max-width:380px"></div>
+          </div>
+          <div>
+            <button class="hold-btn" id="holdBtn">👆 꾹 누르면 <u>들숨</u> · 떼면 <u>날숨</u></button>
+            <div class="toggle" style="margin:12px 0 6px">
+              <button class="chip" id="chestAuto">🔁 자동 호흡</button>
+              <button class="chip on" id="useRib">🦴 갈비뼈 움직임</button>
+              <button class="chip on" id="useDia">💪 가로막 움직임</button>
+            </div>
+            <p class="muted" style="margin:2px 0 6px">갈비뼈·가로막 하나를 꺼 보면? <span class="badge ext">확장 · 가상 값</span></p>
+            <div class="readout">
+              <div><small>허파 부피</small><b id="rdLung">2.50</b> L</div>
+              <div><small>허파 내부 압력</small><b id="rdLp" style="font-size:17px">대기압과 같음</b></div>
+            </div>
+            <div style="text-align:center"><span class="state-pill" id="chestState">● 준비</span></div>
+          </div>
+        </div>
+        <canvas id="spiro" height="170" style="margin-top:12px"></canvas>
+        <p class="muted">그래프: 허파 부피의 변화 (위로 올라가면 들숨, 내려가면 날숨)</p>
+      </div>
+      <div class="card">
+        <h3>📋 분석표 — 들숨과 날숨을 한 번씩 끝까지 해 보면 칸이 채워져요</h3>
+        <div class="tbl-wrap"><table class="tbl" id="anaTable"></table></div>
+        <p class="muted" id="anaMsg">들숨: 버튼을 끝까지 누르고 있기 → 날숨: 버튼에서 손 떼고 기다리기</p>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="model">← ① 모형</button><button class="btn" data-tabgo="gas" style="margin-left:auto">③ 기체 교환 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-gas">
+      <div class="card">
+        <h3>③ 기체 교환 — 확산으로 움직이는 산소와 이산화 탄소</h3>
+        <div class="toggle" style="margin-bottom:8px">
+          <button class="chip on" id="sceneA">🫁 허파꽈리 ↔ 모세혈관</button>
+          <button class="chip" id="sceneB">🧫 모세혈관 ↔ 조직세포</button>
+        </div>
+        <div class="legend"><span><i style="background:var(--o2)"></i>산소(O₂)</span><span><i class="tri" style="background:var(--co2)"></i>이산화 탄소(CO₂)</span><span>사이의 얇은 벽은 기체가 지나갈 수 있어요</span></div>
+        <canvas id="gasCv" height="300"></canvas>
+        <div class="toggle" style="margin-top:10px">
+          <button class="btn small" id="gasRun">▶ 시작</button>
+          <button class="chip on" id="gasKeep">🌬️ 숨쉬기·혈액 흐름 유지</button>
+          <button class="chip" id="gasReset">↺ 다시</button>
+        </div>
+        <div class="readout" id="gasReadout"></div>
+        <div class="info-panel" id="gasInfo">▶ 시작을 눌러 입자의 움직임을 관찰하세요. 입자는 <b>농도가 높은 곳에서 낮은 곳으로</b> 더 많이 이동해요(확산).</div>
+      </div>
+      <div class="card">
+        <h3>📊 실험 기록 <span class="muted">— 20초 동안 이동한 입자 수(알짜)를 기록해요</span></h3>
+        <div class="tbl-wrap"><table class="tbl rec-table"><thead><tr><th>장소</th><th>숨쉬기·혈액 흐름</th><th>산소 이동</th><th>이산화 탄소 이동</th></tr></thead><tbody id="gasBody"><tr><td colspan="4" class="muted">시작하면 20초 뒤 자동으로 기록돼요</td></tr></tbody></table></div>
+        <p class="muted">✏️ 관찰 기록</p>
+        <textarea id="note-gas" data-save="gas" placeholder="허파꽈리에서 산소는 … 쪽으로, 이산화 탄소는 … 쪽으로 이동했다. 숨쉬기를 끄면 …"></textarea><div class="saved" id="saved-gas"></div>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="chest">← ② 들숨과 날숨</button><button class="btn" data-go="3" style="margin-left:auto">스티커 붙이러 가기 →</button></div>
+    </div>
+  </section>
+
+  <!-- 4. 스티커 -->
+  <section class="screen" id="screen-sticker">
+    <h2>🏷️ 스티커 붙이기: 호흡 개념 정리판</h2>
+    <p>스티커를 골라 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 <b>확인하기</b>! 어디에도 붙지 않는 <b>함정 스티커</b>도 숨어 있어요.</p>
+    <div class="board-tabs" id="boardTabs"></div>
+    <div class="sticker-status"><span class="pill">🏷️ 붙인 스티커 <span id="stkCount">0 / 0</span></span><span class="pill">🔁 시도 <span id="stkTry">0</span>회</span></div>
+    <div class="card"><h3 id="boardTitle"></h3><p class="muted" id="boardDesc"></p><div class="sticker-board" id="stkBoard"></div><div class="stk-msg" id="stkMsg"></div><div id="stkDone"></div></div>
+    <div class="card sticker-tray" id="stkTray"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="2">← 이전</button>
+      <button class="btn secondary" id="stkReset">↺ 이 판 처음부터</button>
+      <button class="btn" id="stkCheck">확인하기 ✔</button>
+      <button class="btn mint hidden" id="stkNext">다음 판 →</button>
+      <button class="btn mint hidden" id="stkToLife" data-go="4">실생활로 →</button>
+    </div>
+  </section>
+
+  <!-- 5. 실생활 -->
+  <section class="screen" id="screen-life">
+    <h2>🏠 생활 속 호흡</h2>
+    <p>카드를 눌러 <b>왜 그럴까?</b>를 확인하세요.</p>
+    <div class="life-grid" id="lifeGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="3">← 이전</button>
+      <button class="btn" id="toQuiz" style="margin-left:auto">개념 확인 10문제 →</button>
+    </div>
+  </section>
+
+  <!-- 6. 퀴즈 -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-top"><b id="qNum">1 / 10</b><div class="quiz-progress"><i id="qBar"></i></div><span class="combo" id="combo"></span></div>
+    <div class="card q-card" id="qCard"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="4">← 실생활</button>
+      <button class="btn hidden" id="qNext" style="margin-left:auto">다음 문제 →</button>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result">
+    <div class="card result-hero">
+      <div class="trophy" id="trophy">🏆</div>
+      <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <div class="score-big"><span class="grad-text" id="scoreBig">0</span><span style="font-size:28px;color:var(--color-text-light)"> / 10</span></div>
+      <p id="resultMsg" style="font-size:17px;color:var(--color-text);font-weight:700"></p>
+      <p class="muted" id="resultTime"></p>
+    </div>
+    <div class="card" id="wrongBox"></div>
+    <div class="card check-list">
+      <h3>✅ 학습목표 자가 점검 — 이제 나는</h3>
+      <label><input type="checkbox" data-save-check="c1"> 호흡계(코, 숨관, 숨관가지, 허파, 허파꽈리)의 구조와 기능을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c2"> 허파가 스스로 움직이지 못하는 까닭과 갈비뼈·가로막의 역할을 말할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c3"> 호흡운동 모형의 각 부분이 우리 몸의 어느 부분인지 짝지을 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c4"> 들숨과 날숨을 흉강 부피·허파 압력·공기 이동으로 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c5"> 허파꽈리와 조직세포에서 산소와 이산화 탄소가 확산으로 이동하는 방향을 설명할 수 있다.</label>
+    </div>
+    <p class="muted" style="text-align:center">📸 이 화면을 캡처해서 선생님께 제출하세요.</p>
+    <div class="btn-row center">
+      <button class="btn secondary hidden" id="retryWrong">틀린 문제 다시 풀기</button>
+      <button class="btn secondary" id="retryAll">처음부터 다시 풀기</button>
+      <button class="btn" data-go="0">처음 화면으로</button>
+    </div>
+  </section>
+
+  <footer>Made by Lee Jae Kwang</footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+/* ============ 저장 ============ */
+const LSP='vlab-resp-';
+function lsGet(k,d){try{const v=localStorage.getItem(LSP+k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(LSP+k,JSON.stringify(v));}catch(e){}}
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+
+/* ============ 효과음 (Web Audio로 직접 합성, 외부 파일 없음) ============ */
+const SND={ctx:null,on:lsGet('sound',true),master:null,buf:null};
+function audio(){
+  if(!SND.on) return null;
+  try{
+    if(!SND.ctx){const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+      SND.ctx=new C(); SND.master=SND.ctx.createGain(); SND.master.gain.value=.55; SND.master.connect(SND.ctx.destination);}
+    if(SND.ctx.state==='suspended') SND.ctx.resume();
+    return SND.ctx;
+  }catch(e){return null;}
+}
+function tone(f,dur,o={}){
+  const c=audio(); if(!c) return;
+  const t=c.currentTime+(o.when||0), vol=o.vol||.25;
+  const os=c.createOscillator(), g=c.createGain();
+  os.type=o.type||'sine'; os.frequency.setValueAtTime(f,t);
+  if(o.to) os.frequency.exponentialRampToValueAtTime(o.to,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+(o.attack||.006)); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  os.connect(g); g.connect(SND.master); os.start(t); os.stop(t+dur+.05);
+}
+function noise(dur,o={}){
+  const c=audio(); if(!c) return;
+  if(!SND.buf){SND.buf=c.createBuffer(1,Math.floor(c.sampleRate*1.5),c.sampleRate); const d=SND.buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;}
+  const t=c.currentTime+(o.when||0);
+  const s=c.createBufferSource(); s.buffer=SND.buf; s.loop=true;
+  const fl=c.createBiquadFilter(); fl.type=o.type||'bandpass'; fl.Q.value=o.q||1;
+  fl.frequency.setValueAtTime(o.f1||800,t); fl.frequency.exponentialRampToValueAtTime(o.f2||2000,t+dur);
+  const g=c.createGain(), a=o.attack!=null?o.attack:dur*.4;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.vol||.15,t+a); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(fl); fl.connect(g); g.connect(SND.master); s.start(t); s.stop(t+dur+.05);
+}
+function sfx(n){
+  try{switch(n){
+    case 'tap': tone(660,.07,{type:'triangle',vol:.14}); break;
+    case 'tick': tone(1250,.035,{type:'square',vol:.04}); break;
+    case 'pick': tone(520,.1,{vol:.22,to:900}); break;
+    case 'stick': tone(320,.09,{type:'square',vol:.07,to:150}); noise(.09,{vol:.16,f1:2200,f2:600,attack:.004}); break;
+    case 'peel': noise(.18,{vol:.12,f1:900,f2:3500,attack:.01}); break;
+    case 'correct': tone(784,.12,{type:'triangle',vol:.28}); tone(1047,.24,{type:'triangle',vol:.28,when:.1}); break;
+    case 'wrong': tone(230,.28,{type:'sawtooth',vol:.1,to:130}); break;
+    case 'combo': [523,659,784,1047].forEach((f,i)=>tone(f,.15,{type:'triangle',vol:.24,when:i*.07})); noise(.5,{vol:.08,f1:4000,f2:9000,type:'highpass',when:.2,attack:.01}); break;
+    case 'fanfare': [[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.2],[784,.58,.14],[1047,.7,.6]].forEach(a=>tone(a[0],a[2],{type:'triangle',vol:.27,when:a[1]})); noise(1,{vol:.1,f1:3000,f2:9000,type:'highpass',when:.36,attack:.02}); break;
+    case 'pop': tone(380+Math.random()*320,.07,{vol:.22,to:1300}); break;
+    case 'whoosh': noise(.32,{vol:.09,f1:400,f2:2600,q:.7}); break;
+    case 'inhale': noise(1.3,{vol:.09,f1:450,f2:1500,q:.5}); break;
+    case 'exhale': noise(1.5,{vol:.09,f1:1400,f2:380,q:.5}); break;
+    case 'stamp': tone(110,.2,{type:'square',vol:.13,to:55}); noise(.16,{vol:.22,f1:900,f2:200,attack:.003}); break;
+    case 'burst': noise(.55,{vol:.16,f1:4000,f2:9500,type:'highpass',attack:.004}); tone(900,.14,{vol:.12,to:1900}); break;
+    case 'unlock': tone(660,.1,{type:'triangle',vol:.22}); tone(990,.28,{type:'triangle',vol:.22,when:.09}); break;
+    case 'bubble': tone(300,.12,{vol:.18,to:700}); break;
+  }}catch(e){}
+}
+
+/* ============ 애니메이션 루프 & 폭죽(컨페티) ============ */
+const TASKS=[]; let loopOn=false, lastT=0;
+function addTask(fn){TASKS.push(fn);}
+function kick(){ if(!loopOn){loopOn=true; lastT=performance.now(); requestAnimationFrame(loop);} }
+function loop(t){
+  const dt=clamp((t-lastT)/1000,0.001,0.05); lastT=t; let any=false;
+  for(const f of TASKS){ try{ if(f(dt,t)) any=true; }catch(e){ console.error(e); } }
+  const fxAny=fxStep();
+  if(any||fxAny) requestAnimationFrame(loop); else loopOn=false;
+}
+const FX={cv:null,ctx:null,parts:[],dpr:1,dirty:false};
+const FXCOL=['#ff4d6d','#ffb238','#3361e8','#21c9a9','#7a4ff0','#45b3ff','#ffd43b','#ff8a3d'];
+function fxResize(){ if(!FX.cv) return; FX.dpr=Math.min(2,window.devicePixelRatio||1); FX.cv.width=Math.round(innerWidth*FX.dpr); FX.cv.height=Math.round(innerHeight*FX.dpr); }
+function confetti(x,y,o={}){
+  let n=o.count||40; if(REDUCED) n=Math.ceil(n/4);
+  const sp=o.speed||9, cols=o.colors||FXCOL, shapes=o.shapes||['r','c','s','b'];
+  for(let i=0;i<n;i++){
+    const a=(o.angle!=null?o.angle:-Math.PI/2)+(Math.random()-.5)*(o.spread!=null?o.spread:Math.PI*2);
+    const v=sp*(.4+Math.random()*.8);
+    FX.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:o.g!=null?o.g:.28,rot:Math.random()*6,vr:(Math.random()-.5)*.45,
+      s:(o.size||8)*(.6+Math.random()*.8),shape:shapes[i%shapes.length],col:cols[i%cols.length],life:1,dec:o.decay||(.009+Math.random()*.008),drag:o.drag||.985});
+  }
+  kick();
+}
+function burstAt(el,o={}){ if(!el) return; const r=el.getBoundingClientRect(); confetti(r.left+r.width/2,r.top+r.height/2,o); }
+function fireworks(){
+  sfx('burst'); const W=innerWidth,H=innerHeight;
+  for(let k=0;k<5;k++) setTimeout(()=>{ confetti(W*(.15+Math.random()*.7),H*(.18+Math.random()*.35),{count:60,speed:11,g:.17}); sfx('pop'); },k*260);
+  setTimeout(()=>{ const n=REDUCED?15:90; for(let i=0;i<n;i++) FX.parts.push({x:Math.random()*W,y:-20-Math.random()*240,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,g:.05,rot:Math.random()*6,vr:(Math.random()-.5)*.3,s:6+Math.random()*7,shape:['r','b','s'][i%3],col:FXCOL[i%FXCOL.length],life:1,dec:.004,drag:.995}); kick(); },300);
+}
+function starPath(c,r){ c.beginPath(); for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2, rr=i%2?r*.45:r; c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} c.closePath(); c.fill(); }
+function fxStep(){
+  const P=FX.parts, c=FX.ctx; if(!c) return false;
+  if(!P.length){ if(FX.dirty){ c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,FX.cv.width,FX.cv.height); FX.dirty=false; } return false; }
+  FX.dirty=true; c.setTransform(FX.dpr,0,0,FX.dpr,0,0); c.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i]; p.vx*=p.drag; p.vy=p.vy*p.drag+p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=p.dec;
+    if(p.life<=0||p.y>innerHeight+40){P.splice(i,1);continue;}
+    c.save(); c.globalAlpha=Math.min(1,p.life*1.6); c.translate(p.x,p.y); c.rotate(p.rot); c.fillStyle=p.col; const s=p.s;
+    if(p.shape==='c'){c.beginPath();c.arc(0,0,s/2,0,7);c.fill();}
+    else if(p.shape==='s') starPath(c,s*.7);
+    else if(p.shape==='b') c.fillRect(-s/2,-s/5,s,(s/2.5)*Math.abs(Math.cos(p.rot*2))+1);
+    else c.fillRect(-s/2,-s/2,s,s*.62);
+    c.restore();
+  }
+  return true;
+}
+function floatText(x,y,txt,color){
+  const d=document.createElement('div'); d.className='float-txt'; d.textContent=txt; d.style.left=x+'px'; d.style.top=y+'px'; d.style.color=color||'#12a874';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1200);
+}
+function floatAt(el,txt,color){ if(!el) return; const r=el.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,txt,color); }
+let toastTimer=null;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2300); }
+
+/* ============ 캔버스 도우미 ============ */
+function prepCanvas(cv){
+  const w=cv.clientWidth; if(!w) return null;
+  const H=+cv.getAttribute('height'); const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=H+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv._w=w; cv._dpr=dpr; cv._H=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); return {ctx,W:w,H:cv._H};
+}
+function visible(el){ return !!(el && el.offsetParent!==null); }
+
+/* ============ 화면 이동 ============ */
+const SCREENS=['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const STEP_NAMES=['도입','개념','탐구','스티커','실생활','개념 확인'];
+let cur=-1; const enterHooks={};
+function renderSteps(){
+  const box=$('stepIndicator');
+  if(!box.children.length){
+    STEP_NAMES.forEach((n,k)=>{ const b=document.createElement('button'); b.className='step-dot'; b.innerHTML='<i></i><span>'+n+'</span>'; b.setAttribute('aria-label',(k+1)+'단계 '+n);
+      b.addEventListener('click',()=>{ sfx('tap'); goTo(k===5?(qz&&qz.done?6:5):k); }); box.appendChild(b); });
+  }
+  const pos=Math.min(cur,6);
+  [...box.children].forEach((b,k)=>{ b.classList.toggle('active',k===pos||(pos===6&&k===5)); b.classList.toggle('done',k<pos); });
+}
+function goTo(i){
+  if(i===cur) return;
+  const back=i<cur, prev=cur;
+  SCREENS.forEach((id,k)=>{ const el=$(id); el.classList.toggle('active',k===i); el.classList.toggle('back',k===i&&back); });
+  cur=i; renderSteps(); window.scrollTo(0,0);
+  if(prev>=0) sfx('whoosh');
+  if(i<=5) lsSet('progress',i);
+  if(enterHooks[i]) enterHooks[i]();
+  kick();
+}
+</script>
+<script>
+/* ============ 호흡계 그림 (개념 ①, 스티커 판 1 공용) ============ */
+const RESP_INFO={
+  nose:['👃 코','차고 건조한 공기를 <b>따뜻하고 축축하게</b> 만들어요. 콧속의 털과 점액이 공기 속 <b>먼지와 세균을 걸러요</b>.'],
+  trachea:['🌬️ 숨관','공기가 지나가는 <b>통로</b>예요. 안쪽의 점액과 섬모가 먼지와 세균을 걸러 내요.'],
+  bronchi:['🌿 숨관가지','숨관이 <b>두 갈래로 갈라져</b> 좌우 허파로 들어가요. 허파 속에서 나뭇가지처럼 계속 갈라져 끝이 허파꽈리와 연결돼요.'],
+  lung:['🫁 허파','가슴 양쪽에 하나씩 있고, 갈비뼈와 가로막으로 둘러싸인 <b>흉강</b> 속에 있어요. <b>근육이 없어서 스스로 움직이지 못해요!</b>'],
+  alveoli:['🍇 허파꽈리','포도송이 모양의 작은 공기주머니예요. <b>모세혈관으로 둘러싸여</b> 있어 여기서 산소와 이산화 탄소가 교환돼요. 수가 아주 많아 <b>표면적이 넓어요</b>.'],
+  rib:['🦴 갈비뼈','허파와 심장을 보호하는 뼈예요. 갈비뼈 사이의 근육이 갈비뼈를 <b>올리고 내려</b> 흉강의 크기를 바꿔요.'],
+  dia:['💪 가로막','가슴과 배를 나누는 <b>근육</b>이에요. 수축하면 <b>내려가고</b>, 이완하면 <b>올라가요</b>.']
+};
+function respSVG(board){
+  const P=k=>board?'':` class="part" data-k="${k}"`;
+  let ribs='';
+  for(let i=0;i<5;i++){ const y=180+i*34; ribs+=`<path d="M188 ${y} Q 122 ${y-14} 98 ${y+30}"/><path d="M212 ${y} Q 278 ${y-14} 302 ${y+30}"/>`; }
+  let rings=''; for(let y=84;y<214;y+=13) rings+=`<line x1="193" y1="${y}" x2="207" y2="${y}"/>`;
+  let alv=''; [[312,74],[326,66],[338,80],[322,90],[306,92],[334,96],[318,104],[344,64]].forEach(p=>alv+=`<circle cx="${p[0]}" cy="${p[1]}" r="10"/>`);
+  const leaders=board?`<g stroke="#8a97b8" stroke-width="2" stroke-dasharray="4 4" fill="none">
+    <path d="M190 64 L86 66"/><path d="M193 122 L86 140"/><path d="M118 262 L86 262"/><path d="M100 312 L86 330"/>
+    <path d="M330 128 L330 140"/><path d="M244 246 L314 222"/><path d="M296 362 L314 386"/></g>`:'';
+  return `<svg viewBox="0 0 400 440" role="img" aria-label="호흡계의 구조">
+  <defs>
+    <linearGradient id="rsLung${board?'B':'C'}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc3d0"/><stop offset="1" stop-color="#ff8aa3"/></linearGradient>
+  </defs>
+  <ellipse cx="200" cy="58" rx="40" ry="46" fill="#ffe9dc" stroke="#f1c7ae" stroke-width="2"/>
+  <rect x="182" y="96" width="36" height="44" fill="#ffe9dc"/>
+  <path d="M92 140 Q 120 128 182 132 L 218 132 Q 280 128 308 140 Q 322 260 316 410 L 84 410 Q 78 260 92 140 Z" fill="#fff4ec" stroke="#f1c7ae" stroke-width="2"/>
+  <g${P('lung')}>
+    <path d="M190 170 C 150 150 112 170 104 230 C 96 300 104 340 128 350 C 158 358 186 348 188 322 Z" fill="url(#rsLung${board?'B':'C'})"/>
+    <path d="M210 170 C 250 150 288 170 296 230 C 304 300 296 340 272 350 C 242 358 214 348 212 322 Z" fill="url(#rsLung${board?'B':'C'})"/>
+  </g>
+  <g${P('trachea')}><rect x="192" y="72" width="16" height="150" rx="8" fill="#a9c4f5"/><g stroke="#7f9fe0" stroke-width="2">${rings}</g></g>
+  <g${P('bronchi')} stroke="#6f8fdc" fill="none" stroke-linecap="round">
+    <path d="M200 220 L162 250 L140 286" stroke-width="9"/><path d="M200 220 L238 250 L260 286" stroke-width="9"/>
+    <path d="M162 250 L166 300 M140 286 L122 312 M238 250 L234 300 M260 286 L278 312" stroke-width="5"/>
+    <rect x="130" y="210" width="140" height="110" fill="transparent" stroke="none"/>
+  </g>
+  <g${P('rib')} stroke="#b4c0dc" stroke-width="7" fill="none" stroke-linecap="round" opacity=".9">${ribs}<rect x="194" y="160" width="12" height="150" rx="6" fill="#c9d3ea" stroke="none"/></g>
+  <g${P('dia')}><path d="M88 372 Q 200 318 312 372" stroke="#d9480f" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M88 372 Q 200 318 312 372" stroke="transparent" stroke-width="28" fill="none"/></g>
+  <g${P('nose')}><path d="M200 44 Q 193 62 190 70 Q 200 76 210 70 Q 207 62 200 44 Z" fill="#f4a98d"/><circle cx="200" cy="64" r="20" fill="transparent"/></g>
+  <g${P('alveoli')}>
+    <path d="M268 300 L300 120" stroke="#9fb3e0" stroke-width="2" stroke-dasharray="5 4" fill="none"/>
+    <circle cx="268" cy="302" r="6" fill="#fff" stroke="#9fb3e0" stroke-width="2"/>
+    <circle cx="324" cy="82" r="48" fill="#fff" stroke="#9fb3e0" stroke-width="2.5"/>
+    <path d="M290 112 Q 300 96 312 86" stroke="#6f8fdc" stroke-width="5" fill="none"/>
+    <g fill="#ffb3c4" stroke="#ff7d98" stroke-width="2">${alv}</g>
+    <path d="M286 70 Q 320 40 360 70 M290 104 Q 324 120 356 98" stroke="#e03445" stroke-width="2" fill="none"/>
+    <path d="M296 56 Q 330 112 352 84" stroke="#3d63c9" stroke-width="2" fill="none"/>
+  </g>
+  ${board?'':'<g id="airDots" fill="#45b3ff"></g>'}
+  ${leaders}
+  </svg>`;
+}
+
+/* ============ 공용: 가슴(흉강) 애니메이션 그림 ============ */
+let chestSeq=0;
+function makeChest(el){
+  const id='ch'+(++chestSeq);
+  let ribs=''; for(let i=0;i<5;i++){ const y=132+i*34; ribs+=`<path d="M176 ${y} Q 110 ${y-12} 74 ${y+34}"/><path d="M184 ${y} Q 250 ${y-12} 286 ${y+34}"/>`; }
+  let rings=''; for(let y=8;y<146;y+=14) rings+=`<line x1="173" y1="${y}" x2="187" y2="${y}"/>`;
+  let air=''; for(let i=0;i<9;i++) air+=`<circle r="5"/>`;
+  el.innerHTML=`<svg viewBox="0 0 360 390" role="img" aria-label="들숨과 날숨 때 갈비뼈와 가로막의 움직임">
+    <defs><linearGradient id="${id}L" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc3d0"/><stop offset="1" stop-color="#ff8aa3"/></linearGradient></defs>
+    <g class="c-torso"><path d="M60 70 Q 62 42 112 36 L 248 36 Q 298 42 300 70 L 314 338 Q 180 356 46 338 Z" fill="#fff4ec" stroke="#f1c7ae" stroke-width="2"/></g>
+    <g class="c-lungs">
+      <path d="M170 100 C 124 84 86 116 82 176 C 78 246 92 292 114 302 C 142 312 166 300 168 280 Z" fill="url(#${id}L)"/>
+      <path d="M190 100 C 236 84 274 116 278 176 C 282 246 268 292 246 302 C 218 312 194 300 192 280 Z" fill="url(#${id}L)"/>
+      <path d="M180 120 L180 150 M180 150 L150 175 L128 205 M150 175 L152 215 M180 150 L210 175 L232 205 M210 175 L208 215" stroke="#e05578" stroke-width="6" fill="none" stroke-linecap="round"/>
+    </g>
+    <rect x="171" y="-6" width="18" height="158" rx="9" fill="#a9c4f5"/><g stroke="#7f9fe0" stroke-width="2">${rings}</g>
+    <g class="c-air" fill="#45b3ff">${air}</g>
+    <g class="c-ribs"><rect x="175" y="122" width="10" height="122" rx="5" fill="#c9d3ea"/><g stroke="#b4c0dc" stroke-width="7" fill="none" stroke-linecap="round" opacity=".92">${ribs}</g></g>
+    <path class="c-dia" d="M48 330 Q 180 250 312 330" stroke="#d9480f" stroke-width="11" fill="none" stroke-linecap="round"/>
+    <g font-size="15" font-weight="800" font-family="sans-serif">
+      <text class="c-ribtxt" x="296" y="118" text-anchor="end" fill="#5b6787">갈비뼈</text>
+      <text x="112" y="250" text-anchor="middle" fill="#8a1f3c">허파</text>
+      <text class="c-diatxt" x="180" y="374" text-anchor="middle" fill="#b23a0a">가로막</text>
+      <text x="200" y="22" fill="#3361e8" class="c-airtxt"></text>
+    </g>
+  </svg>`;
+  const svg=el.querySelector('svg'), lungs=svg.querySelector('.c-lungs'), ribsG=svg.querySelector('.c-ribs'), torso=svg.querySelector('.c-torso'),
+        dia=svg.querySelector('.c-dia'), airG=[...svg.querySelectorAll('.c-air circle')], ribT=svg.querySelector('.c-ribtxt'), diaT=svg.querySelector('.c-diatxt'), airT=svg.querySelector('.c-airtxt');
+  const ys=airG.map((_,i)=>i*17);
+  return {
+    set(bR,bD,flow,dt){
+      const sx=1+.06*bR, sy=1+.1*bD;
+      lungs.setAttribute('transform',`translate(180 96) scale(${sx} ${sy}) translate(-180 -96)`);
+      ribsG.setAttribute('transform',`translate(0 ${(-9*bR).toFixed(2)}) translate(180 200) scale(${1+.035*bR} 1) translate(-180 -200)`);
+      torso.setAttribute('transform',`translate(180 200) scale(${1+.03*bR} 1) translate(-180 -200)`);
+      dia.setAttribute('d',`M48 330 Q 180 ${(250+60*bD).toFixed(1)} 312 330`);
+      const f=flow||0, op=clamp(Math.abs(f)*3,0,1);
+      airG.forEach((c,i)=>{ ys[i]+=f*240*(dt||0); if(ys[i]>150) ys[i]-=156; if(ys[i]<-6) ys[i]+=156; c.setAttribute('cx',180+((i%3)-1)*4); c.setAttribute('cy',ys[i].toFixed(1)); c.setAttribute('opacity',op.toFixed(2)); });
+      const up=f>.02, dn=f<-.02;
+      ribT.textContent= up?'갈비뼈 ▲ 올라감':dn?'갈비뼈 ▼ 내려감':'갈비뼈';
+      diaT.textContent= up?'가로막 ▼ 내려감':dn?'가로막 ▲ 올라감':'가로막';
+      airT.textContent= up?'↓ 공기가 들어와요':dn?'↑ 공기가 나가요':'';
+      airT.setAttribute('fill',up?'#1d6fd6':'#6a3fd6');
+    }
+  };
+}
+
+/* ============ 개념 카드 ============ */
+const CONCEPTS=[
+  {t:'호흡계의 구조 — 공기의 길을 따라가 보자', html:`
+    <p>호흡계는 <b>코, 숨관, 숨관가지, 허파</b>로 이루어져 있어요. 그림의 각 부분을 눌러 보거나 <b>공기 따라가기</b>를 눌러 보세요.</p>
+    <div class="diagram-wrap" id="respWrap"></div>
+    <div class="toggle" style="justify-content:center;margin:8px 0"><button class="btn small mint" id="airTour">🌬️ 공기 따라가기</button></div>
+    <div class="info-panel" id="respInfo">👆 그림의 <b>코, 숨관, 숨관가지, 허파, 허파꽈리, 갈비뼈, 가로막</b>을 눌러 보세요.</div>`},
+  {t:'허파꽈리 — 작게 나눌수록 넓어진다!', html:`
+    <p>허파는 수많은 <b>허파꽈리</b>로 이루어져 있어요. 같은 양의 공기를 큰 주머니 하나에 담을 때와 작은 주머니 여러 개에 나누어 담을 때, 공기와 닿는 <b>겉넓이</b>를 비교해 보세요.</p>
+    <div class="area-demo">
+      <canvas id="areaCv" height="220"></canvas>
+      <div class="area-ctrl">
+        <div class="ctrl"><label>공기주머니 수 <em id="areaN">1개</em></label><input type="range" id="areaSl" min="1" max="5" value="1" step="1"></div>
+        <small class="muted">전체 부피는 같아요</small>
+        <div style="font-weight:800;margin-top:6px">겉넓이 <span id="areaX" class="grad-text" style="font-size:26px">1배</span></div>
+        <div class="meter"><i id="areaM" style="width:20%"></i></div>
+      </div>
+    </div>
+    <div class="analogy">🍇 <b>포도송이 비유</b>: 커다란 풍선 하나보다 작은 포도알 여러 개가 겉넓이가 훨씬 넓어요. 허파꽈리 덕분에 허파의 표면적은 교실 바닥 하나 정도(약 70 m²)나 돼요. <span class="badge ext">확장</span></div>
+    <p>표면적이 넓을수록 허파꽈리와 <b>모세혈관</b> 사이에서 기체 교환이 <b>효율적으로</b> 일어나요.</p>`},
+  {t:'호흡운동의 원리 — 갈비뼈와 가로막이 허파를 움직인다', html:`
+    <p>허파는 근육이 없어요. 그래서 <b>갈비뼈와 가로막</b>이 흉강의 부피를 바꾸면, 허파가 따라 커지거나 작아져요.</p>
+    <div class="row" style="align-items:center">
+      <div class="diagram-wrap" id="miniChest" style="max-width:300px"></div>
+      <div>
+        <div class="toggle" style="margin-bottom:10px"><button class="btn small" id="mcIn">들숨 ▶</button><button class="btn small secondary" id="mcOut">날숨 ▶</button></div>
+        <div id="chain" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+    <div class="analogy">💉 <b>1학년 '기체의 성질'과 연결</b>: 주사기 끝을 막고 피스톤을 당기면 부피가 커지고 압력이 낮아지죠? 공기는 <b>압력이 높은 곳 → 낮은 곳</b>으로 이동해요. 허파 속 압력이 바깥보다 낮아지면 공기가 들어와요.</div>`},
+  {t:'기체 교환 — 확산으로 산소와 이산화 탄소가 바뀐다', html:`
+    <p>입자가 스스로 운동하여 퍼져 나가는 현상을 <b>확산</b>이라고 해요. 입자는 <b>농도가 높은 곳 → 낮은 곳</b>으로 이동해요. 향수 냄새가 방 안에 퍼지는 것과 같아요.</p>
+    <div class="gx-grid" id="gxDemo"></div>
+    <div class="analogy">🔗 <b>순환계와 연결</b>: 허파에서 산소를 받은 혈액은 폐정맥 → 심장 → 온몸으로 가서 조직세포에 산소를 주고, 이산화 탄소를 받아 다시 허파로 돌아와요. 허파꽈리에서의 기체 교환을 <b>외호흡</b>, 조직세포에서의 기체 교환을 <b>내호흡</b>이라고도 해요. <span class="badge ext">확장</span></div>`}
+];
+const MYTHS=[
+  ['허파가 스스로 부풀었다 줄었다 하며 숨을 쉰다.','허파에는 <b>근육이 없어요</b>. 갈비뼈와 가로막이 움직여 흉강의 부피가 바뀌면 허파가 <b>따라서</b> 커지거나 작아져요.'],
+  ['공기가 들어와서 허파가 커진다.','순서가 반대예요! <b>흉강·허파의 부피가 먼저 커지고</b> → 허파 속 압력이 낮아져서 → 공기가 들어와요.'],
+  ['숨을 들이쉴 때 가로막이 올라간다.','들숨 때 가로막은 <b>수축해서 아래로 내려가요</b>. 그래서 숨을 깊이 들이쉬면 배가 살짝 나와요.'],
+  ['들숨에는 산소만, 날숨에는 이산화 탄소만 들어 있다.','들숨·날숨 모두 여러 기체가 섞인 공기예요. <b>날숨에도 산소가 있어요</b>. 다만 들숨보다 산소는 적고 이산화 탄소는 많아요. (산소 약 21% → 약 16%, 이산화 탄소 약 0.04% → 약 4%) <span class="badge ext">확장</span>'],
+  ['가로막은 그냥 얇은 막(또는 뼈)이다.','이름은 \'막\'이지만 가로막은 <b>근육</b>이에요. 근육이라서 수축·이완하며 위아래로 움직일 수 있어요.'],
+  ['산소는 허파꽈리에서 혈관으로 힘껏 밀어 넣어진다.','기체 교환은 <b>확산</b>이에요. 펌프 없이도 농도가 높은 곳에서 낮은 곳으로 <b>저절로</b> 이동해요.'],
+  ['호흡운동 모형은 우리 몸과 똑같다.','모형은 <b>원리만</b> 보여 줘요. 실제 허파는 수많은 허파꽈리로 되어 있고, 갈비뼈는 컵처럼 통째로 미끄러지지 않아요.']
+];
+function buildConcepts(){
+  const box=$('conceptCards'); const seen=lsGet('seen',{});
+  box.innerHTML=CONCEPTS.map((c,i)=>`<div class="card concept-card rise-in${seen[i]?' seen':''}" style="--i:${i+1}" data-i="${i}">
+    <div class="head" role="button" tabindex="0"><span class="num">${i+1}</span><strong>${c.t}</strong><span class="chev">▾</span></div>
+    <div class="concept-body"><div>${c.html}</div></div></div>`).join('');
+  box.querySelectorAll('.concept-card>.head').forEach(h=>h.addEventListener('click',()=>{
+    const card=h.parentElement, i=+card.dataset.i, open=!card.classList.contains('open');
+    card.classList.toggle('open',open); sfx(open?'pop':'tap');
+    if(open){ card.classList.add('seen'); const s=lsGet('seen',{}); s[i]=1; lsSet('seen',s); if(i===1) drawArea(); kick(); }
+  }));
+  $('mythGrid').innerHTML=MYTHS.map((m,i)=>`<div class="myth rise-in" style="--i:${i+5}"><div class="no">❌ ${m[0]}</div><div class="tapme">👆 눌러서 바로잡기</div><div class="yes">✅ ${m[1]}</div></div>`).join('');
+  $('mythGrid').querySelectorAll('.myth').forEach(m=>m.addEventListener('click',()=>{ if(!m.classList.contains('open')){ m.classList.add('open'); sfx('correct'); burstAt(m,{count:14,speed:6,size:6}); } }));
+
+  // ① 호흡계 그림
+  $('respWrap').innerHTML=respSVG(false);
+  $('respWrap').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>showResp(p.dataset.k)));
+  $('airTour').addEventListener('click',airTour);
+  // ② 겉넓이
+  $('areaSl').addEventListener('input',()=>{ drawArea(); sfx('bubble'); if(+$('areaSl').value===5){ burstAt($('areaX'),{count:24,speed:7}); } });
+  addEventListener('resize',()=>{ if(visible($('areaCv'))) drawArea(); });
+  // ③ 미니 흉강
+  MC.api=makeChest($('miniChest')); MC.api.set(0,0,0,0);
+  $('mcIn').addEventListener('click',()=>runChain(true)); $('mcOut').addEventListener('click',()=>runChain(false));
+  renderChain(null,-1);
+  // ④ 기체 교환 미니 도식
+  $('gxDemo').innerHTML=gxPanel('허파꽈리에서','alv','허파꽈리','cap','모세혈관',false)+gxPanel('조직세포에서','cap','모세혈관','cell','조직세포',true);
+}
+function gxPanel(title,c1,n1,c2,n2,cellSide){
+  // 위 화살표: 왼→오, 아래: 오→왼
+  const topGas=cellSide?['o2','산소']:['o2','산소'], botGas=cellSide?['co2','이산화 탄소']:['co2','이산화 탄소'];
+  return `<div class="gx-panel"><h4>${title}</h4><div class="gx-row">
+    <div class="gx-box ${c1}">${n1}</div>
+    <div class="gx-arrows">
+      <div class="gx-flow ${topGas[0]}" style="--d:0s"><span class="gas-${topGas[0]}">${topGas[1]}</span><div class="lane r"><i></i><i></i><i></i></div></div>
+      <div class="gx-flow ${botGas[0]}"><span class="gas-${botGas[0]}">${botGas[1]}</span><div class="lane l"><i></i><i></i><i></i></div></div>
+    </div>
+    <div class="gx-box ${c2}">${n2}</div></div>
+    <p class="muted" style="margin:8px 0 0">${cellSide?'세포는 산소를 계속 쓰고 이산화 탄소를 만들어요 → 농도 차가 유지돼요.':'숨을 쉬어 허파꽈리에는 산소가 많고, 들어온 혈액에는 이산화 탄소가 많아요.'}</p></div>`;
+}
+function showResp(k){
+  const w=$('respWrap'); w.querySelectorAll('.part').forEach(p=>p.classList.toggle('sel',p.dataset.k===k));
+  const inf=RESP_INFO[k]; const ip=$('respInfo'); ip.innerHTML=`<b>${inf[0]}</b> — ${inf[1]}`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); sfx('tap');
+}
+let tourRun=false;
+function airTour(){
+  if(tourRun) return; tourRun=true; sfx('inhale');
+  const g=$('respWrap').querySelector('#airDots'); g.innerHTML='';
+  const path=[[200,40],[200,70],[200,140],[200,220],[238,250],[260,286],[268,300]];
+  const seq=[['nose',0],['trachea',2],['bronchi',4],['lung',5],['alveoli',6]];
+  const dots=[]; for(let i=0;i<5;i++){ const c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('r','6'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2'); g.appendChild(c); dots.push(c); }
+  const T=4.2; let t0=performance.now(), si=-1;
+  const seg=[]; let L=0; for(let i=1;i<path.length;i++){ const d=Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1]); seg.push(d); L+=d; }
+  function at(s){ s=clamp(s,0,1)*L; for(let i=0;i<seg.length;i++){ if(s<=seg[i]){ const f=s/seg[i]; return [path[i][0]+(path[i+1][0]-path[i][0])*f, path[i][1]+(path[i+1][1]-path[i][1])*f]; } s-=seg[i]; } return path[path.length-1]; }
+  const idxS=k=>{ let s=0; for(let i=0;i<k;i++) s+=seg[i]; return s/L; };
+  function step(now){
+    const p=(now-t0)/1000/T;
+    dots.forEach((c,i)=>{ const q=at(p-i*.04); c.setAttribute('cx',q[0]); c.setAttribute('cy',q[1]); c.setAttribute('opacity',p-i*.04<0?0:1); });
+    let ns=-1; seq.forEach((s,k)=>{ if(p>=idxS(s[1])-0.001) ns=k; });
+    if(ns!==si){ si=ns; if(si>=0) showResp(seq[si][0]); }
+    if(p<1.2) requestAnimationFrame(step); else { g.innerHTML=''; tourRun=false; const a=$('respWrap').querySelector('[data-k="alveoli"]'); burstAt(a,{count:22,speed:6,colors:['#45b3ff','#9fd3ff','#ff8aa3']}); sfx('pop'); }
+  }
+  requestAnimationFrame(step);
+}
+function drawArea(){
+  const cv=$('areaCv'); const p=prepCanvas(cv); if(!p) return; const {ctx,W,H}=p; const k=+$('areaSl').value;
+  ctx.clearRect(0,0,W,H);
+  const S=Math.min(W-20,H-20), x0=(W-S)/2, y0=(H-S)/2;
+  ctx.fillStyle='#f3f6ff'; ctx.beginPath(); ctx.roundRect?ctx.roundRect(x0,y0,S,S,16):ctx.rect(x0,y0,S,S); ctx.fill();
+  const r=S/(2*k)*0.88;
+  for(let i=0;i<k;i++) for(let j=0;j<k;j++){
+    const cx=x0+S/(2*k)*(2*i+1), cy=y0+S/(2*k)*(2*j+1);
+    const g=ctx.createRadialGradient(cx-r*.35,cy-r*.35,r*.1,cx,cy,r); g.addColorStop(0,'#ffe0e7'); g.addColorStop(1,'#ff7d98');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill();
+  }
+  ctx.fillStyle='rgba(22,32,74,.7)'; ctx.font='800 15px sans-serif'; ctx.textAlign='left'; ctx.fillText(k===1?'큰 주머니 1개':`한 층에 ${k*k}개 × ${k}층`,x0+8,y0+S-10);
+  $('areaN').textContent=(k*k*k)+'개'; $('areaX').textContent=k+'배'; $('areaM').style.width=(k*20)+'%';
+}
+/* ③ 흉강 연쇄 */
+const MC={api:null,b:0,target:0,anim:false,dir:true,t:0};
+const CHAIN_IN=['🦴 갈비뼈 ▲ · 💪 가로막 ▼','📦 흉강 부피 커짐','🫁 허파 부피 커짐','⬇ 허파 속 압력 낮아짐','🌬️ 공기: 몸 밖 → 허파'];
+const CHAIN_OUT=['🦴 갈비뼈 ▼ · 💪 가로막 ▲','📦 흉강 부피 작아짐','🫁 허파 부피 작아짐','⬆ 허파 속 압력 높아짐','🌬️ 공기: 허파 → 몸 밖'];
+function renderChain(dirIn,upto){
+  const arr=dirIn===false?CHAIN_OUT:CHAIN_IN;
+  $('chain').innerHTML=arr.map((s,i)=>`<div style="padding:9px 12px;border-radius:12px;font-weight:800;font-size:15px;transition:all .3s;${i<=upto?`background:${dirIn===false?'#efe7ff':'#e0f1ff'};color:${dirIn===false?'#4b25b0':'#0f5fae'};transform:translateX(4px)`:'background:#f3f5fa;color:#a3acc4'}">${i>0?'→ ':''}${s}</div>`).join('');
+}
+function runChain(dirIn){
+  if(MC.anim) return; MC.anim=true; MC.dir=dirIn; MC.target=dirIn?1:0; MC.t=0; renderChain(dirIn,-1); sfx(dirIn?'inhale':'exhale'); kick();
+}
+addTask(dt=>{
+  if(!MC.api||!MC.anim) return false;
+  MC.t+=dt; const prev=MC.b; const v=clamp((MC.target-MC.b)*2.6,-.7,.7); MC.b=clamp(MC.b+v*dt,0,1);
+  const flow=(MC.b-prev)/dt*0.5; MC.api.set(MC.b,MC.b,flow,dt);
+  const step=Math.min(4,Math.floor(MC.t/0.42)); if(step!==MC._s){ MC._s=step; renderChain(MC.dir,step); sfx('tick'); }
+  if(MC.t>2.4){ MC.anim=false; MC._s=-1; MC.api.set(MC.b,MC.b,0,dt); return false; }
+  return true;
+});
+</script>
+<script>
+/* ============ 탐구 탭 ============ */
+let curTab='plan';
+function setTab(t){
+  curTab=t; sfx('tap');
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('#screen-experiment .tabpane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  window.scrollTo(0,$('expTabs').offsetTop-90>0?Math.min(window.scrollY,$('expTabs').offsetTop-90):0);
+  lsSet('tab',t); kick();
+  if(t==='gas') drawGas();
+}
+
+/* ============ ① 호흡운동 모형 (컵 모형) ============ */
+const P0=1013, VB0=80, VC0=400, KFLOW=9, KLEAK=12;
+const M={cup:0,mem:0,cupT:0,memT:0,vb:VB0,n:P0*(VC0-VB0),pc:P0,q:0,ql:0,leak:false,auto:false,autoT:0,hist:[],histT:0,trial:null,trials:[],flags:{},uiT:0,airS:[],leakS:[]};
+const MODEL_INFO={
+  cup:['🥤 플라스틱 컵 (갈비뼈 붙임딱지)','= 우리 몸의 <b>갈비뼈</b>. 컵을 위로 올리면 갈비뼈가 올라가는 것처럼 컵 속 공간이 넓어져요.'],
+  straw:['🥤 빨대','= 우리 몸의 <b>숨관·숨관가지</b>. 공기가 지나가는 통로예요. Y자로 갈라진 모양이 숨관가지와 닮았죠?'],
+  balloon:['🎈 작은 고무풍선','= 우리 몸의 <b>허파</b>. 스스로 부풀지 못하고, 컵 속 압력이 변해야 부풀거나 쪼그라들어요.'],
+  membrane:['🟠 고무 막','= 우리 몸의 <b>가로막</b>. 아래로 당기면 가로막이 수축해 내려가는 것과 같아요.'],
+  space:['⬜ 컵 속 공간','= 우리 몸의 <b>흉강</b>. 갈비뼈와 가로막으로 둘러싸인 가슴 속 공간이에요. 색이 <span style="color:#1d6fd6">파래지면 압력이 낮고</span>, <span style="color:#6a3fd6">보라색이면 높아요</span>.'],
+  clay:['🟤 고무찰흙','컵과 빨대 사이 틈을 막아 공기가 새지 않게 해요. 흉강도 바깥과 공기가 통하지 않는 <b>닫힌 공간</b>이에요.']
+};
+function cupX(y){ return 125-30*(y-100)/132; } // 위 컵 왼쪽 벽 x
+function buildModel(){
+  let ribs=''; [138,162,186,210].forEach(y=>{ const xl=cupX(y)+4, xr=360-xl; ribs+=`<path d="M${xl} ${y} Q 180 ${y-12} ${xr} ${y}"/>`; });
+  let air=''; for(let i=0;i<12;i++) air+='<circle r="4.5"/>';
+  let lk=''; for(let i=0;i<5;i++) lk+='<circle r="3.5"/>';
+  $('modelWrap').innerHTML=`<svg viewBox="0 0 360 440" role="img" aria-label="호흡운동 모형">
+   <defs><radialGradient id="mbal" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffe3ea"/><stop offset="1" stop-color="#ff6f8f"/></radialGradient></defs>
+   <text x="180" y="430" text-anchor="middle" font-size="13" fill="#8a94b2" font-weight="700">바깥 공기 (대기압)</text>
+   <path id="mSpace" class="part" data-p="space" fill="rgba(140,180,255,.12)"/>
+   <path d="M92 250 L268 250 L276 360 L84 360 Z" fill="none" stroke="#8fb0e6" stroke-width="3"/>
+   <path class="part" data-p="cup" d="M92 250 L84 360 M268 250 L276 360" stroke="transparent" stroke-width="18" fill="none"/>
+   <path id="mBag" fill="rgba(170,190,235,.22)" stroke="#9fb3e0" stroke-width="2" stroke-dasharray="5 4"/>
+   <text id="mBagT" x="292" y="246" font-size="12" fill="#8a94b2" font-weight="700">지퍼백</text>
+   <g id="mUpper">
+     <path d="M125 100 L235 100 L265 232 L95 232 Z" fill="none" stroke="#7fa2e0" stroke-width="3"/>
+     <path class="part" data-p="cup" d="M125 100 L95 232 M235 100 L265 232 M125 100 L235 100" stroke="transparent" stroke-width="18" fill="none"/>
+     <g class="part" data-p="cup" stroke="#c3cde3" stroke-width="6" fill="none" stroke-linecap="round" opacity=".95">${ribs}</g>
+     <path class="part" data-p="straw" d="M180 2 L180 160 M180 160 L150 190 M180 160 L210 190" stroke="#ffd166" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+     <path d="M180 2 L180 160 M180 160 L150 190 M180 160 L210 190" stroke="#fff3c4" stroke-width="4" fill="none" stroke-linecap="round" pointer-events="none"/>
+     <g id="mAir" fill="#45b3ff" pointer-events="none">${air}</g>
+     <ellipse class="part" data-p="clay" cx="180" cy="101" rx="18" ry="9" fill="#a1887f"/>
+     <g id="mLeakG" fill="#ff8a3d" pointer-events="none">${lk}</g>
+     <ellipse id="mB1" class="part" data-p="balloon" cx="150" cy="206" rx="17" ry="17" fill="url(#mbal)" stroke="#e8577a" stroke-width="2"/>
+     <ellipse id="mB2" class="part" data-p="balloon" cx="210" cy="206" rx="17" ry="17" fill="url(#mbal)" stroke="#e8577a" stroke-width="2"/>
+     <g id="mCupKnob" style="cursor:grab"><circle cx="300" cy="166" r="20" fill="#3361e8" stroke="#fff" stroke-width="3"/><text x="300" y="172" text-anchor="middle" font-size="17" fill="#fff" font-weight="900">↕</text><text x="300" y="203" text-anchor="middle" font-size="12" fill="#3361e8" font-weight="800">컵</text></g>
+   </g>
+   <path id="mMem" d="M84 360 Q 180 360 276 360" stroke="#ff8a3d" stroke-width="8" fill="none" stroke-linecap="round"/>
+   <path id="mMemHit" class="part" data-p="membrane" d="M84 360 Q 180 360 276 360" stroke="transparent" stroke-width="26" fill="none"/>
+   <g id="mKnob" style="cursor:grab"><circle cx="180" cy="360" r="20" fill="#ff8a3d" stroke="#fff" stroke-width="3"/><text x="180" y="366" text-anchor="middle" font-size="17" fill="#fff" font-weight="900">↕</text></g>
+   <text id="mKnobT" x="180" y="404" text-anchor="middle" font-size="12" fill="#c25a14" font-weight="800">고무 막 손잡이</text>
+  </svg>`;
+  const svg=$('modelWrap').querySelector('svg');
+  M.svg=svg; M.air=[...svg.querySelectorAll('#mAir circle')]; M.lk=[...svg.querySelectorAll('#mLeakG circle')];
+  M.airS=M.air.map((_,i)=>i/12); M.leakS=M.lk.map((_,i)=>i/5);
+  svg.querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>{ const k=p.dataset.p, inf=MODEL_INFO[k]; const ip=$('modelInfo'); ip.innerHTML=`<b>${inf[0]}</b> ${inf[1]}`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); sfx('tap'); }));
+  // 드래그
+  const toSvgY=e=>{ const r=svg.getBoundingClientRect(); return (e.clientY-r.top)/r.height*440; };
+  function dragger(el,onMove){
+    el.addEventListener('pointerdown',e=>{ if(M.trial) return; e.preventDefault(); el.setPointerCapture(e.pointerId); el.style.cursor='grabbing'; M.auto=false; $('autoBtn').classList.remove('on'); sfx('pick');
+      const mv=ev=>{ onMove(toSvgY(ev)); kick(); }; const up=()=>{ el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); el.removeEventListener('pointercancel',up); el.style.cursor='grab'; };
+      el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); });
+  }
+  dragger(svg.querySelector('#mKnob'),y=>{ M.memT=clamp((y-360)/30,-1,1); $('memSl').value=Math.round(M.memT*100); labelSl(); });
+  dragger(svg.querySelector('#mCupKnob'),y=>{ M.cupT=clamp((166-y)/36,0,1); $('cupSl').value=Math.round(M.cupT*100); labelSl(); });
+  $('cupSl').addEventListener('input',()=>{ if(M.trial) return; M.auto=false; $('autoBtn').classList.remove('on'); M.cupT=$('cupSl').value/100; labelSl(); kick(); });
+  $('memSl').addEventListener('input',()=>{ if(M.trial) return; M.auto=false; $('autoBtn').classList.remove('on'); M.memT=$('memSl').value/100; labelSl(); kick(); });
+  $('autoBtn').addEventListener('click',()=>{ if(M.trial) return; M.auto=!M.auto; M.autoT=0; $('autoBtn').classList.toggle('on',M.auto); sfx('tap'); kick(); });
+  $('leakBtn').addEventListener('click',()=>{ if(M.trial) return; M.leak=!M.leak; $('leakBtn').classList.toggle('on',M.leak); sfx('tap'); toast(M.leak?'🕳️ 고무찰흙에 틈이 생겼어요. 풍선은 어떻게 될까요?':'✅ 틈을 고무찰흙으로 다시 막았어요'); kick(); });
+  $('modelReset').addEventListener('click',()=>{ if(M.trial) return; resetModel(); sfx('tap'); kick(); });
+  $('trialSeal').addEventListener('click',()=>startTrial(false));
+  $('trialLeak').addEventListener('click',()=>startTrial(true));
+  M.trials=lsGet('trials',[]); renderTrials();
+  renderModel();
+}
+function labelSl(){
+  const c=M.cupT, m=M.memT;
+  $('cupVal').textContent=c<.15?'아래':c>.85?'위 (끝까지)':'중간';
+  $('memVal').textContent=m<-.15?'위로 올림':m>.15?(m>.85?'아래로 끝까지 당김':'아래로 당김'):'가운데';
+}
+function resetModel(){
+  Object.assign(M,{cup:0,mem:0,cupT:0,memT:0,vb:VB0,n:P0*(VC0-VB0),pc:P0,q:0,ql:0,auto:false});
+  $('cupSl').value=0; $('memSl').value=0; $('autoBtn').classList.remove('on'); labelSl();
+}
+function modelPhysics(dt){
+  const N=Math.max(1,Math.ceil(dt/0.002)), h=dt/N;
+  for(let i=0;i<N;i++){
+    const vc=VC0+80*M.cup+70*M.mem;
+    M.pc=M.n/(vc-M.vb);
+    const pb=M.pc+0.01*(M.vb-VB0);
+    M.q=KFLOW*(P0-pb);
+    M.vb=Math.max(6,M.vb+M.q*h);
+    M.ql=M.leak?KLEAK*(P0-M.pc):0;
+    M.n+=P0*M.ql*h;
+  }
+  M.pc=M.n/(VC0+80*M.cup+70*M.mem-M.vb);
+}
+function startTrial(leak){
+  if(M.trial) return;
+  resetModel(); M.leak=leak; $('leakBtn').classList.toggle('on',leak);
+  M.trial={leak,t:0,data:[],minP:0,maxV:VB0};
+  ['trialSeal','trialLeak','cupSl','memSl'].forEach(id=>$(id).disabled=true);
+  sfx('pick'); toast(leak?'🕳️ 틈 있는 모형으로 실험 중…':'🧱 틈을 막은 모형으로 실험 중…'); kick();
+}
+function endTrial(){
+  const T=M.trial; M.trial=null;
+  ['trialSeal','trialLeak','cupSl','memSl'].forEach(id=>$(id).disabled=false);
+  const rec={leak:T.leak,dv:Math.round(T.maxV-VB0),minP:+T.minP.toFixed(1),data:T.data};
+  M.trials.push(rec); if(M.trials.length>6) M.trials.shift(); lsSet('trials',M.trials);
+  renderTrials(); sfx('correct'); burstAt($('trialBody'),{count:30,speed:7});
+  const both=M.trials.some(r=>r.leak)&&M.trials.some(r=>!r.leak);
+  if(both&&!M.flags.cmp){ M.flags.cmp=1; setTimeout(()=>toast('🔎 틈이 있으면 컵 속 압력이 덜 낮아져서 풍선이 덜 부풀어요!'),600); }
+}
+function renderTrials(){
+  const tb=$('trialBody');
+  if(!M.trials.length){ tb.innerHTML='<tr><td colspan="4" class="muted">실험 버튼을 눌러 기록해요</td></tr>'; drawTrials(); return; }
+  tb.innerHTML=M.trials.map((r,i)=>`<tr><td>${i+1}</td><td>${r.leak?'🕳️ 틈 있음':'🧱 틈 막음'}</td><td><b>+${r.dv} mL</b></td><td>${r.minP} hPa</td></tr>`).join('');
+  drawTrials();
+}
+function drawTrials(){
+  const p=prepCanvas($('trialGraph')); if(!p) return; const {ctx,W,H}=p;
+  ctx.clearRect(0,0,W,H); const L=44,R=10,T=14,B=28, gw=W-L-R, gh=H-T-B;
+  ctx.strokeStyle='#e3e9f6'; ctx.lineWidth=1; ctx.fillStyle='#6b7591'; ctx.font='12px sans-serif'; ctx.textAlign='right';
+  for(let v=0;v<=250;v+=50){ const y=T+gh-(v/250)*gh; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(W-R,y); ctx.stroke(); ctx.fillText(v,L-6,y+4); }
+  ctx.textAlign='center'; ctx.fillText('시간(초)',L+gw/2,H-6); for(let s=0;s<=4;s++) ctx.fillText(s,L+gw*s/4.5,H-16);
+  ctx.save(); ctx.translate(12,T+gh/2); ctx.rotate(-Math.PI/2); ctx.fillText('풍선 부피(mL)',0,0); ctx.restore();
+  const cols=['#3361e8','#2a9df4','#5c7cfa'], colsL=['#ff8a3d','#f76707','#e8590c'];
+  let si=0, li=0;
+  M.trials.forEach(r=>{ if(!r.data||!r.data.length) return; ctx.beginPath(); ctx.lineWidth=3; ctx.setLineDash(r.leak?[7,5]:[]); ctx.strokeStyle=r.leak?colsL[li++%3]:cols[si++%3];
+    r.data.forEach((d,i)=>{ const x=L+gw*d[0]/4.5, y=T+gh-(d[1]/250)*gh; i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke(); });
+  if(M.trial){ ctx.beginPath(); ctx.lineWidth=3.5; ctx.setLineDash(M.trial.leak?[7,5]:[]); ctx.strokeStyle='#16204a'; M.trial.data.forEach((d,i)=>{ const x=L+gw*d[0]/4.5, y=T+gh-(d[1]/250)*gh; i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke(); }
+  ctx.setLineDash([]);
+  ctx.textAlign='left'; ctx.font='800 13px sans-serif'; ctx.fillStyle='#3361e8'; ctx.fillText('━ 틈 막음',L+8,T+14); ctx.fillStyle='#f76707'; ctx.fillText('┅ 틈 있음',L+90,T+14);
+}
+function renderModel(){
+  const s=M.svg; if(!s) return; const o=36*M.cup;
+  s.querySelector('#mUpper').setAttribute('transform',`translate(0 ${(-o).toFixed(2)})`);
+  s.querySelector('#mBag').setAttribute('d',`M95 ${232-o} L265 ${232-o} L268 250 L92 250 Z`);
+  s.querySelector('#mSpace').setAttribute('d',`M128 ${104-o} L232 ${104-o} L263 ${232-o} L268 250 L274 ${356} Q 180 ${358+60*M.mem*0.95} 86 356 L92 250 L97 ${232-o} Z`);
+  const dp=M.pc-P0, tint=clamp(dp/12,-1,1);
+  s.querySelector('#mSpace').setAttribute('fill',tint<0?`rgba(69,179,255,${(.10+.35*-tint).toFixed(2)})`:`rgba(122,79,240,${(.10+.35*tint).toFixed(2)})`);
+  const my=360+60*M.mem; s.querySelector('#mMem').setAttribute('d',`M84 360 Q 180 ${my} 276 360`); s.querySelector('#mMemHit').setAttribute('d',`M84 360 Q 180 ${my} 276 360`);
+  const ky=360+30*M.mem; s.querySelector('#mKnob').setAttribute('transform',`translate(0 ${(ky-360).toFixed(1)})`); s.querySelector('#mKnobT').setAttribute('y',(ky+44).toFixed(1));
+  const r=17*Math.cbrt(Math.max(M.vb,6)/VB0);
+  ['#mB1','#mB2'].forEach((id,i)=>{ const e=s.querySelector(id); e.setAttribute('rx',(r*1.0).toFixed(1)); e.setAttribute('ry',(r*1.08).toFixed(1)); e.setAttribute('cy',(188+r*1.0).toFixed(1)); });
+  s.querySelector('#mBagT').setAttribute('y',(244-o/2).toFixed(1));
+}
+function strawPt(s,i){ // s 0..1: 위(바깥)→아래(풍선)
+  if(s<0.7){ return [180,2+158*(s/0.7)]; } const f=(s-.7)/.3; return [180+(i%2?30:-30)*f,160+30*f];
+}
+addTask(dt=>{
+  if(!visible($('modelWrap'))) return false;
+  // 목표 위치
+  if(M.trial){ const T=M.trial; T.t+=dt; const t=T.t; let p=t<1.5?t/1.5:t<2.5?1:t<4?1-(t-2.5)/1.5:0; M.cupT=M.memT=p; }
+  else if(M.auto){ M.autoT+=dt; const p=(1-Math.cos(M.autoT*2*Math.PI/5))/2; M.cupT=p; M.memT=-.3+1.3*p; }
+  const mvc=M.trial?3:1.1, mvm=M.trial?3:2.2;
+  M.cup+=clamp(M.cupT-M.cup,-mvc*dt,mvc*dt); M.mem+=clamp(M.memT-M.mem,-mvm*dt,mvm*dt);
+  modelPhysics(dt);
+  if(M.trial){ const T=M.trial; T.data.push([+T.t.toFixed(3),+M.vb.toFixed(1)]); T.minP=Math.min(T.minP,M.pc-P0); T.maxV=Math.max(T.maxV,M.vb); if(T.t>=4.5) endTrial(); drawTrials(); }
+  renderModel();
+  // 공기 입자
+  const f=M.q;
+  M.air.forEach((c,i)=>{ M.airS[i]+=f*dt*0.012; if(M.airS[i]>1) M.airS[i]-=1; if(M.airS[i]<0) M.airS[i]+=1; const pt=strawPt(M.airS[i],i); c.setAttribute('cx',pt[0]); c.setAttribute('cy',pt[1].toFixed(1)); c.setAttribute('opacity',clamp(Math.abs(f)/25,0,1).toFixed(2)); });
+  M.lk.forEach((c,i)=>{ M.leakS[i]+=M.ql*dt*0.02; if(M.leakS[i]>1) M.leakS[i]-=1; if(M.leakS[i]<0) M.leakS[i]+=1; const s=M.leakS[i]; c.setAttribute('cx',(196+(i%2?6:-4)).toFixed(1)); c.setAttribute('cy',(84+34*s).toFixed(1)); c.setAttribute('opacity',(M.leak?clamp(Math.abs(M.ql)/25,0,1):0).toFixed(2)); });
+  // 기록
+  M.histT+=dt; if(M.histT>1/30){ M.histT=0; M.hist.push([M.vb,M.pc-P0]); if(M.hist.length>360) M.hist.shift(); drawModelGraph(); }
+  M.uiT+=dt; if(M.uiT>.1){ M.uiT=0;
+    $('rdVc').textContent=Math.round(VC0+80*M.cup+70*M.mem); $('rdPc').textContent=(M.pc-P0>0?'+':'')+(M.pc-P0).toFixed(1); $('rdVb').textContent=Math.round(M.vb);
+    const st=$('modelState');
+    if(f>3){ $('rdFlow').textContent='⬇ 들어옴'; st.className='state-pill in'; st.textContent='🌬️ 들숨: 공기가 풍선으로 들어와요'; }
+    else if(f<-3){ $('rdFlow').textContent='⬆ 나감'; st.className='state-pill out'; st.textContent='💨 날숨: 풍선 속 공기가 나가요'; }
+    else { $('rdFlow').textContent='멈춤'; st.className='state-pill'; st.textContent='● 멈춤 (압력 = 대기압)'; }
+    $('pGauge').style.left=clamp(50-(M.pc-P0)*3.5,3,97)+'%';
+    $('cupVal').textContent=M.cup<.15?'아래':M.cup>.85?'위 (끝까지)':'중간';
+    if(!M.trial&&!M.auto){ /* 사용자 조작 보상 */
+      if(M.vb>210&&!M.flags.big){ M.flags.big=1; sfx('combo'); burstAt(M.svg.querySelector('#mB2'),{count:40,speed:8}); toast('🎈 풍선이 크게 부풀었어요! 들숨 성공'); }
+      if(M.flags.big&&M.vb<40&&!M.flags.small){ M.flags.small=1; sfx('correct'); burstAt(M.svg.querySelector('#mB1'),{count:24,speed:6,colors:['#7a4ff0','#b197fc','#45b3ff']}); toast('💨 풍선이 쪼그라들었어요! 날숨 성공'); }
+    }
+  }
+  const moving=Math.abs(M.cupT-M.cup)>1e-3||Math.abs(M.memT-M.mem)>1e-3||Math.abs(M.q)>.05||Math.abs(M.ql)>.05;
+  return moving||M.auto||!!M.trial||M.hist.length<360;
+});
+function drawModelGraph(){
+  const p=prepCanvas($('modelGraph')); if(!p) return; const {ctx,W,H}=p;
+  ctx.clearRect(0,0,W,H); const L=40,R=40,T=12,B=22, gw=W-L-R, gh=H-T-B;
+  ctx.strokeStyle='#e3e9f6'; ctx.lineWidth=1; ctx.font='12px sans-serif'; ctx.fillStyle='#6b7591';
+  for(let v=0;v<=250;v+=50){ const y=T+gh-(v/250)*gh; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(W-R,y); ctx.stroke(); ctx.textAlign='right'; ctx.fillText(v,L-5,y+4); }
+  ctx.textAlign='left'; [-20,0,20].forEach(v=>{ const y=T+gh/2-(v/20)*(gh/2); ctx.fillStyle='#7a4ff0'; ctx.fillText((v>0?'+':'')+v,W-R+4,y+4); });
+  ctx.fillStyle='#6b7591'; ctx.textAlign='center'; ctx.fillText('← 12초 전            지금 →',L+gw/2,H-5);
+  const hs=M.hist, n=360;
+  ctx.beginPath(); ctx.setLineDash([]); ctx.strokeStyle='#3361e8'; ctx.lineWidth=3;
+  hs.forEach((d,i)=>{ const x=L+gw*(i+n-hs.length)/n, y=T+gh-(clamp(d[0],0,250)/250)*gh; i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+  ctx.beginPath(); ctx.setLineDash([5,4]); ctx.strokeStyle='#7a4ff0'; ctx.lineWidth=2;
+  hs.forEach((d,i)=>{ const x=L+gw*(i+n-hs.length)/n, y=T+gh/2-(clamp(d[1],-20,20)/20)*(gh/2); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke(); ctx.setLineDash([]);
+}
+
+/* ============ ② 들숨과 날숨 ============ */
+const C={api:null,b:0,hold:false,auto:false,autoT:0,rib:true,dia:true,v:2.5,flow:0,hist:[],hT:0,uiT:0,phase:0,ana:lsGet('ana',false),warned:false};
+const ANA_ROWS=[['갈비뼈','올라간다.','내려간다.'],['가로막','내려간다.','올라간다.'],['흉강 부피','커진다.','작아진다.'],['허파 부피','커진다.','작아진다.'],['허파 내부 압력','낮아진다.','높아진다.'],['공기 이동 경로','몸 밖 → 허파','허파 → 몸 밖']];
+function buildChest(){
+  C.api=makeChest($('chestWrap')); C.api.set(0,0,0,0);
+  const hb=$('holdBtn');
+  const down=e=>{ e.preventDefault(); if(C.hold) return; C.hold=true; C.auto=false; $('chestAuto').classList.remove('on'); hb.classList.add('holding'); try{hb.setPointerCapture(e.pointerId);}catch(_){} sfx('inhale'); C.warned=false; kick(); };
+  const up=()=>{ if(!C.hold) return; C.hold=false; hb.classList.remove('holding'); if(C.b>.25) sfx('exhale'); kick(); };
+  hb.addEventListener('pointerdown',down); hb.addEventListener('pointerup',up); hb.addEventListener('pointercancel',up); hb.addEventListener('lostpointercapture',up);
+  hb.addEventListener('keydown',e=>{ if((e.key===' '||e.key==='Enter')&&!e.repeat){ down(e); } }); hb.addEventListener('keyup',e=>{ if(e.key===' '||e.key==='Enter') up(); });
+  hb.addEventListener('contextmenu',e=>e.preventDefault());
+  $('chestAuto').addEventListener('click',()=>{ C.auto=!C.auto; C.autoT=0; $('chestAuto').classList.toggle('on',C.auto); sfx('tap'); kick(); });
+  $('useRib').addEventListener('click',()=>{ C.rib=!C.rib; $('useRib').classList.toggle('on',C.rib); sfx('tap'); kick(); });
+  $('useDia').addEventListener('click',()=>{ C.dia=!C.dia; $('useDia').classList.toggle('on',C.dia); sfx('tap'); kick(); });
+  renderAna(C.ana?2:0,false);
+}
+function renderAna(level,anim){
+  const t=$('anaTable');
+  t.innerHTML='<thead><tr><th>구분</th><th>들숨</th><th>날숨</th></tr></thead><tbody>'+ANA_ROWS.map((r,i)=>`<tr><th>${r[0]}</th><td class="${level>=1?'rev':'q'}" style="animation-delay:${anim&&level===1?i*.12:0}s">${level>=1?r[1]:'?'}</td><td class="${level>=2?'rev':'q'}" style="animation-delay:${anim&&level===2?i*.12:0}s">${level>=2?r[2]:'?'}</td></tr>`).join('')+'</tbody>';
+  $('anaMsg').textContent=level>=2?'🎉 분석표 완성! 들숨과 날숨은 서로 반대 과정이에요.':level===1?'좋아요! 이제 버튼에서 손을 떼고 끝까지 숨을 내쉬어 보세요.':'들숨: 버튼을 끝까지 누르고 있기 → 날숨: 버튼에서 손 떼고 기다리기';
+}
+addTask(dt=>{
+  if(!visible($('chestWrap'))) return false;
+  let target=C.hold?1:0;
+  if(C.auto){ C.autoT+=dt; target=(1-Math.cos(C.autoT*2*Math.PI/5))/2; }
+  const prev=C.b; const v=C.auto?(target-C.b)*8:clamp((target-C.b)*3,-.55,.65); C.b=clamp(C.b+v*dt,0,1);
+  const bR=C.rib?C.b:0, bD=C.dia?C.b:0; const nv=2.5+.5*(.3*bR+.7*bD); C.flow=(nv-C.v)/dt; C.v=nv;
+  C.api.set(bR,bD,C.flow*1.6,dt);
+  if(C.hold&&!C.rib&&!C.dia&&!C.warned){ C.warned=true; toast('😮 허파가 움직이지 않아요! 허파는 근육이 없으니까요.'); sfx('wrong'); }
+  // 분석표 진행
+  if(!C.ana&&C.rib&&C.dia){
+    if(C.phase===0&&C.b>.92){ C.phase=1; renderAna(1,true); sfx('combo'); burstAt($('anaTable'),{count:30,speed:7}); }
+    else if(C.phase===1&&C.b<.06){ C.phase=2; C.ana=true; lsSet('ana',true); renderAna(2,true); sfx('fanfare'); setTimeout(()=>fireworks(),300); toast('🎉 들숨·날숨 분석표 완성!'); }
+  } else if(!C.ana&&C.b>.92&&(!C.rib||!C.dia)&&!C._n){ C._n=1; toast('📋 분석표는 갈비뼈·가로막을 모두 켜고 채울 수 있어요'); }
+  C.hT+=dt; if(C.hT>1/30){ C.hT=0; C.hist.push(C.v); if(C.hist.length>450) C.hist.shift(); drawSpiro(); }
+  C.uiT+=dt; if(C.uiT>.1){ C.uiT=0; $('rdLung').textContent=C.v.toFixed(2);
+    const st=$('chestState'), lp=$('rdLp');
+    if(C.flow>.02){ st.className='state-pill in'; st.textContent='🌬️ 들숨 중'; lp.textContent='낮아짐 ⬇'; lp.style.color='#1d6fd6'; }
+    else if(C.flow<-.02){ st.className='state-pill out'; st.textContent='💨 날숨 중'; lp.textContent='높아짐 ⬆'; lp.style.color='#6a3fd6'; }
+    else { st.className='state-pill'; st.textContent=C.b>.9?'● 다 들이쉼':'● 멈춤'; lp.textContent='대기압과 같음'; lp.style.color=''; }
+  }
+  return C.hold||C.auto||Math.abs(C.flow)>.001||C.hist.length<450;
+});
+function drawSpiro(){
+  const p=prepCanvas($('spiro')); if(!p) return; const {ctx,W,H}=p;
+  ctx.clearRect(0,0,W,H); const L=44,R=10,T=12,B=22, gw=W-L-R, gh=H-T-B, lo=2.4, hi=3.1;
+  ctx.strokeStyle='#e3e9f6'; ctx.fillStyle='#6b7591'; ctx.font='12px sans-serif'; ctx.textAlign='right';
+  [2.5,2.75,3.0].forEach(v=>{ const y=T+gh-(v-lo)/(hi-lo)*gh; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(W-R,y); ctx.stroke(); ctx.fillText(v.toFixed(2)+'L',L-4,y+4); });
+  ctx.textAlign='center'; ctx.fillText('← 15초 전                지금 →',L+gw/2,H-5);
+  const hs=C.hist, n=450; ctx.lineWidth=3.2; ctx.lineJoin='round';
+  for(let i=1;i<hs.length;i++){ const x0=L+gw*(i-1+n-hs.length)/n, x1=L+gw*(i+n-hs.length)/n, y0=T+gh-(hs[i-1]-lo)/(hi-lo)*gh, y1=T+gh-(hs[i]-lo)/(hi-lo)*gh;
+    ctx.strokeStyle=hs[i]>hs[i-1]+1e-4?'#1d8cf0':hs[i]<hs[i-1]-1e-4?'#7a4ff0':'#9aa6c4'; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); }
+}
+
+/* ============ ③ 기체 교환 (확산) ============ */
+const SCENES={
+  A:{left:'허파꽈리 (공기)',right:'모세혈관 (혈액)',lc:'#fff0f3',rc:'#ffe3e6',init:{lo:30,lc:6,ro:8,rc:26},keep:{lo:30,lc:6,ro:8,rc:26},src:['숨쉬기','혈액 흐름'],short:['허파꽈리','모세혈관']},
+  B:{left:'모세혈관 (혈액)',right:'조직세포',lc:'#ffe3e6',rc:'#fff6d9',init:{lo:28,lc:6,ro:6,rc:28},keep:{lo:28,lc:6,ro:6,rc:28},src:['혈액 흐름','세포호흡'],short:['모세혈관','조직세포']}
+};
+const G={scene:'A',run:false,keep:true,parts:[],t:0,netO:0,netC:0,rec:false,W:0,H:300,rings:[],kT:0,rbc:[],uiT:0,rows:lsGet('gasRows',[])};
+function gasInit(){
+  const S=SCENES[G.scene]; G.parts=[]; G.t=0; G.netO=0; G.netC=0; G.rec=false; G.rings=[];
+  const W=G.W||($('gasCv').clientWidth||600), H=G.H; G.W=W;
+  const add=(g,side,n)=>{ for(let i=0;i<n;i++) G.parts.push(mkP(g,side,W,H)); };
+  add('o2',0,S.init.lo); add('co2',0,S.init.lc); add('o2',1,S.init.ro); add('co2',1,S.init.rc);
+  G.rbc=[]; for(let i=0;i<6;i++) G.rbc.push({y:Math.random()*H,x:Math.random()});
+  updGasUI(); drawGas();
+}
+function mkP(g,side,W,H,edge){
+  const mid=W/2, r=8; let x;
+  if(edge) x=side?W-r-2-Math.random()*20:r+2+Math.random()*20; else x=side?mid+8+r+Math.random()*(mid-2*r-10):r+Math.random()*(mid-2*r-10);
+  const a=Math.random()*Math.PI*2, sp=60+Math.random()*40;
+  return {g,side,x,y:32+r+Math.random()*(H-44-2*r),vx:Math.cos(a)*sp,vy:Math.sin(a)*sp};
+}
+function buildGas(){
+  $('sceneA').addEventListener('click',()=>setScene('A')); $('sceneB').addEventListener('click',()=>setScene('B'));
+  $('gasRun').addEventListener('click',()=>{ G.run=!G.run; $('gasRun').textContent=G.run?'⏸ 일시정지':'▶ 시작'; sfx('tap'); kick(); });
+  $('gasKeep').addEventListener('click',()=>{ G.keep=!G.keep; $('gasKeep').classList.toggle('on',G.keep); sfx('tap'); gasInit(); toast(G.keep?'🌬️ 숨쉬기·혈액 흐름 켜짐 (농도 차 유지)':'⛔ 숨쉬기·혈액 흐름 꺼짐 — 어떻게 될까요?'); });
+  $('gasReset').addEventListener('click',()=>{ sfx('tap'); gasInit(); });
+  addEventListener('resize',()=>{ if(visible($('gasCv'))) drawGas(); });
+  renderGasRows(); gasInit();
+}
+function setScene(s){ G.scene=s; $('sceneA').classList.toggle('on',s==='A'); $('sceneB').classList.toggle('on',s==='B'); sfx('tap'); gasInit();
+  $('gasInfo').innerHTML=s==='A'?'🫁 <b>허파꽈리</b>에는 숨쉬기로 들어온 산소가 많고, <b>모세혈관</b> 혈액에는 온몸에서 모아 온 이산화 탄소가 많아요. ▶ 시작!':'🧫 <b>모세혈관</b> 혈액에는 허파에서 받은 산소가 많고, <b>조직세포</b>는 산소를 쓰고 이산화 탄소를 만들어요. ▶ 시작!'; }
+function counts(){ const c={lo:0,lc:0,ro:0,rc:0}; G.parts.forEach(p=>{ c[(p.side?'r':'l')+(p.g==='o2'?'o':'c')]++; }); return c; }
+function gasStep(dt){
+  const W=G.W, H=G.H, mid=W/2, r=7, top=32;
+  G.parts.forEach(p=>{
+    p.vx+=(Math.random()-.5)*500*dt*clamp(W/400,1,2.4); p.vy+=(Math.random()-.5)*500*dt*clamp(W/400,1,2.4);
+    const sp=Math.hypot(p.vx,p.vy), ks=clamp(W/400,1,2.4), mx=110*ks, mn=45*ks; if(sp>mx){p.vx*=mx/sp;p.vy*=mx/sp;} else if(sp<mn){p.vx*=mn/sp;p.vy*=mn/sp;}
+    let nx=p.x+p.vx*dt, ny=p.y+p.vy*dt;
+    if(ny<top+r){ny=top+r;p.vy=Math.abs(p.vy);} if(ny>H-r){ny=H-r;p.vy=-Math.abs(p.vy);}
+    if(nx<r){nx=r;p.vx=Math.abs(p.vx);} if(nx>W-r){nx=W-r;p.vx=-Math.abs(p.vx);}
+    if(p.side===0&&nx>mid-4-r){ if(Math.random()<.5){ p.side=1; nx=mid+4+r+1; if(p.g==='o2') G.netO++; else G.netC++; } else { nx=mid-4-r; p.vx=-Math.abs(p.vx); } }
+    else if(p.side===1&&nx<mid+4+r){ if(Math.random()<.5){ p.side=0; nx=mid-4-r-1; if(p.g==='o2') G.netO--; else G.netC--; } else { nx=mid+4+r; p.vx=Math.abs(p.vx); } }
+    p.x=nx; p.y=ny;
+  });
+  if(G.keep){ G.kT+=dt; if(G.kT>.35){ G.kT=0; const k=SCENES[G.scene].keep, c=counts();
+    const rm=(g,side)=>{ let best=-1,bd=1e9; G.parts.forEach((p,i)=>{ if(p.g===g&&p.side===side){ const d=side?W-p.x:p.x; if(d<bd){bd=d;best=i;} } }); if(best>=0){ const p=G.parts[best]; G.rings.push({x:p.x,y:p.y,l:1,c:g==='o2'?'#ff4d6d':'#7a4ff0',s:'−'}); G.parts.splice(best,1);} };
+    const ad=(g,side)=>{ const p=mkP(g,side,W,H,true); G.parts.push(p); G.rings.push({x:p.x,y:p.y,l:1,c:g==='o2'?'#ff4d6d':'#7a4ff0',s:'+'}); };
+    if(c.lo<k.lo) ad('o2',0); else if(c.lo>k.lo) rm('o2',0);
+    if(c.lc>k.lc) rm('co2',0); else if(c.lc<k.lc) ad('co2',0);
+    if(c.ro>k.ro) rm('o2',1); else if(c.ro<k.ro) ad('o2',1);
+    if(c.rc<k.rc) ad('co2',1); else if(c.rc>k.rc) rm('co2',1);
+  } }
+  G.rings.forEach(g=>g.l-=dt*1.4); G.rings=G.rings.filter(g=>g.l>0);
+  G.rbc.forEach(b=>{ b.y+=(G.keep?40:0)*dt; if(b.y>H+20) b.y=top-20; });
+}
+function drawGas(){
+  const cv=$('gasCv'); const p=prepCanvas(cv); if(!p) return; const {ctx,W,H}=p;
+  if(G.W&&G.W!==W){ const f=W/G.W; G.parts.forEach(q=>q.x*=f); } G.W=W;
+  const S=SCENES[G.scene], mid=W/2, top=32;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=S.lc; ctx.fillRect(0,0,mid-4,H); ctx.fillStyle=S.rc; ctx.fillRect(mid+4,0,mid-4,H);
+  // 혈액 흐름(적혈구 장식)
+  const capSide=G.scene==='A'?1:0; ctx.fillStyle='rgba(224,52,69,.16)';
+  G.rbc.forEach(b=>{ const x=capSide?mid+14+b.x*(mid-30):10+b.x*(mid-30); ctx.beginPath(); ctx.ellipse(x,b.y,13,7,0,0,7); ctx.fill(); });
+  // 벽(막)
+  ctx.fillStyle='#c7d0e6'; for(let y=top;y<H;y+=16) ctx.fillRect(mid-4,y,8,10);
+  // 제목
+  ctx.fillStyle='rgba(255,255,255,.85)'; ctx.fillRect(0,0,W,top);
+  const c=counts(); ctx.font='800 15px sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#16204a';
+  ctx.fillText(S.left,mid/2,20); ctx.fillText(S.right,mid+mid/2,20);
+  // 입자
+  G.parts.forEach(q=>{
+    if(q.g==='o2'){ ctx.fillStyle='#ff4d6d'; ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(q.x,q.y,7,0,7); ctx.fill(); ctx.stroke(); }
+    else { ctx.fillStyle='#7a4ff0'; ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(q.x,q.y-8.5); ctx.lineTo(q.x+8.5,q.y); ctx.lineTo(q.x,q.y+8.5); ctx.lineTo(q.x-8.5,q.y); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  });
+  G.rings.forEach(g=>{ ctx.globalAlpha=g.l; ctx.strokeStyle=g.c; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(g.x,g.y,10+(1-g.l)*14,0,7); ctx.stroke(); ctx.fillStyle=g.c; ctx.font='900 16px sans-serif'; ctx.fillText(g.s,g.x,g.y-14-(1-g.l)*10); ctx.globalAlpha=1; });
+  // 알짜 이동 화살표
+  const arrow=(net,y,col,label)=>{ if(Math.abs(net)<3) return; const dir=net>0?1:-1, x=mid; ctx.fillStyle=col; ctx.strokeStyle='#fff'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(x-34*dir,y-9); ctx.lineTo(x+14*dir,y-9); ctx.lineTo(x+14*dir,y-17); ctx.lineTo(x+36*dir,y); ctx.lineTo(x+14*dir,y+17); ctx.lineTo(x+14*dir,y+9); ctx.lineTo(x-34*dir,y+9); ctx.closePath(); ctx.stroke(); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='900 12px sans-serif'; ctx.fillText(label,x-6*dir,y+4); };
+  arrow(G.netO,top+58,'#ff4d6d','O₂'); arrow(G.netC,H-46,'#7a4ff0','CO₂');
+  ctx.font='700 13px sans-serif'; ctx.fillStyle='#56607f';
+  ctx.fillText(`O₂ ${c.lo} · CO₂ ${c.lc}`,mid/2,H-10); ctx.fillText(`O₂ ${c.ro} · CO₂ ${c.rc}`,mid+mid/2,H-10);
+  if(!G.run){ ctx.fillStyle='rgba(22,32,74,.55)'; ctx.font='800 15px sans-serif'; ctx.fillText(G.t>0?'⏸ 일시정지':'▶ 시작을 눌러요',mid,H/2); }
+}
+function netTxt(net,names){ if(Math.abs(net)<2) return '거의 없음'; return net>0?`${names[0]} → ${names[1]} ${net}개`:`${names[1]} → ${names[0]} ${-net}개`; }
+function updGasUI(){
+  const S=SCENES[G.scene], c=counts();
+  $('gasReadout').innerHTML=`<div><small>${S.short[0]} 산소 / 이산화 탄소</small><b><span class="gas-o2">${c.lo}</span> / <span class="gas-co2">${c.lc}</span></b></div>
+   <div><small>${S.short[1]} 산소 / 이산화 탄소</small><b><span class="gas-o2">${c.ro}</span> / <span class="gas-co2">${c.rc}</span></b></div>
+   <div><small>산소 알짜 이동</small><b class="gas-o2" style="font-size:16px">${netTxt(G.netO,S.short)}</b></div>
+   <div><small>이산화 탄소 알짜 이동 · ${Math.floor(G.t)}초</small><b class="gas-co2" style="font-size:16px">${netTxt(G.netC,S.short)}</b></div>`;
+}
+function renderGasRows(){
+  $('gasBody').innerHTML=G.rows.length?G.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="gas-o2">${r[2]}</td><td class="gas-co2">${r[3]}</td></tr>`).join(''):'<tr><td colspan="4" class="muted">시작하면 20초 뒤 자동으로 기록돼요</td></tr>';
+}
+addTask(dt=>{
+  if(!visible($('gasCv'))) return false;
+  if(!G.run) return false;
+  G.t+=dt; gasStep(dt); drawGas();
+  G.uiT+=dt; if(G.uiT>.15){ G.uiT=0; updGasUI(); }
+  if(!G.rec&&G.t>=20){ G.rec=true; const S=SCENES[G.scene];
+    G.rows.push([S.short.join(' ↔ '),G.keep?'켬':'끔',netTxt(G.netO,S.short),netTxt(G.netC,S.short)]); if(G.rows.length>8) G.rows.shift(); lsSet('gasRows',G.rows); renderGasRows();
+    sfx('correct'); burstAt($('gasBody'),{count:28,speed:7});
+    $('gasInfo').innerHTML=G.keep?(G.scene==='A'?'✅ <span class="gas-o2">산소</span>는 <b>허파꽈리 → 모세혈관</b>, <span class="gas-co2">이산화 탄소</span>는 <b>모세혈관 → 허파꽈리</b>로 이동했어요. 숨쉬기와 혈액 흐름이 <b>농도 차를 유지</b>해서 교환이 계속돼요.':'✅ <span class="gas-o2">산소</span>는 <b>모세혈관 → 조직세포</b>, <span class="gas-co2">이산화 탄소</span>는 <b>조직세포 → 모세혈관</b>으로 이동했어요. 세포가 산소를 쓰고 이산화 탄소를 만들어 농도 차가 유지돼요.')
+      :'🔎 숨쉬기·혈액 흐름을 끄면 양쪽 <b>농도가 비슷해지면서</b> 알짜 이동이 거의 멈춰요. 입자는 계속 움직이지만 오가는 수가 같아지기 때문이에요. 그래서 우리는 <b>계속 숨을 쉬어야</b> 해요!';
+  }
+  return true;
+});
+</script>
+<style>
+.gx-flow{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13px;font-weight:800;}
+.lane{width:74px;height:14px;position:relative;border-radius:7px;background:#e8edf8;overflow:hidden;}
+.lane i{position:absolute;top:3px;width:8px;height:8px;border-radius:50%;animation:laneR 1.6s linear infinite;}
+.lane.l i{animation-name:laneL;}
+.lane i:nth-child(2){animation-delay:.53s;} .lane i:nth-child(3){animation-delay:1.06s;}
+.gx-flow.o2 .lane i{background:var(--o2);} .gx-flow.co2 .lane i{background:var(--co2);border-radius:2px;}
+.lane.r::after{content:'▶';position:absolute;right:2px;top:-2px;font-size:11px;color:#9aa6c4;} .lane.l::after{content:'◀';position:absolute;left:2px;top:-2px;font-size:11px;color:#9aa6c4;}
+@keyframes laneR{from{left:-10px;}to{left:100%;}} @keyframes laneL{from{left:100%;}to{left:-10px;}}
+.slot-num{font-size:15px;font-weight:900;color:#9aa6c4;}
+.board-tab .lk{margin-right:3px;}
+.slot .sticker{white-space:nowrap;}
+.complete-banner{padding-top:40px;}
+.stamp{font-size:18px;top:8px;}
+.trap-note{font-size:13px;color:#a35a00;font-weight:700;}
+</style>
+<script>
+/* ============ 스티커 붙이기 ============ */
+function modelBoardSVG(){
+  let ribs=''; [138,162,186,210].forEach(y=>{ const xl=cupX(y)+4, xr=360-xl; ribs+=`<path d="M${xl} ${y} Q 180 ${y-12} ${xr} ${y}"/>`; });
+  const lbl=(x,y,t)=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="13" font-weight="800" fill="#56607f">${t}</text>`;
+  return `<svg viewBox="0 0 360 440" role="img" aria-label="호흡운동 모형"><g transform="translate(18 26) scale(.9)">
+    <path d="M92 250 L268 250 L276 360 L84 360 Z" fill="rgba(140,180,255,.14)" stroke="#8fb0e6" stroke-width="3"/>
+    <path d="M95 232 L265 232 L268 250 L92 250 Z" fill="rgba(170,190,235,.22)" stroke="#9fb3e0" stroke-width="2" stroke-dasharray="5 4"/>
+    <path d="M125 100 L235 100 L265 232 L95 232 Z" fill="rgba(140,180,255,.14)" stroke="#7fa2e0" stroke-width="3"/>
+    <g stroke="#c3cde3" stroke-width="6" fill="none" stroke-linecap="round">${ribs}</g>
+    <path d="M180 2 L180 160 M180 160 L150 190 M180 160 L210 190" stroke="#ffd166" stroke-width="11" fill="none" stroke-linecap="round"/>
+    <ellipse cx="180" cy="101" rx="18" ry="9" fill="#a1887f"/>
+    <ellipse cx="150" cy="210" rx="20" ry="22" fill="#ff8aa3" stroke="#e8577a" stroke-width="2"/><ellipse cx="210" cy="210" rx="20" ry="22" fill="#ff8aa3" stroke="#e8577a" stroke-width="2"/>
+    <path d="M84 360 Q 180 372 276 360" stroke="#ff8a3d" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </g>
+  <g stroke="#8a97b8" stroke-width="2" stroke-dasharray="4 4" fill="none"><path d="M188 42 L258 52"/><path d="M245 172 L258 165"/><path d="M134 213 L100 215"/><path d="M140 300 L100 318"/><path d="M220 352 L258 400"/></g>
+  ${lbl(300,20,'빨대 =')}${lbl(300,133,'플라스틱 컵 =')}${lbl(58,183,'작은 고무풍선 =')}${lbl(58,286,'컵 속 공간 =')}${lbl(300,373,'고무 막 =')}
+  </svg>`;
+}
+const BOARDS=[
+  {short:'호흡계 이름표',title:'판 1 · 호흡계 그림에 이름표 붙이기',desc:'그림 이름표형 — ①~⑦ 칸에 알맞은 기관 이름을 붙여요.',color:'c1',type:'svg',
+   stickers:['코','숨관','숨관가지','허파','허파꽈리','갈비뼈','가로막','식도','심장'],
+   slots:[{id:'nose',x:12,y:15,answer:'코',ph:'①',hints:['공기가 처음 들어오는 곳이에요.','차고 건조한 공기를 따뜻하고 축축하게 해요.']},
+          {id:'trachea',x:12,y:31.8,ph:'②',answer:'숨관',hints:['목 속에 있는 공기의 통로예요.','고리 모양 연골이 있는 관이에요.']},
+          {id:'lung',x:12,y:59.5,ph:'③',answer:'허파',hints:['가슴 양쪽에 하나씩 있어요.','근육이 없어 스스로 움직이지 못해요.']},
+          {id:'rib',x:12,y:75.5,ph:'④',answer:'갈비뼈',hints:['허파와 심장을 보호하는 뼈예요.','들숨 때 위로 올라가요.']},
+          {id:'alveoli',x:88,y:34.1,ph:'⑤',answer:'허파꽈리',hints:['포도송이 모양의 작은 공기주머니예요.','모세혈관으로 둘러싸여 기체 교환이 일어나요.']},
+          {id:'bronchi',x:88,y:50.5,ph:'⑥',answer:'숨관가지',hints:['숨관이 두 갈래로 갈라진 부분이에요.','허파 속에서 나뭇가지처럼 갈라져요.']},
+          {id:'dia',x:88,y:88.6,ph:'⑦',answer:'가로막',hints:['가슴과 배를 나누는 근육이에요.','들숨 때 아래로 내려가요.']}],
+   render:()=>`<div class="svg-board">${respSVG(true)}</div>`,
+   summary:'호흡계: <b>코 → 숨관 → 숨관가지 → 허파(허파꽈리)</b>. 허파는 <b>갈비뼈와 가로막</b>으로 둘러싸인 흉강 속에 있어요.'},
+  {short:'모형 ↔ 우리 몸',title:'판 2 · 호흡운동 모형과 우리 몸 짝짓기',desc:'그림 이름표형 — 모형의 각 부분이 우리 몸의 어디인지 붙여요. (교과서 223쪽 표)',color:'c3',type:'svg',
+   stickers:['갈비뼈','숨관·숨관가지','허파','흉강','가로막','허파꽈리','코'],
+   slots:[{id:'straw',x:83.3,y:11.8,ph:'?',name:'빨대 =',answer:'숨관·숨관가지',hints:['공기가 지나가는 통로예요.','Y자로 갈라진 모양을 떠올려요.']},
+          {id:'cup',x:83.3,y:37.5,ph:'?',name:'플라스틱 컵 =',answer:'갈비뼈',hints:['컵에 붙인 붙임딱지가 힌트!','컵을 올리면 흉강이 넓어져요.']},
+          {id:'balloon',x:16.1,y:48.9,ph:'?',name:'작은 고무풍선 =',answer:'허파',hints:['컵 속 압력이 바뀌면 부풀었다 줄었다 해요.','근육이 없어 스스로 못 움직이는 기관이에요.']},
+          {id:'space',x:16.1,y:72.3,ph:'?',name:'컵 속 공간 =',answer:'흉강',hints:['기관이 아니라 \'공간\'이에요.','갈비뼈와 가로막으로 둘러싸인 가슴 속 공간이에요.']},
+          {id:'mem',x:83.3,y:92,ph:'?',name:'고무 막 =',answer:'가로막',hints:['아래로 당기면 컵 속 공간이 넓어져요.','가슴과 배를 나누는 근육이에요.']}],
+   render:()=>`<div class="svg-board" style="max-width:460px">${modelBoardSVG()}</div>`,
+   summary:'컵 = <b>갈비뼈</b>, 빨대 = <b>숨관·숨관가지</b>, 작은 고무풍선 = <b>허파</b>, 고무 막 = <b>가로막</b>, 컵 속 공간 = <b>흉강</b>'},
+  {short:'들숨·날숨 표',title:'판 3 · 들숨과 날숨 분석표 채우기',desc:'표 채우기형 — 같은 문구 스티커가 두 장씩 있어요. (교과서 224쪽 분석해 보기)',color:'c4',type:'table',
+   stickers:['올라간다','올라간다','내려간다','내려간다','커진다','작아진다','낮아진다','높아진다','몸 밖 → 허파','허파 → 몸 밖','변화 없다','허파가 스스로 부푼다'],
+   rows:[['갈비뼈','rib',['올라간다','내려간다'],['들숨 때 가슴이 넓어지려면 갈비뼈는?','①모형에서 컵을 올렸을 때를 떠올려요.']],
+         ['가로막','dia',['내려간다','올라간다'],['들숨 때 배가 살짝 나와요.','가로막이 수축하면 내려가요.']],
+         ['흉강 부피','vol',['커진다','작아진다'],['갈비뼈↑ 가로막↓이면 가슴 속 공간은?','날숨은 들숨과 반대예요.']],
+         ['허파 내부 압력','pre',['낮아진다','높아진다'],['부피가 커지면 압력은? (1학년 기체의 성질)','공기는 압력이 높은 곳 → 낮은 곳으로 이동해요.']],
+         ['공기 이동','air',['몸 밖 → 허파','허파 → 몸 밖'],['들숨은 공기가 들어오는 것!','날숨은 공기가 나가는 것!']]],
+   render(){ return `<div class="tbl-wrap"><table class="tbl" style="min-width:360px"><thead><tr><th>구분</th><th>🌬️ 들숨</th><th>💨 날숨</th></tr></thead><tbody>${this.rows.map(r=>`<tr><th>${r[0]}</th><td><div class="slot" id="slot-2-${r[1]}In"></div></td><td><div class="slot" id="slot-2-${r[1]}Out"></div></td></tr>`).join('')}</tbody></table></div>`; },
+   summary:'들숨: <b>갈비뼈↑ 가로막↓ → 흉강·허파 부피↑ → 압력↓ → 공기 들어옴</b>. 날숨은 정반대예요!'},
+  {short:'기체 교환',title:'판 4 · 기체 교환 관계도 완성하기',desc:'관계도형 — 화살표 방향으로 이동하는 기체와 이동 원리를 붙여요.',color:'c2',type:'gx',
+   stickers:['산소','산소','이산화 탄소','이산화 탄소','확산','질소','근육의 힘'],
+   slots:[{id:'a1',name:'허파꽈리 → 모세혈관',answer:'산소',hints:['숨을 들이쉬어 허파꽈리에 많아진 기체예요.','허파꽈리 쪽 농도가 더 높은 기체예요.']},
+          {id:'a2',name:'모세혈관 → 허파꽈리',answer:'이산화 탄소',hints:['혈액이 온몸에서 모아 온 기체예요.','날숨으로 내보내는 기체예요.']},
+          {id:'b1',name:'모세혈관 → 조직세포',answer:'산소',hints:['세포가 계속 써서 세포 속에 적은 기체예요.','혈액이 허파에서 받아 온 기체예요.']},
+          {id:'b2',name:'조직세포 → 모세혈관',answer:'이산화 탄소',hints:['세포의 생명활동으로 생기는 기체예요.','혈액이 받아서 허파로 가져가요.']},
+          {id:'p',name:'이동 원리',answer:'확산',hints:['농도가 높은 곳 → 낮은 곳으로 퍼지는 현상이에요.','향수 냄새가 방에 퍼지는 것과 같아요.']}],
+   render:()=>`<div class="gx-grid">
+     <div class="gx-panel"><h4>(가) 허파꽈리에서</h4><div class="gx-row"><div class="gx-box alv">허파꽈리</div>
+       <div class="gx-arrows"><span class="arw">──▶</span><div class="slot" id="slot-3-a1"></div><div class="slot" id="slot-3-a2"></div><span class="arw">◀──</span></div><div class="gx-box cap">모세혈관</div></div></div>
+     <div class="gx-panel"><h4>(나) 조직세포에서</h4><div class="gx-row"><div class="gx-box cap">모세혈관</div>
+       <div class="gx-arrows"><span class="arw">──▶</span><div class="slot" id="slot-3-b1"></div><div class="slot" id="slot-3-b2"></div><span class="arw">◀──</span></div><div class="gx-box cell">조직세포</div></div></div></div>
+     <div class="gx-principle">기체가 이동하는 원리 👉 <div class="slot" id="slot-3-p"></div></div>`,
+   summary:'허파꽈리 → 모세혈관: <b>산소</b>, 모세혈관 → 허파꽈리: <b>이산화 탄소</b> / 모세혈관 → 조직세포: <b>산소</b>, 조직세포 → 모세혈관: <b>이산화 탄소</b>. 원리는 <b>확산</b>!'}
+];
+// 판 3 슬롯 생성
+BOARDS[2].slots=[]; BOARDS[2].rows.forEach(r=>{ BOARDS[2].slots.push({id:r[1]+'In',name:r[0]+' · 들숨',answer:r[2][0],ph:'?',hints:r[3]}); BOARDS[2].slots.push({id:r[1]+'Out',name:r[0]+' · 날숨',answer:r[2][1],ph:'?',hints:r[3]}); });
+BOARDS[0].slots.forEach(s=>s.name=s.ph+'번 칸');
+
+const STK={cur:0,boards:[]}; let picked=null;
+function stkLoad(){ const s=lsGet('stk',null); STK.boards=BOARDS.map((b,i)=>Object.assign({placed:{},ok:{},tries:0,done:false,hint:{}},(s&&s.boards&&s.boards[i])||{})); STK.cur=s&&s.cur?s.cur:0; }
+function stkSave(){ lsSet('stk',{cur:STK.cur,boards:STK.boards}); }
+function unlocked(i){ return i===0||STK.boards[i-1].done; }
+function renderBoardTabs(){
+  $('boardTabs').innerHTML=BOARDS.map((b,i)=>`<button class="board-tab${i===STK.cur?' active':''}${unlocked(i)?'':' locked'}${STK.boards[i].done?' done':''}" data-b="${i}">${unlocked(i)?'':'<span class="lk">🔒</span>'}${i+1}. ${b.short}</button>`).join('');
+  $('boardTabs').querySelectorAll('.board-tab').forEach(t=>t.addEventListener('click',()=>{ const i=+t.dataset.b; if(!unlocked(i)){ sfx('wrong'); toast('🔒 앞 판을 먼저 완성해요'); return; } picked=null; STK.cur=i; stkSave(); sfx('tap'); renderBoardFrame(); }));
+}
+function renderBoardFrame(){
+  const b=BOARDS[STK.cur], bi=STK.cur;
+  renderBoardTabs(); $('boardTitle').textContent=b.title; $('boardDesc').textContent=b.desc;
+  let html=b.render();
+  if(b.type==='svg'){ html=html.replace('</div>',b.slots.map(s=>`<div class="slot abs" id="slot-${bi}-${s.id}" style="left:${s.x}%;top:${s.y}%"></div>`).join('')+'</div>'); }
+  $('stkBoard').innerHTML=html; $('stkMsg').innerHTML='<span class="trap-note">⚠️ 함정 스티커는 어디에도 붙이지 않아야 정답이에요.</span>';
+  const bd=$('stkBoard'); bd.classList.remove('rise-in'); void bd.offsetWidth; bd.style.animation='riseIn .45s both';
+  renderDone(false); renderStickers();
+}
+function stLabel(sid){ const [bi,i]=sid.split('-').map(Number); return BOARDS[bi].stickers[i]; }
+function renderStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi];
+  const used=new Set(Object.values(st.placed));
+  const tray=$('stkTray'); tray.innerHTML='<div class="tray-lbl">🗂️ 스티커 보관함 — 하나를 골라 빈칸을 눌러요</div>';
+  b.stickers.forEach((lab,i)=>{ const sid=bi+'-'+i; if(used.has(sid)) return;
+    const s=document.createElement('button'); s.className='sticker '+b.color+(picked===sid?' picked wiggle':''); s.dataset.sid=sid; s.style.setProperty('--tilt',(((i*7)%5)-2)*1.3+'deg'); s.textContent=lab;
+    s.addEventListener('click',()=>{ if(st.done) return; picked=picked===sid?null:sid; sfx(picked?'pick':'tap'); renderStickers(); });
+    tray.appendChild(s); });
+  if(tray.children.length===1) tray.insertAdjacentHTML('beforeend','<span class="muted">보관함이 비었어요</span>');
+  b.slots.forEach(sl=>{
+    const el=$('slot-'+bi+'-'+sl.id); if(!el) return; const sid=st.placed[sl.id], ok=!!st.ok[sl.id];
+    el.classList.toggle('ready',!!picked&&!ok); el.classList.toggle('ok',ok); el.innerHTML='';
+    if(sid){ const s=document.createElement('button'); s.className='sticker '+b.color; s.textContent=stLabel(sid);
+      s.addEventListener('click',e=>{ e.stopPropagation(); if(ok||st.done){ sfx('tap'); return; } if(picked){ place(sl.id); return; } delete st.placed[sl.id]; sfx('peel'); stkSave(); renderStickers(); });
+      el.appendChild(s); }
+    else el.innerHTML=`<span class="slot-num">${sl.ph||'?'}</span>`;
+    el.onclick=()=>{ if(ok||st.done) return; if(!picked){ sfx('tap'); toast('👇 먼저 보관함에서 스티커를 골라요'); return; } place(sl.id); };
+  });
+  $('stkCount').textContent=Object.keys(st.placed).length+' / '+b.slots.length; $('stkTry').textContent=st.tries;
+  $('stkCheck').disabled=st.done;
+}
+function place(slId){
+  const bi=STK.cur, st=STK.boards[bi]; const src=document.querySelector(`#stkTray .sticker[data-sid="${picked}"]`); const r0=src?src.getBoundingClientRect():null;
+  st.placed[slId]=picked; picked=null; sfx('stick'); stkSave(); renderStickers();
+  const dst=$('slot-'+bi+'-'+slId).querySelector('.sticker');
+  if(r0&&dst&&!REDUCED){ const r1=dst.getBoundingClientRect(); dst.style.transition='none'; dst.style.transform=`translate(${r0.left-r1.left}px,${r0.top-r1.top}px) scale(1.15) rotate(-6deg)`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ dst.style.transition='transform .42s cubic-bezier(.2,1.35,.4,1)'; dst.style.transform=''; })); }
+}
+function checkStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi]; if(st.done) return;
+  st.tries++; let wrong=0, empty=0, newOk=0; const msgs=[];
+  b.slots.forEach(sl=>{
+    if(st.ok[sl.id]) return; const el=$('slot-'+bi+'-'+sl.id), sid=st.placed[sl.id];
+    if(!sid){ empty++; return; }
+    if(stLabel(sid)===sl.answer){ st.ok[sl.id]=true; newOk++; setTimeout(()=>burstAt(el,{count:14,speed:5,size:6}),newOk*90); }
+    else { wrong++; el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); st.hint[sl.id]=Math.min((st.hint[sl.id]||0)+1,sl.hints.length);
+      msgs.push(`<span class="h">💡 <b>${sl.name}</b> — ${sl.hints[st.hint[sl.id]-1]}</span>`);
+      setTimeout(()=>{ if(st.placed[sl.id]===sid) delete st.placed[sl.id]; el.classList.remove('no'); stkSave(); renderStickers(); },850); }
+  });
+  const allOk=b.slots.every(sl=>st.ok[sl.id]);
+  if(allOk){ st.done=true; stkSave(); renderStickers(); $('stkMsg').innerHTML=''; setTimeout(()=>renderDone(true),350); }
+  else {
+    if(wrong){ sfx('wrong'); if(newOk) setTimeout(()=>sfx('correct'),250); }
+    else if(newOk) sfx('correct'); else sfx('tap');
+    let m=''; if(newOk) m+=`<span style="color:#12a874;font-weight:800">✔ ${newOk}칸 정답!</span> `;
+    if(wrong) m+=`<span style="color:#e5484d;font-weight:800">✖ ${wrong}칸은 다시 생각해 봐요.</span>`;
+    if(empty) m+=` <span class="muted">빈칸이 ${empty}개 남았어요.</span>`;
+    $('stkMsg').innerHTML=m+msgs.join(''); stkSave(); renderStickers();
+  }
+}
+function renderDone(fx){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi], next=bi<BOARDS.length-1, all=STK.boards.every(x=>x.done);
+  $('stkDone').innerHTML=st.done?`<div class="complete-banner"><div class="stamp">완성!</div><h3 style="margin:0 0 6px">🎉 ${b.short} 정리판 완성!</h3><p>${b.summary}</p><p class="muted">시도 ${st.tries}회 · 이 정리판이 바로 나의 개념 정리 노트예요 📒</p></div>`:'';
+  $('stkNext').classList.toggle('hidden',!(st.done&&next&&!all)); $('stkToLife').classList.toggle('hidden',!(all||(st.done&&!next)));
+  if(st.done&&fx){ sfx('fanfare'); setTimeout(()=>sfx('stamp'),180); fireworks(); renderBoardTabs();
+    if(next){ setTimeout(()=>{ sfx('unlock'); const t=$('boardTabs').children[bi+1]; if(t){ t.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:600,easing:'cubic-bezier(.3,1.6,.5,1)'}); burstAt(t,{count:20,speed:6}); } toast('🔓 다음 판이 열렸어요!'); },900); }
+    if(all) setTimeout(()=>toast('🏅 스티커 정리판 4개를 모두 완성했어요!'),1300);
+  }
+}
+
+/* ============ 실생활 ============ */
+const LIFE=[
+  ['😖','딸꾹질은 왜 날까?','갑자기 "딸꾹!" 소리가 나며 멈추지 않을 때가 있어요.','가로막이 갑자기 경련하듯 <b>수축</b>하면 공기가 확 들어오다가 성대가 닫히면서 소리가 나요.','가로막의 움직임 = 들숨'],
+  ['🫸','하임리히법','음식물이 목에 걸린 사람의 명치 아래(배)를 뒤에서 감싸 세게 밀어 올려요.','배를 밀어 올리면 가로막이 위로 올라가 흉강과 허파의 부피가 확 줄고 <b>압력이 높아져</b> 공기가 세게 나가면서 이물질이 밀려 나와요.','날숨의 원리'],
+  ['🏫','교실 환기','쉬는 시간마다 창문을 열어 환기하라고 해요.','사람이 많으면 호흡으로 공기 중 <b>산소 농도는 낮아지고 이산화 탄소 농도는 높아져</b> 답답하고 졸려요.','교과서 225쪽 스스로 확인하기'],
+  ['👃','입보다 코로 숨쉬기','코로 숨을 쉬는 것이 몸에 더 좋다고 해요.','콧속의 털과 점액이 <b>먼지와 세균을 거르고</b>, 차고 건조한 공기를 <b>따뜻하고 축축하게</b> 만들어 줘요.','코의 기능'],
+  ['🏃','달리기 후 숨이 가빠요','운동장을 달리고 나면 숨을 헐떡이게 돼요.','근육 세포가 에너지를 많이 쓰면서 <b>산소를 많이 쓰고 이산화 탄소를 많이</b> 만들어요. 그래서 더 빠르고 깊게 숨을 쉬어요.','조직세포에서의 기체 교환'],
+  ['❄️','겨울철 하얀 입김','추운 날 숨을 내쉬면 하얀 김이 보여요.','날숨 속 <b>수증기</b>가 차가운 바깥 공기를 만나 작은 물방울로 <b>액화</b>해서 보이는 거예요. (1학년 상태 변화와 연결!)','날숨의 성분'],
+  ['🎺','관악기 연주와 복식호흡','관악기 연주자나 가수는 배로 숨을 쉬는 연습을 해요.','<b>가로막</b>을 크게 내려 많은 공기를 들이쉬고, 천천히 올리며 길게 내쉬어 소리를 오래 유지해요.','가로막과 허파 부피 변화'],
+  ['🏔️','높은 산에서 숨이 차요','높은 산에 오르면 조금만 걸어도 숨이 차요.','높은 곳은 공기가 희박해 허파꽈리의 산소 농도가 낮아져요. 농도 차가 작으면 <b>확산되는 산소가 줄어들어요</b>. <span class="badge ext">확장</span>','확산은 농도 차로 일어난다']
+];
+function buildLife(){
+  $('lifeGrid').innerHTML=LIFE.map((l,i)=>`<div class="life-card rise-in" style="--i:${i}"><span class="ic">${l[0]}</span><h3>${l[1]}</h3><p style="margin:0">${l[2]}</p><div class="more">👆 왜 그럴까?</div><div class="why"><p style="color:var(--color-text)">${l[3]}</p><span class="link-tag">🔗 ${l[4]}</span></div></div>`).join('');
+  $('lifeGrid').querySelectorAll('.life-card').forEach(c=>c.addEventListener('click',()=>{ if(c.classList.contains('open')) return; c.classList.add('open'); sfx('pop'); burstAt(c.querySelector('.ic'),{count:12,speed:5,size:6});
+    if($('lifeGrid').querySelectorAll('.life-card.open').length===LIFE.length){ setTimeout(()=>{ sfx('combo'); toast('🌟 생활 속 호흡 카드를 모두 열었어요!'); burstAt($('toQuiz'),{count:30,speed:8}); },400); } }));
+}
+
+/* ============ 개념 확인 10문항 ============ */
+const QUIZ=[
+  {type:'개념 이해',q:'공기가 몸 밖에서 허파꽈리까지 이동하는 경로로 옳은 것은?',opts:['코 → 숨관 → 숨관가지 → 허파꽈리','코 → 숨관가지 → 숨관 → 허파꽈리','코 → 허파꽈리 → 숨관 → 숨관가지','입 → 식도 → 숨관 → 허파꽈리'],exp:'공기는 <b>코 → 숨관 → 숨관가지 → 허파꽈리</b> 순서로 이동해요. 식도는 음식물이 지나가는 소화계 기관이에요.'},
+  {type:'개념 이해',q:'허파가 수많은 허파꽈리로 이루어져 있어서 좋은 점은?',opts:['공기와 닿는 표면적이 넓어 기체 교환이 효율적으로 일어난다.','허파꽈리가 근육이라 스스로 수축할 수 있다.','공기가 허파에 머무르지 않고 바로 나가게 한다.','혈액이 허파꽈리 속으로 직접 들어갈 수 있다.'],exp:'작은 주머니로 많이 나뉠수록 <b>표면적이 넓어져</b> 모세혈관과의 기체 교환이 잘 일어나요. (개념 ② 겉넓이 실험)'},
+  {type:'오개념 확인',q:'허파에 대한 설명으로 옳은 것은?',opts:['근육이 없어 스스로 수축하거나 이완하지 못한다.','스스로 수축과 이완을 하여 호흡운동을 한다.','배 속에 있으며 가로막 아래쪽에 있다.','숨관가지 없이 숨관과 바로 연결된다.'],exp:'허파는 <b>근육이 없어요</b>. 갈비뼈와 가로막이 흉강의 부피를 바꿔야 허파가 커지거나 작아져요. 허파는 가로막 위, 흉강 속에 있어요.'},
+  {type:'적용',q:'숨을 들이쉴 때 갈비뼈와 가로막의 움직임으로 옳은 것은?',opts:['갈비뼈는 올라가고, 가로막은 내려간다.','갈비뼈는 내려가고, 가로막은 올라간다.','갈비뼈와 가로막이 모두 올라간다.','갈비뼈와 가로막이 모두 내려간다.'],exp:'들숨 때 <b>갈비뼈는 올라가고 가로막은 내려가서</b> 흉강이 넓어져요. 날숨은 반대예요.'},
+  {type:'자료 해석',q:'표는 들숨이 일어날 때의 변화를 정리한 것이다. (가)~(다)에 알맞은 것은?',fig:`<div class="tbl-wrap"><table class="tbl" style="min-width:300px"><tr><th>흉강 부피</th><th>허파 내부 압력</th><th>공기 이동</th></tr><tr><td>(가)</td><td>(나)</td><td>(다)</td></tr></table></div>`,
+   opts:['(가) 커진다 (나) 낮아진다 (다) 몸 밖 → 허파','(가) 커진다 (나) 높아진다 (다) 몸 밖 → 허파','(가) 작아진다 (나) 높아진다 (다) 허파 → 몸 밖','(가) 작아진다 (나) 낮아진다 (다) 몸 밖 → 허파'],exp:'흉강 부피가 <b>커지면</b> 허파 부피도 커지고 허파 속 압력이 <b>낮아져</b> 공기가 <b>몸 밖 → 허파</b>로 들어와요. (② 분석표, 스티커 판 3)'},
+  {type:'모형 · 스티커 연계',q:'호흡운동 모형에서 작은 고무풍선과 고무 막은 우리 몸의 어느 부분에 해당하는가?',opts:['허파, 가로막','갈비뼈, 허파','숨관, 가로막','허파, 갈비뼈'],exp:'작은 고무풍선 = <b>허파</b>, 고무 막 = <b>가로막</b>이에요. 플라스틱 컵은 갈비뼈, 빨대는 숨관·숨관가지, 컵 속 공간은 흉강이에요.'},
+  {type:'가상실험 결과',q:'가상실험에서 고무찰흙 틈이 있는 모형은 틈을 막은 모형보다 작은 고무풍선이 덜 부풀었다. 그 까닭으로 옳은 것은?',opts:['틈으로 바깥 공기가 컵 속으로 들어와 컵 속 압력이 덜 낮아지기 때문이다.','빨대로 공기가 더 많이 들어오기 때문이다.','고무 막이 더 많이 늘어나기 때문이다.','작은 고무풍선이 스스로 수축하기 때문이다.'],exp:'틈이 있으면 컵 속(흉강)으로 바깥 공기가 새어 들어와 <b>압력이 덜 낮아져요</b>. 그래서 풍선(허파)으로 들어오는 공기가 줄어요. 흉강이 닫힌 공간이어야 하는 이유예요.'},
+  {type:'개념 이해',q:'기체 교환에 대한 설명으로 옳은 것은?',opts:['조직세포에서 산소는 모세혈관 → 조직세포로 이동한다.','허파꽈리에서 산소는 모세혈관 → 허파꽈리로 이동한다.','조직세포에서 이산화 탄소는 모세혈관 → 조직세포로 이동한다.','기체는 농도가 낮은 곳에서 높은 곳으로 이동한다.'],exp:'산소는 <b>허파꽈리 → 모세혈관 → 조직세포</b>, 이산화 탄소는 <b>조직세포 → 모세혈관 → 허파꽈리</b>로 이동해요. 기체는 농도가 높은 곳 → 낮은 곳으로 확산해요.'},
+  {type:'가상실험 결과',q:'기체 교환 가상실험에서 \'숨쉬기·혈액 흐름 유지\'를 끄고 오래 두었더니 산소의 알짜 이동이 거의 멈추었다. 그 까닭은?',opts:['양쪽의 산소 농도가 같아져 농도 차가 없어졌기 때문이다.','산소 입자가 움직임을 멈추었기 때문이다.','벽이 막혀 입자가 지나갈 수 없게 되었기 때문이다.','이산화 탄소가 산소를 모두 밀어냈기 때문이다.'],exp:'입자는 계속 움직이지만 <b>농도가 같아지면</b> 양쪽으로 오가는 수가 같아 알짜 이동이 없어져요. 그래서 숨쉬기와 혈액 순환으로 농도 차를 계속 유지해야 해요.'},
+  {type:'통합 · 실생활',q:'사람이 많이 모여 있는 교실에서 환기를 자주 해야 하는 까닭으로 옳은 것은?',opts:['호흡으로 공기 중 산소 농도는 낮아지고 이산화 탄소 농도는 높아지기 때문이다.','호흡으로 공기 중 산소 농도가 높아지기 때문이다.','날숨에는 산소가 전혀 들어 있지 않기 때문이다.','이산화 탄소가 허파꽈리에서 만들어지기 때문이다.'],exp:'사람들이 숨을 쉬면 산소는 줄고 이산화 탄소는 늘어나요. 날숨에도 산소가 들어 있고, 이산화 탄소는 <b>조직세포</b>에서 만들어져요.'}
+];
+let qz=null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(list,retry){ qz={list:shuffle(list||QUIZ.map((_,i)=>i)),i:0,score:0,wrong:[],t0:Date.now(),answered:false,streak:0,retry:!!retry,done:false}; if(cur!==5) goTo(5); renderQuestion(); }
+function renderQuestion(){
+  const qi=qz.list[qz.i], q=QUIZ[qi]; qz.answered=false; qz.order=shuffle(q.opts.map((_,i)=>i));
+  $('qNum').textContent=(qz.i+1)+' / '+qz.list.length; $('qBar').style.width=(qz.i/qz.list.length*100)+'%';
+  const card=$('qCard'); card.classList.remove('q-card'); void card.offsetWidth; card.classList.add('q-card');
+  card.innerHTML=`<span class="q-type">${q.type}</span>${qz.retry?' <span class="q-type" style="background:#fff0e2;color:#b35300">다시 풀기</span>':''}<div class="q-text">Q${qz.i+1}. ${q.q}</div>${q.fig?`<div class="q-fig">${q.fig}</div>`:''}
+    <div id="opts">${qz.order.map((oi,k)=>`<button class="opt" data-oi="${oi}"><span class="n">${'①②③④'[k]}</span><span>${q.opts[oi]}</span></button>`).join('')}</div><div id="fb"></div>`;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  $('qNext').classList.add('hidden');
+}
+function answer(btn){
+  if(qz.answered) return; qz.answered=true;
+  const qi=qz.list[qz.i], q=QUIZ[qi], ok=+btn.dataset.oi===0;
+  $('qCard').querySelectorAll('.opt').forEach(b=>{ if(+b.dataset.oi===0) b.classList.add('correct'); });
+  if(ok){ qz.score++; qz.streak++; sfx(qz.streak>=3?'combo':'correct'); burstAt(btn,{count:qz.streak>=3?60:34,speed:qz.streak>=3?11:8});
+    const r=btn.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,qz.streak>=3?`🔥 ${qz.streak}연속!`:'정답! +1',qz.streak>=3?'#ff6a00':'#12a874');
+    const cb=$('combo'); cb.textContent=qz.streak>=2?`🔥 ${qz.streak}연속`:''; cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump');
+  } else { qz.streak=0; btn.classList.add('wrong'); sfx('wrong'); qz.wrong.push(qi); $('combo').textContent=''; if(navigator.vibrate) try{navigator.vibrate(80);}catch(e){} }
+  $('fb').innerHTML=`<div class="feedback ${ok?'ok':'no'}"><b class="big">${ok?'⭕ 정답이에요!':'❌ 아쉬워요! 정답은 초록색 보기예요.'}</b><br>${q.exp}</div>`;
+  $('qBar').style.width=((qz.i+1)/qz.list.length*100)+'%';
+  const nb=$('qNext'); nb.textContent=qz.i===qz.list.length-1?'결과 보기 🏁':'다음 문제 →'; nb.classList.remove('hidden');
+  setTimeout(()=>{ const r=$('fb').getBoundingClientRect(); if(r.bottom>innerHeight) window.scrollBy({top:r.bottom-innerHeight+90,behavior:'smooth'}); },60);
+}
+function nextQ(){ sfx('tap'); if(qz.i<qz.list.length-1){ qz.i++; renderQuestion(); window.scrollTo(0,0); } else showResult(); }
+function showResult(){
+  qz.done=true; const total=qz.list.length, sc=qz.score, rate=sc/total, sec=Math.round((Date.now()-qz.t0)/1000);
+  goTo(6);
+  const stars=rate>=.9?3:rate>=.7?2:rate>=.4?1:0;
+  $('trophy').textContent=rate>=.9?'🏆':rate>=.7?'🥈':'💪';
+  $('trophy').style.animation='none'; void $('trophy').offsetWidth; $('trophy').style.animation='';
+  [...$('stars').children].forEach((s,i)=>{ s.classList.remove('on'); if(i<stars) setTimeout(()=>{ s.classList.add('on'); sfx('pop'); burstAt(s,{count:14,speed:6,shapes:['s'],colors:['#ffd43b','#ffb238']}); },500+i*320); });
+  $('scoreBig').parentElement.nextElementSibling; $('scoreBig').nextElementSibling.textContent=' / '+total;
+  let n=0; const el=$('scoreBig'); el.textContent='0'; const tm=setInterval(()=>{ if(n>=sc){ clearInterval(tm); return; } n++; el.textContent=n; sfx('tick'); },110);
+  $('resultMsg').textContent=qz.retry?`틀렸던 ${total}문제 중 ${sc}문제를 맞혔어요!`:rate===1?'완벽해요! 호흡 박사 인정! 🎉':rate>=.8?'아주 잘했어요! 호흡의 원리를 잘 이해했어요.':rate>=.5?'좋아요! 틀린 문제를 다시 풀어 보면 완벽해질 거예요.':'괜찮아요! 개념과 가상실험을 다시 보고 도전해 봐요.';
+  $('resultTime').textContent=`⏱ 걸린 시간 ${Math.floor(sec/60)}분 ${sec%60}초`;
+  $('wrongBox').innerHTML=qz.wrong.length?'<h3>📌 틀린 문제</h3>'+qz.wrong.map(qi=>`<p style="color:var(--color-text)">• ${QUIZ[qi].q}<br><span class="muted">정답: ${QUIZ[qi].opts[0]}</span></p>`).join(''):'<h3>🎯 틀린 문제가 없어요!</h3><p>모든 문제를 맞혔어요.</p>';
+  $('retryWrong').classList.toggle('hidden',!qz.wrong.length);
+  setTimeout(()=>{ if(rate>=.8){ sfx('fanfare'); fireworks(); } else { sfx('correct'); confetti(innerWidth/2,innerHeight*.3,{count:50,speed:9}); } },350);
+}
+
+/* ============ 시작 ============ */
+function init(){
+  // 배경 방울
+  const bb=$('bgBubbles'); for(let i=0;i<14;i++){ const s=document.createElement('span'); const z=14+Math.random()*46; s.style.width=s.style.height=z+'px'; s.style.left=Math.random()*100+'%'; s.style.animationDuration=(14+Math.random()*16)+'s'; s.style.animationDelay=(-Math.random()*20)+'s'; s.style.opacity=.35+Math.random()*.4; bb.appendChild(s); }
+  FX.cv=$('fx'); FX.ctx=FX.cv.getContext('2d'); fxResize(); addEventListener('resize',fxResize);
+  // 효과음 버튼
+  const sb=$('soundBtn'); const upd=()=>{ sb.textContent=SND.on?'🔊':'🔇'; }; upd();
+  sb.addEventListener('click',()=>{ SND.on=!SND.on; lsSet('sound',SND.on); upd(); if(SND.on) sfx('correct'); toast(SND.on?'🔊 효과음 켜짐':'🔇 효과음 꺼짐'); });
+  // 버튼 물결 효과
+  document.addEventListener('pointerdown',e=>{ const b=e.target.closest('.btn'); if(!b||b.disabled) return; const r=b.getBoundingClientRect(), z=Math.max(r.width,r.height); const s=document.createElement('span'); s.className='ripple'; s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px'; b.appendChild(s); setTimeout(()=>s.remove(),650); });
+  document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ goTo(+g.dataset.go); return; } const t=e.target.closest('[data-tabgo]'); if(t){ setTab(t.dataset.tabgo); } });
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+  // 기록 자동 저장
+  document.querySelectorAll('[data-save]').forEach(t=>{ const k=t.dataset.save; t.value=lsGet('note-'+k,''); let tm=null;
+    t.addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(()=>{ lsSet('note-'+k,t.value); const s=$('saved-'+k); if(s){ s.textContent='저장됨 ✓'; setTimeout(()=>s.textContent='',1500); } },400); }); });
+  document.querySelectorAll('[data-save-check]').forEach(c=>{ const k='chk-'+c.dataset.saveCheck; c.checked=!!lsGet(k,false); c.addEventListener('change',()=>{ lsSet(k,c.checked); if(c.checked){ sfx('pop'); burstAt(c,{count:12,speed:5,size:6}); if([...document.querySelectorAll('[data-save-check]')].every(x=>x.checked)){ sfx('combo'); toast('✅ 학습목표를 모두 달성했어요!'); } } }); });
+  // 도입
+  $('startBtn').addEventListener('click',()=>{ goTo(1); });
+  const pg=lsGet('progress',0); if(pg>0){ $('resumeBtn').classList.remove('hidden'); $('resumeBtn').addEventListener('click',()=>goTo(pg)); }
+  $('thinkAnsBtn').addEventListener('click',()=>{ const a=$('thinkAns'); const h=a.classList.toggle('hidden'); sfx('tap'); $('thinkAnsBtn').textContent=h?'예시 답안 보기':'예시 답안 숨기기'; });
+  let guiding=false;
+  $('breathGuideBtn').addEventListener('click',()=>{ if(guiding) return; guiding=true; const ball=$('breathBall'); let k=0;
+    const step=()=>{ if(k>=6){ ball.textContent='잘했어요!'; ball.style.transform='scale(.85)'; sfx('correct'); burstAt(ball,{count:30,speed:7}); guiding=false; return; }
+      const inn=k%2===0; ball.style.transform=inn?'scale(1.12)':'scale(.7)'; ball.textContent=inn?'들이쉬기':'내쉬기'; sfx(inn?'inhale':'exhale'); k++; setTimeout(step,inn?3200:3400); };
+    step(); });
+  // 각 모듈
+  buildConcepts(); buildModel(); buildChest(); buildGas(); buildLife(); stkLoad();
+  $('stkCheck').addEventListener('click',checkStickers);
+  $('stkReset').addEventListener('click',()=>{ const st=STK.boards[STK.cur]; Object.assign(st,{placed:{},ok:{},tries:0,done:false,hint:{}}); picked=null; stkSave(); sfx('peel'); renderBoardFrame(); });
+  $('stkNext').addEventListener('click',()=>{ if(STK.cur<BOARDS.length-1){ STK.cur++; picked=null; stkSave(); sfx('unlock'); renderBoardFrame(); window.scrollTo(0,0); } });
+  $('toQuiz').addEventListener('click',()=>{ startQuiz(); });
+  $('qNext').addEventListener('click',nextQ);
+  $('retryWrong').addEventListener('click',()=>startQuiz(qz.wrong.slice(),true));
+  $('retryAll').addEventListener('click',()=>startQuiz());
+  enterHooks[2]=()=>{ setTab(curTab); };
+  enterHooks[3]=()=>{ renderBoardFrame(); };
+  enterHooks[5]=()=>{ if(!qz||qz.done) startQuiz(); };
+  enterHooks[1]=()=>{ if(visible($('areaCv'))) drawArea(); };
+  curTab=lsGet('tab','plan');
+  goTo(0);
+}
+init();
+</script>
+</body>
+</html>
