@@ -1,0 +1,7 @@
+labs/*/raw/
+labs/*/voice/
+labs/*/fr/
+labs/*/*.wav
+labs/*/*.mp4
+labs/*/sheet.jpg
+labs/*/timeline.json
