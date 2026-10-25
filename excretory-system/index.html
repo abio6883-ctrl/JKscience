@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>배설계의 구조와 기능 가상실험실</title>
+<style>
+:root{
+  --color-primary:#3361e8;
+  --color-primary-dark:#1f43b8;
+  --color-secondary:#0fb59b;
+  --color-accent:#ff8a3d;
+  --color-bg:#f1f0ff;
+  --color-surface:#ffffff;
+  --color-text:#1b1d4a;
+  --color-text-light:#5a5f80;
+  --color-success:#12a874;
+  --color-error:#e5484d;
+  --art:#e03131;
+  --ven:#4263eb;
+  --kid:#c2255c;
+  --urine:#f5b700;
+  --filt:#7048e8;
+  --reab:#12b886;
+  --sec:#f76707;
+  --line:#e2e3f3;
+  --radius:20px;
+  --shadow:0 10px 30px rgba(60,40,140,.10);
+  --shadow-s:0 4px 12px rgba(60,40,140,.10);
+  --font:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;font-family:var(--font);color:var(--color-text);}
+body{overflow-x:hidden;background:radial-gradient(1200px 600px at 10% -10%,#dfe8ff 0,transparent 60%),radial-gradient(900px 500px at 110% 10%,#d9fbf3 0,transparent 55%),var(--color-bg);min-height:100vh;}
+button{font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#bgBubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+#bgBubbles span{position:absolute;bottom:-80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(120,170,255,.25) 60%,rgba(120,170,255,.05));animation:rise linear infinite;}
+@keyframes rise{to{transform:translateY(-120vh) translateX(30px);}}
+#fx{position:fixed;inset:0;width:100vw !important;height:100vh;pointer-events:none;z-index:9000;background:transparent !important;border-radius:0 !important;}
+#app{position:relative;z-index:1;max-width:980px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:12px 16px 70px;}
+/* 상단 바 */
+.topbar{position:sticky;top:0;z-index:50;margin:0 -16px 14px;padding:10px 16px 8px;background:rgba(238,243,255,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.topbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brand{font-weight:800;font-size:15px;color:var(--color-primary-dark);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brand i{font-style:normal;margin-right:4px;}
+.icon-btn{border:none;background:#fff;border-radius:14px;min-width:48px;height:48px;font-size:21px;box-shadow:var(--shadow-s);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.icon-btn:active{transform:scale(.92);}
+.step-indicator{display:flex;gap:6px;}
+.step-dot{flex:1;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:12px;color:var(--color-text-light);min-width:0;background:none;border:none;padding:0;min-height:40px;}
+.step-dot i{display:block;width:100%;height:8px;border-radius:5px;background:#d7e0f5;position:relative;overflow:hidden;}
+.step-dot i::after{content:'';position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--color-secondary),#3ad1b8);border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.step-dot.done i::after{width:100%;}
+.step-dot.active i::after{width:100%;background:linear-gradient(90deg,var(--color-primary),#6a8cff);}
+.step-dot.active{color:var(--color-primary);font-weight:800;}
+.step-dot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* 화면 전환 */
+.screen{display:none;flex:1;flex-direction:column;}
+.screen.active{display:flex;animation:screenIn .5s cubic-bezier(.2,.8,.2,1);}
+.screen.active.back{animation:screenInBack .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes screenIn{from{opacity:0;transform:translateX(40px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes screenInBack{from{opacity:0;transform:translateX(-40px) scale(.985);}to{opacity:1;transform:none;}}
+.screen.active .rise-in{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 80ms);}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+h1{font-size:clamp(28px,5.4vw,42px);margin:6px 0 8px;line-height:1.25;letter-spacing:-.02em;}
+h2{font-size:clamp(21px,3.6vw,27px);margin:0 0 10px;letter-spacing:-.01em;}
+h3{font-size:18px;margin:0 0 8px;}
+p{line-height:1.7;color:var(--color-text-light);margin:6px 0;}
+b,strong{color:var(--color-text);}
+.grad-text{background:linear-gradient(100deg,#2448d8,#3a8bff 45%,#13b8a0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.card{background:var(--color-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.7);}
+.btn{position:relative;overflow:hidden;border:none;border-radius:16px;padding:14px 24px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,#3d6cff,#2448d8);min-height:52px;box-shadow:0 6px 0 #1a37a3,0 10px 20px rgba(36,72,216,.25);transition:transform .12s,box-shadow .12s;}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1a37a3,0 4px 10px rgba(36,72,216,.2);}
+.btn.secondary{background:#fff;color:var(--color-primary);box-shadow:0 5px 0 #c6d3f5,0 8px 16px rgba(36,72,216,.08);}
+.btn.secondary:active{box-shadow:0 1px 0 #c6d3f5;}
+.btn.mint{background:linear-gradient(135deg,#21c9a9,#0d9e86);box-shadow:0 6px 0 #0a7a67,0 10px 20px rgba(13,158,134,.25);}
+.btn.small{padding:10px 16px;font-size:15px;min-height:48px;border-radius:14px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none;}
+.btn.secondary .ripple{background:rgba(51,97,232,.2);}
+@keyframes ripple{to{transform:scale(4);opacity:0;}}
+.pulse{animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 6px 0 #1a37a3,0 0 0 0 rgba(61,108,255,.45);}50%{box-shadow:0 6px 0 #1a37a3,0 0 0 14px rgba(61,108,255,0);}}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:20px;}
+.btn-row.center{justify-content:center;}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 10px;}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#e3eaff;color:var(--color-primary-dark);font-size:13px;font-weight:800;}
+.badge.teal{background:#d8f6ef;color:#0a7f6c;}
+.badge.ext{background:#fff0e2;color:#b35300;font-size:12px;padding:3px 9px;vertical-align:middle;}
+.muted{font-size:13px;color:var(--color-text-light);}
+.row{display:flex;gap:14px;flex-wrap:wrap;}
+.row>*{flex:1 1 300px;min-width:0;}
+.hidden{display:none !important;}
+.gas-o2{color:var(--o2);font-weight:800;}
+.gas-co2{color:var(--co2);font-weight:800;}
+/* 도입 */
+#screen-intro{text-align:center;}
+.unit-tag{display:inline-block;font-size:14px;font-weight:800;color:#0a7f6c;background:#d8f6ef;padding:6px 14px;border-radius:999px;}
+.hero{width:min(260px,62vw);margin:4px auto 0;}
+.hero svg{width:100%;height:auto;display:block;overflow:visible;}
+.hero .lungs{transform-origin:130px 70px;animation:breathe 4s ease-in-out infinite;}
+.hero .dia{animation:diaMove 4s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:scale(.94);}50%{transform:scale(1.06);}}
+@keyframes diaMove{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
+.hero .puff{animation:puff 4s ease-in-out infinite;transform-origin:130px 10px;}
+@keyframes puff{0%,40%{opacity:0;transform:translateY(-14px) scale(.6);}50%{opacity:1;}90%,100%{opacity:0;transform:translateY(40px) scale(1);}}
+.goal-list{text-align:left;max-width:600px;margin:14px auto;padding:0;list-style:none;}
+.goal-list li{background:var(--color-surface);border-radius:14px;padding:13px 14px 13px 50px;margin-bottom:9px;box-shadow:var(--shadow-s);position:relative;line-height:1.55;}
+.goal-list li::before{content:attr(data-n);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:640px;margin:12px auto;}
+.flow div{background:var(--color-surface);border-radius:14px;padding:8px 2px;font-size:12px;box-shadow:var(--shadow-s);font-weight:700;color:var(--color-text-light);}
+.flow div b{display:block;font-size:22px;margin-bottom:2px;}
+.think{max-width:640px;margin:12px auto;text-align:left;}
+.breath-guide{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:8px 0 12px;}
+.breath-ball{width:96px;height:96px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffffff,#8fc6ff 45%,#3361e8);box-shadow:0 10px 30px rgba(51,97,232,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;transform:scale(.7);transition:transform 4s ease-in-out;}
+/* 개념 */
+.core-idea{position:relative;overflow:hidden;background:linear-gradient(130deg,#2448d8,#3a8bff 55%,#13b8a0);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:0 14px 30px rgba(36,72,216,.28);}
+.core-idea::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{50%{transform:translate(-12px,14px) scale(1.08);}}
+.core-idea .lbl{font-size:13px;font-weight:800;opacity:.92;letter-spacing:.06em;}
+.core-idea p{color:#fff;font-size:18px;margin:6px 0 0;line-height:1.65;position:relative;z-index:1;}
+.core-idea b{color:#fff;background:rgba(255,255,255,.18);padding:0 4px;border-radius:6px;}
+.concept-card>.head{display:flex;align-items:center;gap:12px;cursor:pointer;min-height:52px;}
+.concept-card>.head .num{flex:none;width:38px;height:38px;border-radius:12px;background:#e3eaff;color:var(--color-primary);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.concept-card>.head strong{flex:1;font-size:17px;}
+.concept-card>.head .chev{transition:transform .3s;color:var(--color-text-light);font-size:18px;}
+.concept-card.open>.head .chev{transform:rotate(180deg);}
+.concept-card.seen>.head .num{background:var(--color-secondary);color:#fff;}
+.concept-card .concept-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1);}
+.concept-card.open .concept-body{grid-template-rows:1fr;}
+.concept-card .concept-body>div{overflow:hidden;}
+.concept-card .concept-body>div>*:first-child{margin-top:12px;}
+.analogy{background:#fff7ee;border-left:5px solid var(--color-accent);border-radius:12px;padding:11px 13px;margin:8px 0;font-size:15px;line-height:1.65;}
+.info-panel{background:#f1f5ff;border-radius:14px;padding:12px 14px;min-height:66px;font-size:15px;line-height:1.65;transition:background .3s;}
+.info-panel.flash{animation:flashBg .6s;}
+@keyframes flashBg{0%{background:#dce6ff;}100%{background:#f1f5ff;}}
+.info-panel b{color:var(--color-primary-dark);}
+.diagram-wrap{max-width:560px;margin:0 auto;position:relative;}
+.diagram-wrap svg{width:100%;height:auto;display:block;}
+svg .part{cursor:pointer;transition:filter .2s;}
+svg .part:hover{filter:brightness(1.06);}
+svg .part.sel{filter:drop-shadow(0 0 6px rgba(51,97,232,.9));}
+.tbl-wrap{overflow-x:auto;}
+table.tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:15px;min-width:420px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;text-align:center;vertical-align:middle;line-height:1.45;}
+table.tbl tr>*:last-child{border-right:none;}
+table.tbl tr:last-child>*{border-bottom:none;}
+table.tbl th{background:#eef3ff;}
+table.tbl td.rev{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#effcf8;font-weight:700;color:#0a6d5d;}
+table.tbl td.q{color:#a6b1cc;font-weight:800;}
+@keyframes popIn{0%{transform:scale(.4);opacity:0;}100%{transform:none;opacity:1;}}
+.myth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;}
+.myth{background:var(--color-surface);border-radius:16px;box-shadow:var(--shadow-s);padding:14px;cursor:pointer;min-height:110px;position:relative;}
+.myth .no{color:#b4232a;font-weight:800;margin-bottom:6px;line-height:1.5;}
+.myth .yes{color:#0a6d5d;line-height:1.6;font-size:15px;display:none;}
+.myth .tapme{font-size:13px;color:var(--color-text-light);}
+.myth.open .yes{display:block;animation:riseIn .45s both;}
+.myth.open .tapme{display:none;}
+.myth.open .no{text-decoration:line-through;text-decoration-color:rgba(180,35,42,.5);}
+.area-demo{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.area-demo canvas{flex:1 1 260px;max-width:340px;}
+.area-demo .area-ctrl{flex:1 1 220px;}
+.meter{height:16px;border-radius:9px;background:#e6ecf8;overflow:hidden;margin:4px 0 10px;}
+.meter>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#21c9a9,#3361e8);transition:width .4s cubic-bezier(.2,.8,.2,1);}
+/* 탐구 */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:10px;scrollbar-width:thin;}
+.tab{flex:none;border:none;border-radius:14px;padding:10px 15px;font-size:15px;font-weight:800;background:#fff;color:var(--color-text-light);min-height:48px;box-shadow:var(--shadow-s);transition:all .2s;}
+.tab.active{background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;transform:translateY(-1px);}
+.tabpane{display:none;}
+.tabpane.active{display:block;animation:riseIn .45s both;}
+.plan-step{display:flex;gap:12px;margin-bottom:12px;}
+.plan-step .k{flex:none;width:86px;font-weight:800;color:var(--color-primary);font-size:15px;padding-top:2px;}
+.plan-step .v{flex:1;line-height:1.65;color:var(--color-text);font-size:15px;min-width:0;}
+.plan-step ol{margin:0;padding-left:20px;}
+textarea,.inp{width:100%;border-radius:14px;border:1.5px solid #d3dcf0;padding:11px;font-family:var(--font);font-size:15px;resize:vertical;background:#fff;color:var(--color-text);transition:border .2s,box-shadow .2s;}
+textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 4px rgba(51,97,232,.15);}
+textarea{min-height:68px;}
+.saved{font-size:12px;color:var(--color-success);height:16px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.ctrl label{font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
+.ctrl label em{font-style:normal;color:var(--color-primary);}
+input[type=range]{width:100%;height:44px;accent-color:var(--color-primary);}
+.toggle{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{border:2px solid #d3dcf0;background:#fff;border-radius:999px;padding:9px 15px;font-size:15px;font-weight:800;min-height:46px;color:var(--color-text);transition:all .2s;}
+.chip.on{border-color:var(--color-primary);background:#e8eeff;color:var(--color-primary-dark);}
+.chip.warn.on{border-color:var(--color-error);background:#ffeced;color:#a3161b;}
+canvas{display:block;width:100%;border-radius:16px;background:#fff;touch-action:manipulation;}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:10px 0;}
+.readout div{background:#f1f5ff;border-radius:14px;padding:9px 11px;}
+.readout small{display:block;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.readout b{font-size:21px;font-variant-numeric:tabular-nums;}
+.state-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-weight:800;font-size:15px;background:#eef1f8;color:var(--color-text-light);transition:all .3s;}
+.state-pill.in{background:#e0f1ff;color:#0f62b8;}
+.state-pill.out{background:#f1e9ff;color:#5b2fc4;}
+.model-wrap{max-width:420px;margin:0 auto;position:relative;touch-action:none;}
+.model-wrap svg{width:100%;height:auto;display:block;}
+.hold-btn{width:100%;border:none;border-radius:22px;min-height:84px;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(135deg,#45b3ff,#3361e8);box-shadow:0 8px 0 #2245b5,0 14px 28px rgba(51,97,232,.3);user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .12s,box-shadow .12s,background .3s;}
+.hold-btn.holding{transform:translateY(6px);box-shadow:0 2px 0 #2245b5,0 6px 16px rgba(51,97,232,.3);background:linear-gradient(135deg,#2ec4a6,#0f8f7b);}
+.gauge{position:relative;height:22px;border-radius:12px;background:linear-gradient(90deg,#7a4ff0 0%,#e9e3ff 38%,#eef2f8 50%,#e0f1ff 62%,#45b3ff 100%);margin:6px 0 2px;}
+.gauge i{position:absolute;top:-5px;width:6px;height:32px;border-radius:3px;background:#16204a;left:50%;transform:translateX(-50%);transition:left .12s;}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.lock-note{font-size:13px;color:var(--color-text-light);}
+.rec-table td,.rec-table th{font-size:14px;padding:7px;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--color-text-light);font-weight:700;margin:6px 0;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;}
+.legend i.tri{border-radius:2px;transform:rotate(45deg);width:11px;height:11px;}
+/* 스티커 */
+.board-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;}
+.board-tab{flex:none;border:none;background:#fff;border-radius:14px;padding:9px 13px;min-height:48px;font-weight:800;font-size:14px;color:var(--color-text-light);box-shadow:var(--shadow-s);}
+.board-tab.active{background:linear-gradient(135deg,#ffb238,#ff7a2f);color:#fff;}
+.board-tab.locked{opacity:.55;}
+.board-tab.done::after{content:' ✔';}
+.sticker-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;}
+.sticker-status .pill{background:#fff;border-radius:999px;padding:7px 13px;font-weight:800;font-size:14px;box-shadow:var(--shadow-s);}
+.sticker-board{position:relative;}
+.sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:76px;background:repeating-linear-gradient(45deg,#fffaf0,#fffaf0 12px,#fff4de 12px,#fff4de 24px);border:2px dashed #f2c98a;}
+.sticker-tray .tray-lbl{width:100%;font-size:13px;font-weight:800;color:#b36b00;}
+.sticker{position:relative;border:none;border-radius:13px;padding:11px 15px;font-size:16px;font-weight:800;min-height:48px;color:#3b2a00;background:linear-gradient(160deg,#fff,#fff3c4);box-shadow:0 3px 0 rgba(0,0,0,.12),0 6px 12px rgba(150,100,0,.12);transform:rotate(var(--tilt,0deg));transition:transform .18s,box-shadow .18s;}
+.sticker::before{content:'';position:absolute;inset:3px;border:1.5px dashed rgba(180,130,0,.35);border-radius:10px;pointer-events:none;}
+.sticker.c1{background:linear-gradient(160deg,#fff,#d6ecff);color:#0d3f78;}
+.sticker.c2{background:linear-gradient(160deg,#fff,#ffdbe2);color:#7c1430;}
+.sticker.c3{background:linear-gradient(160deg,#fff,#dcf8ee);color:#0a5747;}
+.sticker.c4{background:linear-gradient(160deg,#fff,#ece3ff);color:#3c1f8f;}
+.sticker.picked{transform:rotate(0) scale(1.12) translateY(-4px);box-shadow:0 12px 22px rgba(0,0,0,.22);outline:3px solid var(--color-primary);outline-offset:2px;z-index:3;}
+.sticker.wiggle{animation:wiggle .9s ease-in-out infinite;}
+@keyframes wiggle{0%,100%{transform:rotate(-2deg) scale(1.12) translateY(-4px);}50%{transform:rotate(2deg) scale(1.12) translateY(-4px);}}
+.slot{min-height:50px;min-width:86px;border:2.5px dashed #b6c3e2;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:4px;position:relative;background:rgba(255,255,255,.92);transition:border-color .2s,background .2s,transform .2s;}
+.slot .sticker{padding:8px 10px;font-size:15px;min-height:40px;transform:none;}
+.slot.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+@keyframes slotGlow{50%{box-shadow:0 0 0 5px rgba(51,97,232,.18);}}
+.slot.ok{border-style:solid;border-color:var(--color-success);background:#ecfbf5;}
+.slot.ok::after{content:'✔';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-success);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;animation:popIn .4s cubic-bezier(.3,1.6,.5,1);z-index:2;}
+.slot.no{border-style:solid;border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.slot.no::after{content:'✖';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-error);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+.slot .hint{font-size:12px;color:var(--color-text-light);line-height:1.3;text-align:center;}
+.slot.abs{position:absolute;transform:translate(-50%,-50%);}
+.slot.abs.no{animation:shakeAbs .45s;}
+@keyframes shakeAbs{0%,100%{transform:translate(-50%,-50%);}25%{transform:translate(calc(-50% - 7px),-50%);}75%{transform:translate(calc(-50% + 7px),-50%);}}
+.svg-board{position:relative;max-width:540px;margin:0 auto;}
+.svg-board svg{width:100%;height:auto;display:block;}
+.stk-msg{min-height:26px;font-size:15px;line-height:1.6;margin-top:8px;}
+.stk-msg .h{display:block;color:#a35a00;}
+.complete-banner{position:relative;text-align:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,#fff7e6,#ffe8f0);margin-top:12px;overflow:hidden;}
+.complete-banner p{color:var(--color-text);font-weight:700;}
+.stamp{position:absolute;right:14px;top:10px;font-size:22px;font-weight:900;color:#e5484d;border:4px solid #e5484d;border-radius:12px;padding:3px 10px;transform:rotate(-14deg);opacity:.9;animation:stamp .6s cubic-bezier(.2,1.8,.4,1);background:rgba(255,255,255,.6);}
+@keyframes stamp{0%{transform:rotate(-14deg) scale(3);opacity:0;}100%{transform:rotate(-14deg) scale(1);opacity:.9;}}
+.gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;}
+.gx-panel{background:#f7f9ff;border-radius:16px;padding:12px;}
+.gx-panel h4{margin:0 0 8px;font-size:15px;}
+.gx-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.gx-box{border-radius:16px;padding:14px 6px;text-align:center;font-weight:800;font-size:15px;color:#fff;min-height:118px;display:flex;align-items:center;justify-content:center;}
+.gx-box.alv{background:radial-gradient(circle at 35% 35%,#ffd0da,#ff8fa6);color:#6b1028;}
+.gx-box.cap{background:linear-gradient(180deg,#ff6b6b,#c92a4a);}
+.gx-box.cell{background:radial-gradient(circle at 40% 40%,#fff0c2,#f5c451);color:#5c3d00;}
+.gx-arrows{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.gx-arrows .arw{font-size:13px;font-weight:900;color:var(--color-text-light);line-height:1;}
+.gx-principle{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-weight:800;flex-wrap:wrap;}
+/* 실생활 */
+.life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.life-card{background:var(--color-surface);border-radius:18px;box-shadow:var(--shadow);padding:16px;cursor:pointer;transition:transform .2s;position:relative;overflow:hidden;}
+.life-card:active{transform:scale(.98);}
+.life-card .ic{font-size:40px;line-height:1;display:inline-block;transition:transform .4s cubic-bezier(.3,1.6,.5,1);}
+.life-card.open .ic{transform:scale(1.15) rotate(-8deg);}
+.life-card h3{margin:8px 0 6px;}
+.life-card .why{display:none;}
+.life-card.open .why{display:block;animation:riseIn .45s both;}
+.life-card .more{font-size:13px;font-weight:800;color:var(--color-primary);}
+.life-card.open .more{display:none;}
+.link-tag{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:#0a7f6c;background:#d8f6ef;border-radius:999px;padding:4px 10px;}
+/* 퀴즈 */
+.quiz-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.quiz-progress{flex:1;height:12px;border-radius:7px;background:#dde5f6;overflow:hidden;}
+.quiz-progress i{display:block;height:100%;background:linear-gradient(90deg,#21c9a9,#3361e8);border-radius:7px;transition:width .5s cubic-bezier(.2,.8,.2,1);width:0;}
+.combo{font-weight:900;color:#ff6a00;min-width:70px;text-align:right;font-size:15px;}
+.combo.bump{animation:bump .5s cubic-bezier(.3,1.8,.5,1);}
+@keyframes bump{0%{transform:scale(1.8);}100%{transform:scale(1);}}
+.q-card{animation:qIn .45s cubic-bezier(.2,.8,.2,1);}
+@keyframes qIn{from{opacity:0;transform:translateX(30px) rotate(1deg);}to{opacity:1;transform:none;}}
+.q-type{display:inline-block;font-size:12px;font-weight:800;background:#e3eaff;color:var(--color-primary-dark);padding:4px 10px;border-radius:999px;margin-bottom:6px;}
+.q-text{font-size:18px;font-weight:800;line-height:1.6;margin:4px 0 12px;}
+.q-fig{margin:6px 0 12px;}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid #d3dcf0;background:#fff;border-radius:16px;padding:13px 14px;font-size:16px;margin-bottom:10px;min-height:54px;line-height:1.5;color:var(--color-text);transition:transform .12s,border-color .2s,background .2s;}
+.opt:active{transform:scale(.98);}
+.opt .n{flex:none;width:28px;height:28px;border-radius:9px;background:#eef2fb;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.opt.correct{border-color:var(--color-success);background:#e9fbf4;animation:correctPop .5s cubic-bezier(.3,1.6,.5,1);}
+.opt.correct .n{background:var(--color-success);color:#fff;}
+.opt.wrong{border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.opt.wrong .n{background:var(--color-error);color:#fff;}
+@keyframes correctPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+.feedback{border-radius:16px;padding:13px 15px;margin-top:6px;line-height:1.65;font-size:15px;animation:riseIn .4s both;}
+.feedback.ok{background:#e9fbf4;}
+.feedback.no{background:#fff3e8;}
+.feedback b.big{font-size:17px;}
+/* 결과 */
+.result-hero{text-align:center;}
+.trophy{font-size:84px;line-height:1;display:inline-block;animation:trophy 1s cubic-bezier(.3,1.6,.5,1) both;}
+@keyframes trophy{0%{transform:scale(0) rotate(-30deg);}100%{transform:none;}}
+.score-big{font-size:64px;font-weight:900;line-height:1.1;}
+.stars{font-size:38px;letter-spacing:6px;}
+.stars span{display:inline-block;opacity:.18;filter:grayscale(1);}
+.stars span.on{opacity:1;filter:none;animation:starIn .5s cubic-bezier(.3,1.8,.5,1) both;}
+@keyframes starIn{0%{transform:scale(0) rotate(-90deg);}100%{transform:none;}}
+.check-list label{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.55;cursor:pointer;min-height:48px;}
+.check-list input{width:24px;height:24px;flex:none;accent-color:var(--color-success);margin-top:1px;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120px);background:#16204a;color:#fff;padding:12px 20px;border-radius:999px;font-weight:800;z-index:9500;transition:transform .4s cubic-bezier(.3,1.5,.5,1);box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:92vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.float-txt{position:fixed;z-index:9600;pointer-events:none;font-weight:900;font-size:22px;animation:floatUp 1.1s ease-out forwards;text-shadow:0 2px 0 #fff,0 0 8px #fff;}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6);}20%{opacity:1;transform:translate(-50%,-14px) scale(1.15);}100%{opacity:0;transform:translate(-50%,-70px) scale(1);}}
+footer{text-align:center;font-size:12px;color:#8a94b2;padding:24px 0 6px;letter-spacing:.03em;}
+@media (max-width:560px){
+  #app{padding:8px 12px 60px;}
+  .topbar{margin:0 -12px 12px;padding:8px 12px 6px;}
+  .step-dot{font-size:11px;}
+  .card{padding:15px;}
+  .plan-step{flex-direction:column;gap:4px;}
+  .plan-step .k{width:auto;}
+  .flow div{font-size:11px;}
+  .slot{min-width:76px;min-height:44px;}
+  .slot .sticker{font-size:13px;padding:6px 7px;min-height:34px;}
+  .sticker{font-size:15px;padding:10px 12px;}
+  .q-text{font-size:17px;}
+  .gx-box{min-height:104px;font-size:14px;}
+}
+
+/* ====== 배설계 전용 ====== */
+body{background:radial-gradient(1100px 600px at 5% -10%,#e7e1ff 0,transparent 60%),radial-gradient(900px 500px at 110% 5%,#fff1c9 0,transparent 55%),var(--color-bg);}
+.topbar{background:rgba(241,240,255,.84);}
+#bgBubbles span{border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.95),rgba(255,214,90,.28) 60%,rgba(255,214,90,.06));}
+@keyframes rise{to{transform:translateY(-120vh) translateX(30px) rotate(-45deg);}}
+.grad-text{background:linear-gradient(100deg,#5b3cd6,#c2255c 50%,#f59f00);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.core-idea{background:linear-gradient(130deg,#4c2fc9,#8a3fd1 50%,#d9480f);box-shadow:0 14px 30px rgba(90,50,200,.28);}
+.unit-tag{color:#8a1c4a;background:#ffe3ec;}
+.hero{width:min(300px,70vw);}
+.hero .glow{animation:kglow 2.4s ease-in-out infinite;}
+@keyframes kglow{0%,100%{filter:drop-shadow(0 0 0 rgba(194,37,92,0));}50%{filter:drop-shadow(0 0 10px rgba(194,37,92,.55));}}
+.pill-tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;margin-left:4px;vertical-align:middle;}
+.pt-f{background:#ece5ff;color:#4c2fc9;} .pt-r{background:#d3f9ec;color:#087f5b;} .pt-s{background:#ffe8d6;color:#c2410c;}
+/* 다이어그램 */
+.ex-wrap{max-width:520px;margin:0 auto;position:relative;}
+.ex-wrap svg,.neph-wrap svg,.kid-wrap svg{width:100%;height:auto;display:block;}
+.neph-wrap{max-width:760px;margin:0 auto;position:relative;}
+.kid-wrap{max-width:420px;margin:0 auto;position:relative;}
+svg .part{cursor:pointer;}
+svg .part.sel{filter:drop-shadow(0 0 7px rgba(112,72,232,.95));}
+svg .hit{stroke:transparent;fill:none;cursor:pointer;}
+svg .lbl{font-weight:800;font-size:17px;fill:#3b3f66;pointer-events:none;}
+svg .lead{stroke:#9aa1c4;stroke-width:1.6;stroke-dasharray:4 4;fill:none;pointer-events:none;}
+svg .pa{opacity:.35;transition:opacity .3s;}
+svg.show-f .pa-f,svg.show-r .pa-r,svg.show-s .pa-s,svg.show-all .pa{opacity:1;}
+svg.show-f .pa-f,svg.show-r .pa-r,svg.show-s .pa-s{stroke-dasharray:10 7;animation:dash .7s linear infinite;}
+@keyframes dash{to{stroke-dashoffset:-17;}}
+.pill-bg{fill:#fff;stroke:#d9dcef;stroke-width:1.5;}
+.zoom-in{animation:zoomIn .7s cubic-bezier(.2,.9,.2,1) both;}
+@keyframes zoomIn{0%{opacity:0;transform:scale(.25) translateY(-40px);}100%{opacity:1;transform:none;}}
+.flow-nodes{display:flex;flex-direction:column;gap:6px;margin-top:10px;min-height:60px;}
+.flow-nodes .node{padding:10px 13px;border-radius:13px;font-weight:800;font-size:15px;background:#f4f2ff;color:#3c2d8f;animation:nodeIn .5s cubic-bezier(.3,1.5,.5,1) both;line-height:1.5;}
+.flow-nodes .node.bad{background:#ffe9ec;color:#a51d3a;}
+.flow-nodes .node.good{background:#fff4d6;color:#8a5a00;}
+.flow-nodes .node.out{background:#e6fcf5;color:#0a6d5d;}
+@keyframes nodeIn{0%{opacity:0;transform:translateX(-24px) scale(.9);}100%{opacity:1;transform:none;}}
+.tox{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;margin:4px 0;}
+.tox .bar{flex:1;height:12px;border-radius:7px;background:#eef0f7;overflow:hidden;}
+.tox .bar i{display:block;height:100%;border-radius:7px;transition:width 1s cubic-bezier(.2,.8,.2,1);}
+/* 탐구 */
+.sim-wrap{position:relative;max-width:760px;margin:0 auto;}
+.sim-wrap svg{width:100%;height:auto;display:block;}
+.sim-wrap canvas{position:absolute;left:0;top:0;width:100%;height:100%;background:transparent !important;border-radius:0;pointer-events:none;}
+.stage-bar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.stage-bar span{flex:1 1 80px;text-align:center;padding:9px 4px;border-radius:12px;background:#f1f2f9;color:#9aa1bd;font-weight:800;font-size:13px;transition:all .35s;}
+.stage-bar span.on{background:linear-gradient(135deg,#7048e8,#3361e8);color:#fff;transform:translateY(-2px);box-shadow:0 6px 14px rgba(80,60,200,.25);}
+.stage-bar span.done{background:#e6fcf5;color:#0a7f6c;}
+.caption{background:#f6f4ff;border-radius:14px;padding:12px 14px;min-height:58px;font-size:15px;line-height:1.65;border-left:5px solid var(--filt);}
+.caption.flash{animation:flashBg2 .6s;}
+@keyframes flashBg2{0%{background:#e3dbff;}100%{background:#f6f4ff;}}
+.legend2{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:800;color:var(--color-text-light);margin:8px 0;}
+.legend2 span{display:inline-flex;align-items:center;gap:4px;}
+.legend2 svg{width:18px;height:18px;}
+.cnt-tbl td,.cnt-tbl th{font-size:14px;padding:7px 5px;}
+.cnt-tbl td.hot{background:#fff4d6;font-weight:900;color:#a35a00;}
+.cnt-tbl td.zero{color:#b5bad0;}
+.cnt-tbl td.new{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);}
+.water-row{display:flex;gap:10px;align-items:center;font-size:14px;font-weight:800;margin:6px 0;}
+.water-row .wbar{flex:1;height:18px;border-radius:9px;background:#e7f5ff;overflow:hidden;position:relative;}
+.water-row .wbar i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;transition:width .9s cubic-bezier(.2,.8,.2,1);}
+.pred{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--line);}
+.pred .q{flex:1 1 180px;font-weight:800;font-size:15px;}
+.pred .res{font-weight:800;font-size:14px;min-width:30px;}
+.route-slots{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0;}
+.route-slots .rs{min-width:78px;min-height:46px;border:2.5px dashed #b9bfe0;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;padding:4px 8px;background:#fff;color:#9aa1bd;}
+.route-slots .rs.fill{border-style:solid;border-color:var(--color-success);background:#ecfbf5;color:#0a6d5d;animation:popIn .4s cubic-bezier(.3,1.6,.5,1);}
+.route-slots .rs.next{border-color:var(--filt);animation:slotGlow 1.2s ease-in-out infinite;}
+.route-slots .arr{color:#9aa6c4;font-weight:900;}
+.chip.shake{animation:shake .45s;border-color:var(--color-error);}
+.bl-meter{height:22px;border-radius:12px;background:#fff8e1;overflow:hidden;position:relative;border:2px solid #ffe08a;}
+.bl-meter i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ffe066,#f5b700);border-radius:10px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.bl-meter b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.lab-grid{display:grid;grid-template-columns:92px repeat(3,1fr);gap:8px;align-items:end;}
+.lab-grid .rh{font-weight:800;font-size:14px;align-self:center;line-height:1.35;}
+.lab-grid .ch{text-align:center;font-weight:900;font-size:16px;align-self:center;}
+.tube{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:48px;position:relative;}
+.tube svg{width:min(62px,15vw);height:auto;overflow:visible;}
+.tube small{font-size:12px;font-weight:800;color:var(--color-text-light);min-height:16px;text-align:center;line-height:1.3;}
+.tube.done small{color:var(--color-text);}
+.tube .liq{transition:fill 1.4s ease;}
+.tube.heating .bub{animation:bub .8s ease-in infinite;}
+.tube .bub{opacity:0;}
+@keyframes bub{0%{opacity:0;transform:translateY(0);}30%{opacity:1;}100%{opacity:0;transform:translateY(-38px);}}
+.tube .drop{opacity:0;}
+.tube.dropping .drop{animation:dropFall .55s ease-in;}
+@keyframes dropFall{0%{opacity:1;transform:translateY(-30px);}100%{opacity:0;transform:translateY(40px);}}
+.diag-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--line);}
+.diag-row b{min-width:62px;}
+.pad-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0;}
+.pad-tools .tool{border:2px solid #d6d9ef;background:#fff;border-radius:12px;min-width:48px;min-height:48px;font-weight:800;font-size:14px;padding:4px 8px;display:inline-flex;align-items:center;justify-content:center;gap:4px;}
+.pad-tools .tool.on{border-color:var(--filt);background:#efeaff;box-shadow:0 0 0 3px rgba(112,72,232,.18);}
+.pad-tools .tool svg{width:22px;height:22px;}
+.pad-tools .sw{width:22px;height:22px;border-radius:50%;display:inline-block;}
+.pad-wrap{position:relative;max-width:760px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:inset 0 0 0 2px #e2e3f3;}
+.pad-wrap canvas{touch-action:none;background:#fff;border-radius:0;}
+.cls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.cls-col{background:#f7f6ff;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;align-items:stretch;}
+.cls-col h4{margin:0;font-size:14px;text-align:center;line-height:1.4;}
+.cls-col .slot{min-width:0;}
+.seq-board{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;}
+.seq-board .arr{font-weight:900;color:#9aa6c4;font-size:18px;}
+.seq-board .ends{font-weight:800;font-size:14px;background:#fff4d6;border-radius:12px;padding:8px 10px;}
+.neph-slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px;}
+.neph-slots .ns{display:flex;align-items:center;gap:6px;}
+.neph-slots .ns b{flex:none;min-width:30px;font-size:16px;color:#5b3cd6;}
+.neph-slots .ns .slot{flex:1;min-width:0;}
+.rec-cv-wrap canvas{background:#fff;}
+@media (max-width:560px){
+  .lab-grid{grid-template-columns:70px repeat(3,1fr);}
+  .lab-grid .rh{font-size:12px;}
+  .cnt-tbl td,.cnt-tbl th{font-size:12px;padding:6px 3px;}
+  svg .lbl{font-size:19px;}
+}
+</style>
+</head>
+<body>
+<div id="bgBubbles" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand"><i>🫘</i>배설계의 구조와 기능 가상실험실</div>
+      <button class="icon-btn" id="soundBtn" aria-label="효과음 켜기/끄기" title="효과음">🔊</button>
+    </div>
+    <nav class="step-indicator" id="stepIndicator" aria-label="학습 단계"></nav>
+  </div>
+
+  <!-- 1. 도입 -->
+  <section class="screen" id="screen-intro">
+    <div class="rise-in" style="--i:0"><span class="unit-tag">중2 · Ⅵ. 동물과 에너지 · 2. 호흡과 배설</span></div>
+    <div class="hero rise-in" style="--i:1" id="heroBox"></div>
+    <h1 class="rise-in" style="--i:2"><span class="grad-text">배설계의 구조와 기능</span></h1>
+    <p class="rise-in" style="--i:3">콩팥은 하루에도 수없이 혈액을 걸러 낸다! 거름망(토리)과 재활용 선별장(세뇨관)을 직접 작동시켜 오줌을 만들어 보자.</p>
+    <div class="badges rise-in" style="--i:4">
+      <span class="badge">교과서 226~229쪽</span>
+      <span class="badge">지도서 360~363쪽</span>
+      <span class="badge teal">성취기준 [9과13-04]</span>
+    </div>
+    <p class="muted rise-in" style="--i:4">[9과13-04] 배설계의 구조와 기능을 이해하고, 노폐물이 배설되는 과정을 모식도로 표현할 수 있다.</p>
+    <ul class="goal-list rise-in" style="--i:5">
+      <li data-n="1">노폐물이 만들어지는 과정과 배설의 뜻을 설명할 수 있다.</li>
+      <li data-n="2">배설계의 구조와 기능을 알고, 요소가 배설되는 경로를 설명할 수 있다.</li>
+      <li data-n="3">콩팥단위에서 여과·재흡수·분비를 거쳐 오줌이 만들어지는 과정을 모식도로 표현할 수 있다.</li>
+    </ul>
+    <div class="flow rise-in" style="--i:6">
+      <div><b>🚪</b>도입</div><div><b>💡</b>개념</div><div><b>🧪</b>탐구</div><div><b>🏷️</b>스티커</div><div><b>🏠</b>실생활</div><div><b>✅</b>확인</div>
+    </div>
+    <div class="card think rise-in" style="--i:7">
+      <h3>💭 생각 열기 — "영화가 끝나려면 1시간이나 남았는데…… 오줌 마려워요."</h3>
+      <p style="margin-top:0">음료수를 마실 때마다 방광이 차올라요. 버튼을 눌러 보세요!</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn small mint" id="drinkBtn">🥤 음료수 마시기</button>
+        <div style="flex:1;min-width:180px"><div class="bl-meter"><i id="introBl" style="width:10%"></i><b id="introBlTxt">방광 10%</b></div></div>
+      </div>
+      <p><b>오줌은 어디에서, 어떻게 만들어질까요?</b> 생각을 적어 보세요.</p>
+      <textarea id="note-think" data-save="think" placeholder="예) 오줌은 …에서 혈액 속 …을/를 걸러 만든다."></textarea>
+      <div class="saved" id="saved-think"></div>
+      <button class="btn small secondary" id="thinkAnsBtn">예시 답안 보기</button>
+      <p class="hidden" id="thinkAns" style="color:var(--color-text)">생명활동을 통해 만들어지는 <b>노폐물</b>이 물과 함께 몸 밖으로 나가는 것이 오줌이다. <b>콩팥</b>에서 혈액에 있는 노폐물을 걸러 오줌을 만든다.</p>
+    </div>
+    <div class="btn-row center rise-in" style="--i:8">
+      <button class="btn secondary hidden" id="resumeBtn">이어서 하기</button>
+      <button class="btn pulse" id="startBtn">시작하기 →</button>
+    </div>
+  </section>
+
+  <!-- 2. 개념 -->
+  <section class="screen" id="screen-concept">
+    <h2>💡 핵심 아이디어와 개념</h2>
+    <div class="core-idea rise-in" style="--i:0">
+      <div class="lbl">KEY IDEA · 핵심 아이디어</div>
+      <p>단백질이 분해될 때 생긴 독성이 강한 <b>암모니아</b>는 간에서 <b>요소</b>로 바뀐다. <b>콩팥</b>의 콩팥단위는 혈액을 <b>여과 → 재흡수 → 분비</b>하여 요소 같은 노폐물을 오줌으로 만들고, 오줌은 <b>오줌관 → 방광 → 요도</b>를 거쳐 몸 밖으로 나간다. 이것이 <b>배설</b>이다.</p>
+    </div>
+    <div id="conceptCards"></div>
+    <h3 style="margin-top:8px">🔍 오개념 바로잡기 <span class="muted">— 카드를 눌러 확인해요</span></h3>
+    <div class="myth-grid" id="mythGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="0">← 이전</button>
+      <button class="btn" data-go="2" style="margin-left:auto">탐구하러 가기 →</button>
+    </div>
+  </section>
+
+  <!-- 3. 탐구 -->
+  <section class="screen" id="screen-experiment">
+    <h2>🧪 탐구하기</h2>
+    <div class="tabs" id="expTabs" role="tablist">
+      <button class="tab active" data-tab="plan">📝 탐구 계획서</button>
+      <button class="tab" data-tab="route">① 요소의 배설 경로</button>
+      <button class="tab" data-tab="neph">② 콩팥단위 오줌 만들기</button>
+      <button class="tab" data-tab="lab">③ 오줌 검사실</button>
+      <button class="tab" data-tab="pad">④ 나만의 모식도</button>
+    </div>
+
+    <div class="tabpane active" id="tab-plan">
+      <div class="card">
+        <h3>📝 탐구 계획서 — 노폐물의 배설 과정을 모식도로 표현하기 <span class="badge" style="font-size:12px">교과서 229쪽 디지털 해 보기</span></h3>
+        <div class="plan-step"><div class="k">문제 인식</div><div class="v">콩팥으로 들어온 혈액 속 물질(혈구, 단백질, 포도당, 아미노산, 무기염류, 요소)은 콩팥단위에서 각각 어디로 이동할까? 왜 오줌에는 포도당이 없고 요소는 많을까?</div></div>
+        <div class="plan-step"><div class="k">가설</div><div class="v"><textarea id="note-hyp" data-save="hyp" placeholder="예) 크기가 작은 물질은 토리에서 … 되고, 몸에 필요한 물질은 세뇨관에서 … 될 것이다."></textarea><div class="saved" id="saved-hyp"></div></div></div>
+        <div class="plan-step"><div class="k">변인</div><div class="v">
+          <b>조작 변인</b>: 콩팥단위의 상태(정상 / 토리 손상), 혈액 속 포도당의 양(보통 / 많음)<br>
+          <b>통제 변인</b>: 콩팥으로 들어오는 혈액의 양, 혈구·단백질·요소 등의 처음 양<br>
+          <b>종속 변인</b>: 여과액·오줌·콩팥정맥 혈액에 들어 있는 물질의 종류와 양</div></div>
+        <div class="plan-step"><div class="k">준비물</div><div class="v">스마트 기기(이 가상실험실), 물질 모형(혈구 🔴, 단백질 🟣, 포도당 🟡, 아미노산 🟢, 무기염류 🔵, 요소 🟠, 노폐물 🟤)</div></div>
+        <div class="plan-step"><div class="k">실험 과정</div><div class="v"><ol>
+          <li>① 탭: 요소가 몸 밖으로 나가는 경로(분석해 보기)를 순서대로 이어 본다.</li>
+          <li>② 탭: 콩팥단위 모식도에서 <b>여과 → 재흡수 → 분비</b>를 한 단계씩 진행하며 물질의 이동을 관찰한다.</li>
+          <li>적혈구·포도당·요소를 하나씩 <b>따라가며</b> 배설 경로를 확인한다. (화면 녹화 기능으로 영상 만들기)</li>
+          <li>조건(토리 손상, 혈당 높음)을 바꾸어 오줌 성분을 비교한다.</li>
+          <li>③ 탭: 오줌 시료에 검출 용액을 떨어뜨려 단백질·포도당을 확인하고, 어느 과정에 문제가 있는지 판단한다.</li>
+          <li>④ 탭: 물질 모형 스탬프로 나만의 모식도를 그려 저장하고 설명한다.</li>
+        </ol></div></div>
+        <div class="plan-step"><div class="k">예상 결과</div><div class="v"><textarea id="note-pred" data-save="pred" placeholder="오줌에는 …이/가 없고, …이/가 많을 것이다. 콩팥정맥의 요소 농도는 콩팥동맥보다 …"></textarea><div class="saved" id="saved-pred"></div></div></div>
+      </div>
+      <div class="btn-row"><button class="btn" data-tabgo="route" style="margin-left:auto">① 실험 시작 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-route">
+      <div class="card">
+        <h3>① 요소의 배설 경로 잇기 <span class="badge" style="font-size:12px">교과서 227쪽 분석해 보기</span></h3>
+        <p style="margin-top:0">간에서 만들어진 <b>요소</b>는 혈액을 따라 콩팥으로 와요. 요소가 몸 밖으로 나가기까지 거치는 곳을 <b>순서대로</b> 눌러 빈칸을 채우세요. (그림을 눌러도 돼요)</p>
+        <div class="row" style="align-items:flex-start">
+          <div><div class="ex-wrap" id="routeWrap"></div></div>
+          <div>
+            <div class="route-slots" id="routeSlots"></div>
+            <div class="toggle" id="routeChips" style="margin:8px 0"></div>
+            <div class="info-panel" id="routeInfo">👆 첫 번째 칸: 요소가 들어 있는 혈액이 콩팥으로 들어가는 혈관은?</div>
+            <div class="toggle" style="margin-top:10px"><button class="chip" id="routeReset">↺ 다시 잇기</button><button class="chip hidden" id="routeReplay">🟠 요소 다시 따라가기</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🫙 방광 관찰 — 오줌은 방광에 모였다가 나가요</h3>
+        <p style="margin-top:0">콩팥에서 오줌을 계속 만들어 보내면 방광이 어떻게 될까요? <span class="muted">(성인의 방광은 오줌을 약 600 mL까지 저장할 수 있어요)</span></p>
+        <div class="toggle" style="margin-bottom:8px"><button class="btn small" id="blAdd">💧 오줌 보내기 (+100 mL)</button><button class="btn small mint" id="blOut">🚽 요도로 내보내기</button></div>
+        <div class="bl-meter"><i id="blBar" style="width:0%"></i><b id="blTxt">방광 0 mL</b></div>
+        <p class="muted" id="blMsg" style="margin-top:8px">오줌관은 꿈틀운동으로 오줌을 방광으로 보내요.</p>
+      </div>
+      <div class="card">
+        <h3>✍️ 관찰 기록</h3>
+        <textarea data-save="obs1" placeholder="요소의 배설 경로를 화살표로 써 보자: 콩팥동맥 → …"></textarea><div class="saved" id="saved-obs1"></div>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="plan">← 계획서</button><button class="btn" data-tabgo="neph" style="margin-left:auto">② 콩팥단위 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-neph">
+      <div class="card">
+        <h3>② 콩팥단위에서 오줌 만들기 <span class="badge" style="font-size:12px">교과서 228~229쪽</span></h3>
+        <p style="margin-top:0"><b>다음 단계 ▶</b>를 눌러 혈액 속 물질이 어디로 가는지 한 단계씩 관찰하세요.</p>
+        <div class="toggle" style="margin-bottom:8px" id="condChips">
+          <button class="chip on" data-cond="normal">🙂 정상</button>
+          <button class="chip" data-cond="glom">⚠️ 토리 손상</button>
+          <button class="chip" data-cond="sugar">🍬 혈당 높음</button>
+          <button class="chip" data-cond="water">🥤 물 많이 마심 <span class="badge ext">확장</span></button>
+        </div>
+        <div class="stage-bar" id="stageBar"><span>① 혈액 유입</span><span>② 여과</span><span>③ 재흡수</span><span>④ 분비</span><span>⑤ 오줌 완성</span></div>
+        <div class="sim-wrap" id="simWrap"><canvas id="simCv"></canvas></div>
+        <div class="legend2" id="simLegend"></div>
+        <div class="toggle" style="margin:6px 0">
+          <button class="btn small" id="simNext">① 혈액 들어오기 ▶</button>
+          <button class="btn small mint" id="simAuto">⏩ 자동 재생</button>
+          <button class="btn small secondary" id="simReset">↺ 새 혈액</button>
+        </div>
+        <div style="margin:8px 0"><b style="font-size:14px">🔎 물질 따라가기</b>
+          <div class="toggle" id="followChips" style="margin-top:6px">
+            <button class="chip on" data-f="all">전체</button><button class="chip" data-f="rbc">🔴 적혈구</button><button class="chip" data-f="glu">🟡 포도당</button><button class="chip" data-f="ure">🟠 요소</button><button class="chip" data-f="pro">🟣 단백질</button>
+          </div>
+        </div>
+        <div class="caption" id="simCap">💡 혈액이 <b>콩팥동맥</b>을 따라 들어올 준비를 하고 있어요. 먼저 아래 <b>예측하기</b>에 답해 보세요!</div>
+      </div>
+      <div class="card">
+        <h3>🤔 예측하기 — 건강한 사람의 오줌에 이 물질이 있을까?</h3>
+        <div id="predBox"></div>
+        <p class="muted" id="predMsg">'정상' 조건으로 ⑤단계까지 진행하면 예측이 맞았는지 알려 줘요.</p>
+      </div>
+      <div class="card">
+        <h3>📊 물질의 양 비교 <span class="muted">(입자 수, 가상 값)</span></h3>
+        <div class="tbl-wrap"><table class="tbl cnt-tbl" id="cntTbl"></table></div>
+        <div style="margin-top:10px">
+          <div class="water-row"><span style="min-width:96px">여과된 물</span><div class="wbar"><i style="width:100%;background:linear-gradient(90deg,#74c0fc,#339af0)"></i></div><span>100</span></div>
+          <div class="water-row"><span style="min-width:96px">재흡수된 물</span><div class="wbar"><i id="wReab" style="width:0;background:linear-gradient(90deg,#63e6be,#12b886)"></i></div><span id="wReabT">–</span></div>
+          <div class="water-row"><span style="min-width:96px">오줌 속 물</span><div class="wbar"><i id="wUrine" style="width:0;background:linear-gradient(90deg,#ffe066,#f5b700)"></i></div><span id="wUrineT">–</span></div>
+          <p class="muted" style="margin:4px 0 0">물은 <b>대부분 재흡수</b>되므로, 오줌 속 요소의 농도는 여과액보다 훨씬 높아요. (실제로 하루에 약 180 L가 여과되고 오줌은 약 1.5 L만 나와요 <span class="badge ext">확장</span>)</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📈 조건별 오줌 성분 겹쳐 보기</h3>
+        <div class="rec-cv-wrap"><canvas id="recCv" height="230"></canvas></div>
+        <div class="tbl-wrap" style="margin-top:8px"><table class="tbl rec-table" id="recTbl"></table></div>
+        <button class="chip" id="recClear" style="margin-top:8px">🗑️ 기록 지우기</button>
+      </div>
+      <div class="card">
+        <h3>✍️ 교과서 질문에 답해 보기</h3>
+        <p style="margin:0 0 4px"><b>Q1.</b> 여과된 액체에는 있지만 오줌에는 없는 물질을 써 보자.</p>
+        <textarea data-save="q1" placeholder="예) …, … — 그 까닭은 …"></textarea><div class="saved" id="saved-q1"></div>
+        <p style="margin:10px 0 4px"><b>Q2.</b> 건강한 사람의 콩팥동맥과 콩팥정맥에 있는 혈액 속 요소 농도를 비교해 보자.</p>
+        <textarea data-save="q2" placeholder="콩팥정맥의 요소 농도는 콩팥동맥보다 … 그 까닭은 …"></textarea><div class="saved" id="saved-q2"></div>
+        <button class="btn small secondary" id="nephAnsBtn" style="margin-top:8px">예시 답안 보기</button>
+        <div class="hidden" id="nephAns"><p style="color:var(--color-text)"><b>Q1.</b> 포도당, 아미노산 — 여과액에는 있지만 세뇨관에서 <b>모두 재흡수</b>되므로 오줌에는 없다.<br><b>Q2.</b> 요소 같은 노폐물은 콩팥에서 걸러져 오줌으로 나가므로 <b>콩팥정맥이 콩팥동맥보다 요소 농도가 낮다.</b></p></div>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="route">← ①</button><button class="btn" data-tabgo="lab" style="margin-left:auto">③ 오줌 검사실 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-lab">
+      <div class="card">
+        <h3>③ 오줌 검사실 — 어느 과정에 문제가 생겼을까? <span class="badge" style="font-size:12px">229쪽 스스로 확인하기 · 238쪽</span></h3>
+        <p style="margin-top:0">세 사람(가·나·다)의 오줌 시료가 있어요. 시험관을 눌러 검출 용액을 떨어뜨리세요. 베네딕트 용액은 <b>🔥 가열</b>해야 반응해요. <span class="muted">(Ⅵ-1 영양소 검출 반응을 떠올려요)</span></p>
+        <div class="lab-grid" id="labGrid"></div>
+        <div class="toggle" style="margin-top:10px"><button class="btn small" id="heatBtn">🔥 베네딕트 시험관 가열하기</button><button class="chip" id="labReset">↺ 새 시료로</button></div>
+        <div class="info-panel" id="labInfo" style="margin-top:10px">💡 <b>뷰렛 용액</b>: 단백질이 있으면 <b>보라색</b> · <b>베네딕트 용액</b>: 포도당이 있으면 가열 후 <b>황적색</b></div>
+      </div>
+      <div class="card">
+        <h3>🩺 진단하기 — 검사 결과로 판단해요</h3>
+        <div id="diagBox"></div>
+        <button class="btn small" id="diagCheck" style="margin-top:10px">진단 확인 ✔</button>
+        <div id="diagFb" style="margin-top:8px"></div>
+        <p class="muted">실제 병원에서는 소변 검사 시험지(막대)를 담가 단백질·포도당 등을 한 번에 확인해요. <span class="badge ext">확장</span></p>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="neph">← ②</button><button class="btn" data-tabgo="pad" style="margin-left:auto">④ 나만의 모식도 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-pad">
+      <div class="card">
+        <h3>④ 나만의 모식도 그리기 <span class="badge" style="font-size:12px">229쪽 디지털 해 보기 2~4</span></h3>
+        <p style="margin-top:0">물질 모형 스탬프를 골라 콩팥단위 위에 찍고, 펜으로 <b>여과·재흡수·분비</b> 화살표를 그려 보세요. 완성하면 <b>그림 저장</b>!</p>
+        <div class="pad-tools" id="padTools"></div>
+        <div class="pad-wrap"><canvas id="padCv" height="300"></canvas></div>
+        <div class="toggle" style="margin-top:8px"><button class="chip" id="padUndo">↶ 되돌리기</button><button class="chip" id="padClear">🗑️ 모두 지우기</button><button class="btn small mint" id="padSave">💾 그림 저장 (PNG)</button></div>
+        <p style="margin:12px 0 4px"><b>내 모식도 설명하기</b> — 적혈구, 포도당, 요소는 각각 어떤 경로로 이동하나요?</p>
+        <textarea data-save="padtxt" placeholder="적혈구는 … / 포도당은 토리에서 … 된 뒤 세뇨관에서 … / 요소는 …"></textarea><div class="saved" id="saved-padtxt"></div>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="lab">← ③</button><button class="btn" data-go="3" style="margin-left:auto">스티커로 정리하기 →</button></div>
+    </div>
+  </section>
+
+  <!-- 4. 스티커 -->
+  <section class="screen" id="screen-sticker">
+    <h2>🏷️ 스티커 붙이기: 배설 개념 정리판</h2>
+    <p>스티커를 골라 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 <b>확인하기</b>! 어디에도 붙지 않는 <b>함정 스티커</b>도 숨어 있어요.</p>
+    <div class="board-tabs" id="boardTabs"></div>
+    <div class="sticker-status"><span class="pill">🏷️ 붙인 스티커 <span id="stkCount">0 / 0</span></span><span class="pill">🔁 시도 <span id="stkTry">0</span>회</span></div>
+    <div class="card"><h3 id="boardTitle"></h3><p class="muted" id="boardDesc"></p><div class="sticker-board" id="stkBoard"></div><div class="stk-msg" id="stkMsg"></div><div id="stkDone"></div></div>
+    <div class="card sticker-tray" id="stkTray"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="2">← 이전</button>
+      <button class="btn secondary" id="stkReset">↺ 이 판 처음부터</button>
+      <button class="btn" id="stkCheck">확인하기 ✔</button>
+      <button class="btn mint hidden" id="stkNext">다음 판 →</button>
+      <button class="btn mint hidden" id="stkToLife" data-go="4">실생활로 →</button>
+    </div>
+  </section>
+
+  <!-- 5. 실생활 -->
+  <section class="screen" id="screen-life">
+    <h2>🏠 생활 속 배설</h2>
+    <p>카드를 눌러 <b>왜 그럴까?</b>를 확인하세요.</p>
+    <div class="life-grid" id="lifeGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="3">← 이전</button>
+      <button class="btn" id="toQuiz" style="margin-left:auto">개념 확인 10문제 →</button>
+    </div>
+  </section>
+
+  <!-- 6. 퀴즈 -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-top"><b id="qNum">1 / 10</b><div class="quiz-progress"><i id="qBar"></i></div><span class="combo" id="combo"></span></div>
+    <div class="card q-card" id="qCard"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="4">← 실생활</button>
+      <button class="btn hidden" id="qNext" style="margin-left:auto">다음 문제 →</button>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result">
+    <div class="card result-hero">
+      <div class="trophy" id="trophy">🏆</div>
+      <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <div class="score-big"><span class="grad-text" id="scoreBig">0</span><span style="font-size:28px;color:var(--color-text-light)"> / 10</span></div>
+      <p id="resultMsg" style="font-size:17px;color:var(--color-text);font-weight:700"></p>
+      <p class="muted" id="resultTime"></p>
+    </div>
+    <div class="card" id="wrongBox"></div>
+    <div class="card check-list">
+      <h3>✅ 학습목표 자가 점검 — 이제 나는</h3>
+      <label><input type="checkbox" data-save-check="c1"> 단백질이 분해될 때 생긴 암모니아가 간에서 요소로 바뀌어 오줌으로 나가는 과정을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c2"> 배설과 배출의 차이를 말할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c3"> 배설계(콩팥, 오줌관, 방광, 요도)의 구조와 기능을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c4"> 요소가 콩팥동맥 → 콩팥단위 → 콩팥깔때기 → 오줌관 → 방광 → 요도로 나가는 경로를 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c5"> 여과·재흡수·분비를 콩팥단위 모식도로 표현하고 설명할 수 있다.</label>
+    </div>
+    <p class="muted" style="text-align:center">📸 이 화면을 캡처해서 선생님께 제출하세요.</p>
+    <div class="btn-row center">
+      <button class="btn secondary hidden" id="retryWrong">틀린 문제 다시 풀기</button>
+      <button class="btn secondary" id="retryAll">처음부터 다시 풀기</button>
+      <button class="btn" data-go="0">처음 화면으로</button>
+    </div>
+  </section>
+
+  <footer>Made by Lee Jae Kwang</footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+/* ============ 저장 ============ */
+const LSP='vlab-excr-';
+function lsGet(k,d){try{const v=localStorage.getItem(LSP+k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(LSP+k,JSON.stringify(v));}catch(e){}}
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+
+/* ============ 효과음 (Web Audio로 직접 합성, 외부 파일 없음) ============ */
+const SND={ctx:null,on:lsGet('sound',true),master:null,buf:null};
+function audio(){
+  if(!SND.on) return null;
+  try{
+    if(!SND.ctx){const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+      SND.ctx=new C(); SND.master=SND.ctx.createGain(); SND.master.gain.value=.55; SND.master.connect(SND.ctx.destination);}
+    if(SND.ctx.state==='suspended') SND.ctx.resume();
+    return SND.ctx;
+  }catch(e){return null;}
+}
+function tone(f,dur,o={}){
+  const c=audio(); if(!c) return;
+  const t=c.currentTime+(o.when||0), vol=o.vol||.25;
+  const os=c.createOscillator(), g=c.createGain();
+  os.type=o.type||'sine'; os.frequency.setValueAtTime(f,t);
+  if(o.to) os.frequency.exponentialRampToValueAtTime(o.to,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+(o.attack||.006)); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  os.connect(g); g.connect(SND.master); os.start(t); os.stop(t+dur+.05);
+}
+function noise(dur,o={}){
+  const c=audio(); if(!c) return;
+  if(!SND.buf){SND.buf=c.createBuffer(1,Math.floor(c.sampleRate*1.5),c.sampleRate); const d=SND.buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;}
+  const t=c.currentTime+(o.when||0);
+  const s=c.createBufferSource(); s.buffer=SND.buf; s.loop=true;
+  const fl=c.createBiquadFilter(); fl.type=o.type||'bandpass'; fl.Q.value=o.q||1;
+  fl.frequency.setValueAtTime(o.f1||800,t); fl.frequency.exponentialRampToValueAtTime(o.f2||2000,t+dur);
+  const g=c.createGain(), a=o.attack!=null?o.attack:dur*.4;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.vol||.15,t+a); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(fl); fl.connect(g); g.connect(SND.master); s.start(t); s.stop(t+dur+.05);
+}
+function sfx(n){
+  try{switch(n){
+    case 'tap': tone(660,.07,{type:'triangle',vol:.14}); break;
+    case 'tick': tone(1250,.035,{type:'square',vol:.04}); break;
+    case 'pick': tone(520,.1,{vol:.22,to:900}); break;
+    case 'stick': tone(320,.09,{type:'square',vol:.07,to:150}); noise(.09,{vol:.16,f1:2200,f2:600,attack:.004}); break;
+    case 'peel': noise(.18,{vol:.12,f1:900,f2:3500,attack:.01}); break;
+    case 'correct': tone(784,.12,{type:'triangle',vol:.28}); tone(1047,.24,{type:'triangle',vol:.28,when:.1}); break;
+    case 'wrong': tone(230,.28,{type:'sawtooth',vol:.1,to:130}); break;
+    case 'combo': [523,659,784,1047].forEach((f,i)=>tone(f,.15,{type:'triangle',vol:.24,when:i*.07})); noise(.5,{vol:.08,f1:4000,f2:9000,type:'highpass',when:.2,attack:.01}); break;
+    case 'fanfare': [[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.2],[784,.58,.14],[1047,.7,.6]].forEach(a=>tone(a[0],a[2],{type:'triangle',vol:.27,when:a[1]})); noise(1,{vol:.1,f1:3000,f2:9000,type:'highpass',when:.36,attack:.02}); break;
+    case 'pop': tone(380+Math.random()*320,.07,{vol:.22,to:1300}); break;
+    case 'whoosh': noise(.32,{vol:.09,f1:400,f2:2600,q:.7}); break;
+    case 'inhale': noise(1.3,{vol:.09,f1:450,f2:1500,q:.5}); break;
+    case 'exhale': noise(1.5,{vol:.09,f1:1400,f2:380,q:.5}); break;
+    case 'stamp': tone(110,.2,{type:'square',vol:.13,to:55}); noise(.16,{vol:.22,f1:900,f2:200,attack:.003}); break;
+    case 'burst': noise(.55,{vol:.16,f1:4000,f2:9500,type:'highpass',attack:.004}); tone(900,.14,{vol:.12,to:1900}); break;
+    case 'unlock': tone(660,.1,{type:'triangle',vol:.22}); tone(990,.28,{type:'triangle',vol:.22,when:.09}); break;
+    case 'drip': tone(1400,.09,{vol:.2,to:420}); tone(700,.05,{vol:.08,when:.08}); break;
+    case 'flush': noise(1.3,{vol:.2,f1:300,f2:1800,type:'lowpass',q:.6,attack:.15}); noise(.9,{vol:.08,f1:2500,f2:600,when:.4}); break;
+    case 'flow': noise(.7,{vol:.1,f1:250,f2:700,type:'lowpass',q:.8}); break;
+    case 'filter': noise(.6,{vol:.1,f1:3000,f2:1200,q:2}); [0,.12,.24].forEach(w=>tone(900+w*600,.06,{vol:.08,when:w})); break;
+    case 'absorb': [523,659,784].forEach((f,i)=>tone(f,.14,{type:'sine',vol:.16,when:i*.08,to:f*1.25})); break;
+    case 'secrete': [784,622,494].forEach((f,i)=>tone(f,.14,{type:'triangle',vol:.14,when:i*.08,to:f*.8})); break;
+    case 'zoom': tone(300,.45,{vol:.14,to:1500}); noise(.4,{vol:.06,f1:600,f2:5000}); break;
+    case 'sparkle': [1319,1568,2093].forEach((f,i)=>tone(f,.12,{type:'sine',vol:.12,when:i*.06})); break;
+    case 'heat': for(let i=0;i<8;i++) tone(250+Math.random()*350,.08,{vol:.12,to:700+Math.random()*500,when:i*.13}); break;
+    case 'pen': tone(1800,.02,{type:'triangle',vol:.03}); break;
+    case 'bubble': tone(300,.12,{vol:.18,to:700}); break;
+  }}catch(e){}
+}
+
+/* ============ 애니메이션 루프 & 폭죽(컨페티) ============ */
+const TASKS=[]; let loopOn=false, lastT=0;
+function addTask(fn){TASKS.push(fn);}
+function kick(){ if(!loopOn){loopOn=true; lastT=performance.now(); requestAnimationFrame(loop);} }
+function loop(t){
+  const dt=clamp((t-lastT)/1000,0.001,0.05); lastT=t; let any=false;
+  for(const f of TASKS){ try{ if(f(dt,t)) any=true; }catch(e){ console.error(e); } }
+  const fxAny=fxStep();
+  if(any||fxAny) requestAnimationFrame(loop); else loopOn=false;
+}
+const FX={cv:null,ctx:null,parts:[],dpr:1,dirty:false};
+const FXCOL=['#ff4d6d','#ffb238','#3361e8','#21c9a9','#7a4ff0','#45b3ff','#ffd43b','#ff8a3d'];
+function fxResize(){ if(!FX.cv) return; FX.dpr=Math.min(2,window.devicePixelRatio||1); FX.cv.width=Math.round(innerWidth*FX.dpr); FX.cv.height=Math.round(innerHeight*FX.dpr); }
+function confetti(x,y,o={}){
+  let n=o.count||40; if(REDUCED) n=Math.ceil(n/4);
+  const sp=o.speed||9, cols=o.colors||FXCOL, shapes=o.shapes||['r','c','s','b'];
+  for(let i=0;i<n;i++){
+    const a=(o.angle!=null?o.angle:-Math.PI/2)+(Math.random()-.5)*(o.spread!=null?o.spread:Math.PI*2);
+    const v=sp*(.4+Math.random()*.8);
+    FX.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:o.g!=null?o.g:.28,rot:Math.random()*6,vr:(Math.random()-.5)*.45,
+      s:(o.size||8)*(.6+Math.random()*.8),shape:shapes[i%shapes.length],col:cols[i%cols.length],life:1,dec:o.decay||(.009+Math.random()*.008),drag:o.drag||.985});
+  }
+  kick();
+}
+function burstAt(el,o={}){ if(!el) return; const r=el.getBoundingClientRect(); confetti(r.left+r.width/2,r.top+r.height/2,o); }
+function fireworks(){
+  sfx('burst'); const W=innerWidth,H=innerHeight;
+  for(let k=0;k<5;k++) setTimeout(()=>{ confetti(W*(.15+Math.random()*.7),H*(.18+Math.random()*.35),{count:60,speed:11,g:.17}); sfx('pop'); },k*260);
+  setTimeout(()=>{ const n=REDUCED?15:90; for(let i=0;i<n;i++) FX.parts.push({x:Math.random()*W,y:-20-Math.random()*240,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,g:.05,rot:Math.random()*6,vr:(Math.random()-.5)*.3,s:6+Math.random()*7,shape:['r','b','s'][i%3],col:FXCOL[i%FXCOL.length],life:1,dec:.004,drag:.995}); kick(); },300);
+}
+function starPath(c,r){ c.beginPath(); for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2, rr=i%2?r*.45:r; c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} c.closePath(); c.fill(); }
+function fxStep(){
+  const P=FX.parts, c=FX.ctx; if(!c) return false;
+  if(!P.length){ if(FX.dirty){ c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,FX.cv.width,FX.cv.height); FX.dirty=false; } return false; }
+  FX.dirty=true; c.setTransform(FX.dpr,0,0,FX.dpr,0,0); c.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i]; p.vx*=p.drag; p.vy=p.vy*p.drag+p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=p.dec;
+    if(p.life<=0||p.y>innerHeight+40){P.splice(i,1);continue;}
+    c.save(); c.globalAlpha=Math.min(1,p.life*1.6); c.translate(p.x,p.y); c.rotate(p.rot); c.fillStyle=p.col; const s=p.s;
+    if(p.shape==='c'){c.beginPath();c.arc(0,0,s/2,0,7);c.fill();}
+    else if(p.shape==='s') starPath(c,s*.7);
+    else if(p.shape==='b') c.fillRect(-s/2,-s/5,s,(s/2.5)*Math.abs(Math.cos(p.rot*2))+1);
+    else c.fillRect(-s/2,-s/2,s,s*.62);
+    c.restore();
+  }
+  return true;
+}
+function floatText(x,y,txt,color){
+  const d=document.createElement('div'); d.className='float-txt'; d.textContent=txt; d.style.left=x+'px'; d.style.top=y+'px'; d.style.color=color||'#12a874';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1200);
+}
+function floatAt(el,txt,color){ if(!el) return; const r=el.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,txt,color); }
+let toastTimer=null;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2300); }
+
+/* ============ 캔버스 도우미 ============ */
+function prepCanvas(cv){
+  const w=cv.clientWidth; if(!w) return null;
+  const H=+cv.getAttribute('height'); const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=H+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv._w=w; cv._dpr=dpr; cv._H=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); return {ctx,W:w,H:cv._H};
+}
+function visible(el){ return !!(el && el.offsetParent!==null); }
+
+/* ============ 화면 이동 ============ */
+const SCREENS=['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const STEP_NAMES=['도입','개념','탐구','스티커','실생활','개념 확인'];
+let cur=-1; const enterHooks={};
+function renderSteps(){
+  const box=$('stepIndicator');
+  if(!box.children.length){
+    STEP_NAMES.forEach((n,k)=>{ const b=document.createElement('button'); b.className='step-dot'; b.innerHTML='<i></i><span>'+n+'</span>'; b.setAttribute('aria-label',(k+1)+'단계 '+n);
+      b.addEventListener('click',()=>{ sfx('tap'); goTo(k===5?(qz&&qz.done?6:5):k); }); box.appendChild(b); });
+  }
+  const pos=Math.min(cur,6);
+  [...box.children].forEach((b,k)=>{ b.classList.toggle('active',k===pos||(pos===6&&k===5)); b.classList.toggle('done',k<pos); });
+}
+function goTo(i){
+  if(i===cur) return;
+  const back=i<cur, prev=cur;
+  SCREENS.forEach((id,k)=>{ const el=$(id); el.classList.toggle('active',k===i); el.classList.toggle('back',k===i&&back); });
+  cur=i; renderSteps(); window.scrollTo(0,0);
+  if(prev>=0) sfx('whoosh');
+  if(i<=5) lsSet('progress',i);
+  if(enterHooks[i]) enterHooks[i]();
+  kick();
+}
+
+</script>
+<script>
+/* ============ 물질 모형 ============ */
+const PT={
+  rbc:{n:'혈구',c:'#e03131',r:11},
+  pro:{n:'단백질',c:'#9c36b5',r:11},
+  glu:{n:'포도당',c:'#f2a900',r:8.5},
+  ami:{n:'아미노산',c:'#2f9e44',r:8.5},
+  min:{n:'무기염류',c:'#1c7ed6',r:7},
+  ure:{n:'요소',c:'#fd7e14',r:8.5},
+  was:{n:'노폐물',c:'#8d6e63',r:7.5}
+};
+const PT_ORDER=['rbc','pro','glu','ami','min','ure','was'];
+function drawP(ctx,t,x,y,r,a){
+  const p=PT[t]; ctx.save(); ctx.globalAlpha=a==null?1:a; ctx.translate(x,y); ctx.fillStyle=p.c; ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.lineWidth=Math.max(1,r*.18);
+  ctx.beginPath();
+  if(t==='rbc'){ ctx.arc(0,0,r,0,7); ctx.fill(); ctx.stroke(); ctx.fillStyle='rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(0,0,r*.45,0,7); ctx.fill(); }
+  else if(t==='pro'){ for(let i=0;i<12;i++){ const ang=i*Math.PI/6, rr=i%2?r*.72:r; ctx.lineTo(Math.cos(ang)*rr,Math.sin(ang)*rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else if(t==='glu'){ for(let i=0;i<6;i++){ const ang=i*Math.PI/3+Math.PI/6; ctx.lineTo(Math.cos(ang)*r,Math.sin(ang)*r); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else if(t==='ami'){ ctx.moveTo(0,-r); ctx.lineTo(r,0); ctx.lineTo(0,r); ctx.lineTo(-r,0); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else if(t==='min'){ ctx.rect(-r*.85,-r*.85,r*1.7,r*1.7); ctx.fill(); ctx.stroke(); }
+  else if(t==='ure'){ ctx.moveTo(0,-r*1.1); ctx.lineTo(r,r*.75); ctx.lineTo(-r,r*.75); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else { ctx.arc(0,0,r,0,7); ctx.fill(); ctx.stroke(); ctx.strokeStyle='#fff'; ctx.lineWidth=Math.max(1,r*.22); ctx.beginPath(); ctx.moveTo(-r*.45,-r*.45); ctx.lineTo(r*.45,r*.45); ctx.moveTo(r*.45,-r*.45); ctx.lineTo(-r*.45,r*.45); ctx.stroke(); }
+  ctx.restore();
+}
+function iconSVG(t,sz){
+  const p=PT[t], c=p.c, s=sz||18; let body='';
+  if(t==='rbc') body=`<circle cx="10" cy="10" r="8" fill="${c}" stroke="#fff" stroke-width="1.5"/><circle cx="10" cy="10" r="3.4" fill="rgba(255,255,255,.4)"/>`;
+  else if(t==='pro'){ let pts=''; for(let i=0;i<12;i++){ const a=i*Math.PI/6, rr=i%2?5.8:8.5; pts+=(10+Math.cos(a)*rr).toFixed(1)+','+(10+Math.sin(a)*rr).toFixed(1)+' '; } body=`<polygon points="${pts}" fill="${c}" stroke="#fff" stroke-width="1.2"/>`; }
+  else if(t==='glu'){ let pts=''; for(let i=0;i<6;i++){ const a=i*Math.PI/3+Math.PI/6; pts+=(10+Math.cos(a)*8).toFixed(1)+','+(10+Math.sin(a)*8).toFixed(1)+' '; } body=`<polygon points="${pts}" fill="${c}" stroke="#fff" stroke-width="1.2"/>`; }
+  else if(t==='ami') body=`<polygon points="10,2 18,10 10,18 2,10" fill="${c}" stroke="#fff" stroke-width="1.2"/>`;
+  else if(t==='min') body=`<rect x="4" y="4" width="12" height="12" fill="${c}" stroke="#fff" stroke-width="1.2"/>`;
+  else if(t==='ure') body=`<polygon points="10,2 18.5,16 1.5,16" fill="${c}" stroke="#fff" stroke-width="1.2"/>`;
+  else body=`<circle cx="10" cy="10" r="7.5" fill="${c}" stroke="#fff" stroke-width="1.2"/><path d="M7 7 L13 13 M13 7 L7 13" stroke="#fff" stroke-width="1.8"/>`;
+  return `<svg viewBox="0 0 20 20" width="${s}" height="${s}" aria-hidden="true">${body}</svg>`;
+}
+
+/* ============ 배설계 그림 (viewBox 520×500) ============ */
+const EX_INFO={
+  kidney:['🫘 콩팥','허리의 등 쪽 좌우에 1개씩 있어요. 혈액 속 노폐물을 <b>걸러 오줌을 만드는</b> 기관이에요. 콩팥겉질, 콩팥속질, 콩팥깔때기로 나뉘어요.'],
+  artery:['🔴 콩팥동맥','요소 같은 노폐물이 <b>많이 들어 있는 혈액</b>이 콩팥으로 <b>들어가는</b> 혈관이에요.'],
+  vein:['🔵 콩팥정맥','콩팥에서 걸러져 노폐물이 <b>줄어든 혈액</b>이 콩팥에서 <b>나오는</b> 혈관이에요.'],
+  pelvis:['🟡 콩팥깔때기','콩팥단위에서 만들어진 오줌이 <b>모이는 곳</b>이에요. 오줌관과 연결돼요.'],
+  ureter:['〰️ 오줌관','콩팥에서 만들어진 오줌이 <b>방광으로 이동하는 통로</b>예요. 길이 약 20~30 cm, 꿈틀운동으로 오줌을 보내요.'],
+  bladder:['🫙 방광','오줌을 <b>모아 두는 주머니</b>예요. 성인은 약 600 mL까지 저장할 수 있어요.'],
+  urethra:['🚪 요도','방광에 모인 오줌이 <b>몸 밖으로 나가는 통로</b>예요.'],
+  aorta:['대동맥','심장에서 나온 혈액이 온몸으로 흐르는 굵은 동맥이에요. 여기서 콩팥동맥이 갈라져요.'],
+  vena:['대정맥','온몸의 혈액이 심장으로 돌아가는 굵은 정맥이에요. 콩팥정맥이 여기로 이어져요.']
+};
+function exSVG(mode){
+  // mode: 'label' 이름표 표시 / 'board' 번호만 / 'plain'
+  const L=mode==='label', B=mode==='board'; const u=mode+(++SVGID);
+  const kidL='M175 120 C 130 120 122 175 130 205 C 138 250 170 262 190 250 C 206 240 198 222 200 205 C 202 188 212 178 208 160 C 204 135 195 120 175 120 Z';
+  const kidR='M345 120 C 390 120 398 175 390 205 C 382 250 350 262 330 250 C 314 240 322 222 320 205 C 318 188 308 178 312 160 C 316 135 325 120 345 120 Z';
+  const pelL='M180 186 Q 198 193 206 202 Q 198 212 180 219 Q 188 202 180 186 Z', pelR='M340 186 Q 322 193 314 202 Q 322 212 340 219 Q 332 202 340 186 Z';
+  const urL='M205 214 C 220 280 225 340 238 392', urR='M315 214 C 300 280 295 340 282 392';
+  const bl='M220 395 Q 220 370 260 370 Q 300 370 300 395 Q 302 440 260 445 Q 218 440 220 395 Z';
+  const labels=[['kidney',70,150,'콩팥','M92 156 L150 172'],['ureter',70,300,'오줌관','M98 302 L218 292'],['bladder',70,412,'방광','M90 410 L222 405'],
+                ['artery',455,150,'콩팥동맥','M418 154 L292 183'],['vein',455,232,'콩팥정맥','M420 230 L296 206'],['urethra',455,472,'요도','M432 470 L264 470'],['pelvis',70,236,'콩팥깔때기','M112 236 L188 206']];
+  let lab='';
+  labels.forEach((l,i)=>{ if(B&&l[0]==='pelvis') return; if(L||B) lab+=`<path class="lead" d="${l[4]}"/>`;
+    if(L) lab+=`<text class="lbl" x="${l[1]}" y="${l[2]+6}" text-anchor="middle">${l[3]}</text>`; });
+  return `<svg viewBox="0 0 520 500" role="img" aria-label="배설계의 구조">
+  <defs><clipPath id="blClip${u}"><path d="${bl}"/></clipPath>
+   <linearGradient id="kg${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e66a8c"/><stop offset="1" stop-color="#a61e4d"/></linearGradient></defs>
+  <path d="M180 20 Q 260 0 340 20 L 390 120 Q 405 300 360 470 L 160 470 Q 115 300 130 120 Z" fill="#f6f3ff" stroke="#e5dfff" stroke-width="3"/>
+  <g class="part" data-k="aorta"><path d="M248 30 L248 345" stroke="#e03131" stroke-width="13" stroke-linecap="round"/><path class="hit" d="M248 30 L248 345" stroke-width="22"/></g>
+  <g class="part" data-k="vena"><path d="M272 30 L272 345" stroke="#4263eb" stroke-width="13" stroke-linecap="round"/><path class="hit" d="M272 30 L272 345" stroke-width="22"/></g>
+  <g class="part" data-k="artery"><path d="M248 178 L205 188 M248 178 L315 188" stroke="#e03131" stroke-width="8" stroke-linecap="round" fill="none"/><path class="hit" d="M248 178 L205 188 M248 178 L315 188" stroke-width="24"/></g>
+  <g class="part" data-k="vein"><path d="M205 210 L272 200 M315 210 L272 200" stroke="#4263eb" stroke-width="8" stroke-linecap="round" fill="none"/><path class="hit" d="M205 210 L272 200 M315 210 L272 200" stroke-width="22"/></g>
+  <g class="part glow" data-k="kidney"><path d="${kidL}" fill="url(#kg${u})" stroke="#8a1c40" stroke-width="2.5"/><path d="${kidR}" fill="url(#kg${u})" stroke="#8a1c40" stroke-width="2.5"/></g>
+  <g class="part" data-k="pelvis"><path d="${pelL}" fill="#ffe066" stroke="#e8a400" stroke-width="2"/><path d="${pelR}" fill="#ffe066" stroke="#e8a400" stroke-width="2"/></g>
+  <g class="part" data-k="ureter"><path d="${urL} M${urR.slice(1)}" stroke="#f5b700" stroke-width="8" fill="none" stroke-linecap="round"/><path class="hit" d="${urL} M${urR.slice(1)}" stroke-width="26"/></g>
+  <g class="part" data-k="bladder"><path d="${bl}" fill="#fff8db" stroke="#e8a400" stroke-width="3"/>
+    <g clip-path="url(#blClip${u})"><rect class="blFill" x="215" y="${mode==='label'?445:420}" width="90" height="90" fill="#ffd43b" opacity=".85"/></g></g>
+  <g class="part" data-k="urethra"><path d="M260 445 L260 492" stroke="#f5b700" stroke-width="8" stroke-linecap="round"/><path class="hit" d="M260 445 L260 492" stroke-width="26"/></g>
+  ${lab}
+  <g class="ureaDots"></g>
+  </svg>`;
+}
+
+/* ============ 콩팥 단면 (viewBox 420×300) ============ */
+const KID_INFO={
+  cortex:['콩팥겉질','콩팥의 바깥 부분이에요. 토리와 보먼주머니가 주로 이곳에 있어요.'],
+  medulla:['콩팥속질','콩팥겉질 안쪽 부분이에요. 세뇨관이 길게 뻗어 있어요.'],
+  kpelvis:['콩팥깔때기','콩팥 안쪽의 빈 공간으로, 만들어진 오줌이 모여 오줌관으로 나가요.'],
+  kureter:['오줌관','콩팥깔때기에 모인 오줌을 방광으로 보내요.'],
+  kart:['콩팥동맥','노폐물이 많은 혈액이 들어와요.'],
+  kvein:['콩팥정맥','걸러진 깨끗한 혈액이 나가요.'],
+  unit:['콩팥단위','오줌을 만드는 <b>기본 단위</b>! 토리 + 보먼주머니 + 세뇨관으로 이루어져요. 콩팥 하나에 약 100만 개나 있어요. <span class="badge ext">확장</span>']
+};
+function kidSVG(){
+  const outer='M190 30 C 90 30 50 100 55 160 C 60 235 120 275 190 270 C 245 266 272 240 264 205 C 258 182 240 172 242 150 C 244 128 262 118 264 95 C 268 55 240 30 190 30 Z';
+  const inner='M190 58 C 115 58 85 110 88 160 C 92 215 135 245 190 242 C 226 240 240 220 236 200 C 232 182 218 170 220 150 C 222 130 236 118 237 98 C 240 72 222 58 190 58 Z';
+  return `<svg viewBox="0 0 420 300" role="img" aria-label="콩팥의 단면">
+   <g class="part" data-k="kart"><path d="M410 128 L262 140" stroke="#e03131" stroke-width="10" stroke-linecap="round"/><path class="hit" d="M410 128 L262 140" stroke-width="24"/></g>
+   <g class="part" data-k="kvein"><path d="M410 172 L262 162" stroke="#4263eb" stroke-width="10" stroke-linecap="round"/><path class="hit" d="M410 172 L262 162" stroke-width="24"/></g>
+   <g class="part" data-k="kureter"><path d="M250 175 C 280 195 296 240 300 296" stroke="#f5b700" stroke-width="11" fill="none" stroke-linecap="round"/><path class="hit" d="M250 175 C 280 195 296 240 300 296" stroke-width="26"/></g>
+   <g class="part" data-k="cortex"><path d="${outer}" fill="#e17595" stroke="#8a1c40" stroke-width="3"/></g>
+   <g class="part" data-k="medulla"><path d="${inner}" fill="#b83b62"/>
+     <path d="M112 100 L150 76 L214 140 Z M96 160 L104 205 L212 156 Z M120 225 L160 238 L214 168 Z" fill="#9c2a50"/></g>
+   <g class="part" data-k="kpelvis"><path d="M206 118 Q 240 132 256 150 Q 240 170 206 184 Q 222 150 206 118 Z" fill="#ffe066" stroke="#e8a400" stroke-width="2"/></g>
+   <g class="part" data-k="unit"><circle cx="118" cy="66" r="15" fill="#fff" stroke="#7048e8" stroke-width="3"/><circle cx="118" cy="66" r="7" fill="#e03131"/><path d="M128 76 C 140 95 132 110 150 125" stroke="#7048e8" stroke-width="4" fill="none"/>
+     <circle cx="118" cy="66" r="22" fill="none" stroke="#7048e8" stroke-width="2" stroke-dasharray="4 3"><animate attributeName="r" values="18;26;18" dur="1.8s" repeatCount="indefinite"/></circle></g>
+   <text class="lbl" x="58" y="24">콩팥겉질</text><path class="lead" d="M96 30 L100 48"/>
+   <text class="lbl" x="22" y="290">콩팥속질</text><path class="lead" d="M70 272 L120 222"/>
+   <text class="lbl" x="300" y="44">콩팥단위</text><path class="lead" d="M296 40 L140 62"/>
+   <text class="lbl" x="306" y="120" font-size="14">콩팥동맥</text><text class="lbl" x="306" y="196" font-size="14">콩팥정맥</text>
+   <text class="lbl" x="312" y="270" font-size="14">오줌관</text><text class="lbl" x="196" y="214" font-size="13">깔때기</text>
+  </svg>`;
+}
+
+/* ============ 콩팥단위 모식도 (viewBox 720×470) ============ */
+let SVGID=0;
+const LANE=90, TUBE=240, GX=120, GY=240;
+const NEPH_INFO={
+  glom:['토리','모세혈관이 실뭉치처럼 꼬여 뭉쳐 있는 부분이에요. 혈압이 높아 혈액 속 작은 물질이 <b>보먼주머니로 여과</b>돼요.'],
+  cap2:['보먼주머니','토리를 둘러싸는 <b>주머니 모양</b>의 구조예요. 여과된 액체를 받아 세뇨관으로 보내요.'],
+  tube:['세뇨관','보먼주머니와 연결된 <b>가늘고 긴 관</b>이에요. 둘러싼 모세혈관과 물질을 주고받아요(재흡수·분비).'],
+  cap:['모세혈관','세뇨관을 둘러싸고 있어요. 필요한 물질을 <b>다시 흡수(재흡수)</b>하고, 남은 노폐물을 세뇨관으로 <b>내보내요(분비)</b>.'],
+  artery:['콩팥동맥','노폐물이 많은 혈액이 토리로 들어와요.'],
+  pelvis:['콩팥깔때기','세뇨관에 남은 액체, 즉 <b>오줌</b>이 모이는 곳이에요.']
+};
+function nephSVG(mode){
+  // mode: 'label' | 'board' | 'quiz' | 'sim'
+  const L=mode!=='board', Q=mode==='quiz', B=mode==='board'; const u=mode+(++SVGID);
+  let caps=''; for(let x=300;x<=620;x+=40) caps+=`<path d="M${x} ${LANE+10} C ${x-16} ${LANE+60} ${x+16} ${TUBE-60} ${x} ${TUBE-20}" stroke="#ef8aa6" stroke-width="4" fill="none" opacity=".55"/>`;
+  let knot=''; [[0,0],[-16,-10],[14,-12],[-12,14],[16,12],[0,-22],[-24,4],[22,0],[2,22]].forEach(o=>knot+=`<circle cx="${GX+o[0]}" cy="${GY+o[1]}" r="12" fill="#e03131" stroke="#b02525" stroke-width="2"/>`);
+  const arF=[-40,0,40].map(a=>{const r=a*Math.PI/180;return `<path class="pa pa-f" d="M${(GX+30*Math.cos(r)).toFixed(1)} ${(GY+30*Math.sin(r)).toFixed(1)} L${(GX+52*Math.cos(r)).toFixed(1)} ${(GY+52*Math.sin(r)).toFixed(1)}" stroke="#7048e8" stroke-width="5" marker-end="url(#mF${u})"/>`;}).join('');
+  const arR=[300,340,380].map(x=>`<path class="pa pa-r" d="M${x} ${TUBE-26} L${x} ${LANE+20}" stroke="#12b886" stroke-width="6" marker-end="url(#mR${u})"/>`).join('');
+  const arS=[520,560,600].map(x=>`<path class="pa pa-s" d="M${x} ${LANE+18} L${x} ${TUBE-28}" stroke="#f76707" stroke-width="6" marker-end="url(#mS${u})"/>`).join('');
+  const pill=(x,y,t,c)=>`<g><rect class="pill-bg" x="${x-34}" y="${y-17}" width="68" height="30" rx="15"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="16" font-weight="900" fill="${c}">${t}</text></g>`;
+  const num=(x,y,t)=>`<g><circle cx="${x}" cy="${y}" r="17" fill="#5b3cd6"/><text x="${x}" y="${y+6}" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">${t}</text></g>`;
+  let lab='';
+  if(B){ lab+=num(GX,340,'①')+num(55,160,'②')+num(450,290,'③')+num(450,52,'④')+num(640,420,'⑤')+pill(215,165,'(가)','#5b3cd6')+pill(340,165,'(나)','#087f5b')+pill(560,165,'(다)','#c2410c'); }
+  else {
+    lab+=`<text class="lbl" x="${GX}" y="346" text-anchor="middle">토리</text><text class="lbl" x="58" y="160" text-anchor="middle">보먼주머니</text>
+      <text class="lbl" x="440" y="296" text-anchor="middle">세뇨관</text><text class="lbl" x="440" y="58" text-anchor="middle">모세혈관</text>
+      <text class="lbl" x="665" y="58" text-anchor="middle" fill="#3b5bdb">콩팥정맥 →</text><text class="lbl" x="58" y="440" text-anchor="middle" fill="#c92a2a">콩팥동맥</text>
+      <text class="lbl" x="640" y="428" text-anchor="middle" fill="#a35a00">콩팥깔때기</text>`;
+    lab+= Q ? pill(215,165,'(가)','#5b3cd6')+pill(340,165,'(나)','#087f5b')+pill(560,165,'(다)','#c2410c') : pill(215,165,'여과','#5b3cd6')+pill(340,165,'재흡수','#087f5b')+pill(560,165,'분비','#c2410c');
+  }
+  const mk=(id,c)=>`<marker id="${id}${u}" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="${c}"/></marker>`;
+  return `<svg viewBox="0 0 720 470" role="img" aria-label="콩팥단위 모식도" class="${mode==='label'?'':'show-all'}">${mode==='pad'?'<style>.lbl{font:800 17px sans-serif;fill:#3b3f66}.pill-bg{fill:#fff;stroke:#d9dcef;stroke-width:1.5}.hit{stroke:transparent;fill:none}</style>':''}
+   <defs>${mk('mF','#7048e8')}${mk('mR','#12b886')}${mk('mS','#f76707')}
+    <linearGradient id="capG${u}" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="720" y2="0"><stop offset="0" stop-color="#e03131"/><stop offset=".55" stop-color="#ae3ec9"/><stop offset="1" stop-color="#4263eb"/></linearGradient></defs>
+   <rect x="0" y="0" width="720" height="470" rx="18" fill="#fffdfb"/>
+   <g class="part" data-k="cap">${caps}<path d="M128 232 C 150 180 165 110 210 ${LANE+2} L 712 ${LANE}" stroke="url(#capG${u})" stroke-width="20" fill="none" stroke-linecap="round"/>
+     <path d="M700 ${LANE-14} L720 ${LANE} L700 ${LANE+14} Z" fill="#4263eb"/><path class="hit" d="M150 180 L 712 ${LANE}" stroke-width="34"/></g>
+   <g class="part" data-k="artery"><path d="M0 368 C 45 338 85 288 112 254" stroke="#e03131" stroke-width="20" fill="none" stroke-linecap="round"/><path class="hit" d="M0 368 C 45 338 85 288 112 254" stroke-width="34"/></g>
+   <g class="part" data-k="tube"><path d="M176 ${TUBE} L 640 ${TUBE} L 640 372" stroke="#b197fc" stroke-width="38" fill="none"/><path d="M176 ${TUBE} L 640 ${TUBE} L 640 374" stroke="#f3f0ff" stroke-width="28" fill="none"/></g>
+   <g class="part" data-k="cap2"><path d="M178 206 A 66 66 0 1 0 178 274" fill="rgba(151,117,250,.13)" stroke="#9775fa" stroke-width="9"/></g>
+   <g class="part" data-k="glom">${knot}</g>
+   <g class="part" data-k="pelvis"><rect x="565" y="372" width="150" height="88" rx="18" fill="#fff3bf" stroke="#f59f00" stroke-width="4"/></g>
+   ${mode==='pad'?'':arF+arR+arS}${mode==='pad'?lab.replace(/<g><rect class="pill-bg"[\s\S]*?<\/g>/g,''):lab}
+  </svg>`;
+}
+
+/* ============ 도입 히어로 ============ */
+function heroSVG(){
+  const urL='M205 214 C 220 280 225 340 238 392', urR='M315 214 C 300 280 295 340 282 392';
+  return exSVG('plain').replace('<g class="ureaDots"></g>',`
+   <circle r="6" fill="#ffd43b" stroke="#fff" stroke-width="2"><animateMotion dur="2.6s" repeatCount="indefinite" path="${urL}"/></circle>
+   <circle r="6" fill="#ffd43b" stroke="#fff" stroke-width="2"><animateMotion dur="2.6s" begin="1.3s" repeatCount="indefinite" path="${urR}"/></circle>
+   <circle r="5" fill="#e03131" stroke="#fff" stroke-width="1.5"><animateMotion dur="2s" repeatCount="indefinite" path="M248 40 L248 178 L205 188"/></circle>
+   <circle r="5" fill="#4263eb" stroke="#fff" stroke-width="1.5"><animateMotion dur="2s" begin="1s" repeatCount="indefinite" path="M205 210 L272 200 L272 40"/></circle>`).replace('class="blFill" x="215" y="420"','class="blFill" x="215" y="420"><animate attributeName="y" values="440;385;440" dur="6s" repeatCount="indefinite"/></rect><rect x="0" y="0" width="0" height="0"');
+}
+</script>
+<script>
+/* ============ 개념 ============ */
+const CONCEPTS=[
+  {t:'노폐물은 어디에서 생길까? — 암모니아 → 요소', html:`
+    <p>세포가 영양소를 분해하여 생명활동에 필요한 에너지를 얻을 때(세포호흡) <b>노폐물</b>이 생겨요. 영양소를 골라 무엇이 생기는지 확인해 보세요.</p>
+    <div class="toggle" style="justify-content:center"><button class="btn small" data-nut="carb">🍚 탄수화물</button><button class="btn small" data-nut="fat">🧈 지방</button><button class="btn small" data-nut="pro">🍗 단백질</button></div>
+    <div class="flow-nodes" id="nutFlow"><div class="node" style="background:#f3f4f8;color:#9aa1bd">👆 영양소 버튼을 눌러 보세요</div></div>
+    <div id="toxBox" class="hidden" style="margin-top:8px">
+      <div class="tox"><span style="min-width:74px">☠️ 암모니아</span><div class="bar"><i id="toxA" style="width:0;background:#e5484d"></i></div><span>독성 강함</span></div>
+      <div class="tox"><span style="min-width:74px">🟠 요소</span><div class="bar"><i id="toxU" style="width:0;background:#fd7e14"></i></div><span>독성 약함</span></div>
+    </div>
+    <div class="analogy">🚮 <b>배설 vs 배출</b>: 생명활동 결과 <b>몸 안에서 생긴 노폐물</b>을 내보내는 것이 <b>배설</b>(오줌, 날숨의 이산화 탄소)이에요. 음식물 중 <b>흡수되지 않은 찌꺼기(대변)</b>를 항문으로 내보내는 것은 <b>배출</b>이에요.</div>`},
+  {t:'배설계의 구조 — 콩팥, 오줌관, 방광, 요도', html:`
+    <p>배설계는 <b>콩팥, 오줌관, 방광, 요도</b>로 이루어져 있어요. 그림을 눌러 보거나 <b>오줌 따라가기</b>를 눌러 보세요.</p>
+    <div class="ex-wrap" id="exWrap"></div>
+    <div class="toggle" style="justify-content:center;margin:8px 0"><button class="btn small mint" id="exTour">💧 오줌 따라가기</button></div>
+    <div class="info-panel" id="exInfo">👆 그림의 <b>콩팥, 콩팥동맥, 콩팥정맥, 콩팥깔때기, 오줌관, 방광, 요도</b>를 눌러 보세요.</div>`},
+  {t:'콩팥의 속 — 오줌을 만드는 기본 단위, 콩팥단위', html:`
+    <p>콩팥을 반으로 자르면 <b>콩팥겉질, 콩팥속질, 콩팥깔때기</b>가 보여요. 겉질과 속질에는 오줌을 만드는 기본 단위인 <b>콩팥단위</b>가 퍼져 있어요.</p>
+    <div class="kid-wrap" id="kidWrap"></div>
+    <div class="toggle" style="justify-content:center;margin:8px 0"><button class="btn small" id="zoomBtn">🔍 콩팥단위 확대하기</button></div>
+    <div id="zoomBox" class="hidden"><div class="neph-wrap" id="nephLbl"></div><p class="muted" style="text-align:center">콩팥단위 = <b>토리 + 보먼주머니 + 세뇨관</b> · 세뇨관은 <b>모세혈관</b>으로 둘러싸여 있어요.</p></div>
+    <div class="info-panel" id="kidInfo">👆 콩팥 단면의 각 부분을 눌러 보세요. 반짝이는 동그라미는 <b>콩팥단위</b>예요!</div>`},
+  {t:'오줌이 만들어지는 과정 — 여과 · 재흡수 · 분비', html:`
+    <p>버튼을 눌러 각 과정에서 물질이 <b>어디에서 어디로</b> 이동하는지 확인하세요.</p>
+    <div class="toggle" style="justify-content:center;margin-bottom:8px"><button class="btn small" data-proc="f" style="background:linear-gradient(135deg,#8e6bff,#5b3cd6);box-shadow:0 6px 0 #3f26a3">여과</button><button class="btn small mint" data-proc="r">재흡수</button><button class="btn small" data-proc="s" style="background:linear-gradient(135deg,#ff922b,#e8590c);box-shadow:0 6px 0 #b3440a">분비</button></div>
+    <div class="neph-wrap" id="procWrap"></div>
+    <div class="info-panel" id="procInfo">👆 위 버튼을 눌러 보세요.</div>
+    <div class="tbl-wrap" style="margin-top:10px"><table class="tbl"><tr><th>과정</th><th>이동 방향</th><th>이동하는 물질</th></tr>
+      <tr><td><span class="pill-tag pt-f">여과</span></td><td>토리 → 보먼주머니</td><td>물, 포도당, 아미노산, 무기염류, 요소 등 <b>크기가 작은 물질</b><br><span class="muted">(혈구·단백질 등 큰 물질은 여과되지 않아요)</span></td></tr>
+      <tr><td><span class="pill-tag pt-r">재흡수</span></td><td>세뇨관 → 모세혈관</td><td>포도당·아미노산(<b>모두</b>), 물·무기염류(<b>대부분</b>) — 몸에 <b>필요한</b> 물질</td></tr>
+      <tr><td><span class="pill-tag pt-s">분비</span></td><td>모세혈관 → 세뇨관</td><td>여과되지 않고 혈액에 남아 있던 <b>노폐물</b></td></tr></table></div>
+    <div class="analogy">🧹 <b>방 청소 비유</b>: 서랍 속 물건을 일단 다 쏟아 내고(<b>여과</b>), 필요한 물건은 다시 서랍에 넣고(<b>재흡수</b>), 서랍 구석에 남은 쓰레기는 마저 꺼내 버려요(<b>분비</b>). 남은 쓰레기 더미가 바로 <b>오줌</b>이에요!</div>`}
+];
+const MYTHS=[
+  ['대변을 내보내는 것도 배설이다.','대변은 음식물 중 <b>흡수되지 않은 찌꺼기</b>라서 <b>배출</b>이에요. 배설은 몸 안의 생명활동으로 생긴 노폐물(요소, 이산화 탄소)을 내보내는 거예요.'],
+  ['오줌은 방광에서 만들어진다.','오줌은 <b>콩팥(콩팥단위)</b>에서 만들어져요. 방광은 오줌을 <b>잠시 모아 두는</b> 주머니예요.'],
+  ['토리에서 여과되는 물질은 혈액에서 모두 빠져나간다.','여과되는 물질도 <b>일부만</b> 보먼주머니로 빠져나가요. 나머지는 혈액에 남아 모세혈관으로 흘러가요. (② 실험에서 포도당이 혈액에도 남아 있는 것 확인!)'],
+  ['혈액 속의 모든 물질이 토리에서 걸러진다.','<b>혈구와 단백질</b>처럼 크기가 큰 물질은 여과되지 않아요. 오줌에 단백질이 나온다면 여과 과정에 문제가 있다는 뜻이에요.'],
+  ['재흡수는 필요 없는 물질을 다시 모으는 과정이다.','재흡수는 포도당·아미노산·물처럼 몸에 <b>필요한</b> 물질을 세뇨관에서 모세혈관으로 <b>되찾는</b> 과정이에요.'],
+  ['암모니아가 그대로 오줌으로 나간다.','독성이 강한 암모니아는 <b>간에서 독성이 약한 요소로</b> 바뀐 뒤 콩팥으로 운반되어 오줌으로 나가요.'],
+  ['오줌은 대부분 요소로 되어 있다.','오줌은 <b>대부분 물</b>이고, 요소·무기염류 등이 섞인 <b>혼합물</b>이에요.'],
+  ['콩팥정맥의 혈액에 요소가 더 많다.','요소는 콩팥에서 걸러져 오줌으로 나가므로 <b>콩팥정맥이 콩팥동맥보다 요소 농도가 낮아요.</b>']
+];
+const NUT={
+  carb:[['🍚 탄수화물',''],['🔥 조직세포에서 산소와 반응 (세포호흡) → ⚡ 에너지',''],['💨 이산화 탄소 + 💧 물 생성',''],['💨 이산화 탄소 → 순환계 → 🫁 허파 → 날숨으로 배설','out']],
+  fat:[['🧈 지방',''],['🔥 조직세포에서 산소와 반응 (세포호흡) → ⚡ 에너지',''],['💨 이산화 탄소 + 💧 물 생성',''],['💨 이산화 탄소 → 순환계 → 🫁 허파 → 날숨으로 배설','out']],
+  pro:[['🍗 단백질',''],['🔥 조직세포에서 분해 → ⚡ 에너지',''],['💨 이산화 탄소 + 💧 물 + ☠️ 암모니아 생성','bad'],['☠️ 암모니아(독성 강함) → 🟤 간 → 🟠 요소(독성 약함)','good'],['🟠 요소 → 순환계 → 🫘 콩팥에서 걸러짐 → 🟡 오줌으로 배설','out'],['💨 이산화 탄소 → 🫁 허파 → 날숨으로 배설','out']]
+};
+let nutTm=[];
+function runNut(k){
+  nutTm.forEach(clearTimeout); nutTm=[]; const box=$('nutFlow'); box.innerHTML=''; sfx('tap');
+  $('toxBox').classList.toggle('hidden',k!=='pro'); $('toxA').style.width='0'; $('toxU').style.width='0';
+  NUT[k].forEach((n,i)=>nutTm.push(setTimeout(()=>{ const d=document.createElement('div'); d.className='node '+n[1]; d.textContent=(i?'→ ':'')+n[0]; box.appendChild(d);
+    sfx(n[1]==='bad'?'wrong':n[1]==='good'?'sparkle':n[1]==='out'?'drip':'pop');
+    if(k==='pro'&&i===2){ $('toxA').style.width='92%'; }
+    if(k==='pro'&&i===3){ $('toxA').style.width='0'; $('toxU').style.width='22%'; burstAt(d,{count:16,speed:5,colors:['#fd7e14','#ffd43b']}); }
+    if(i===NUT[k].length-1) burstAt(d,{count:20,speed:6}); },i*650)));
+}
+function buildConcepts(){
+  const box=$('conceptCards'); const seen=lsGet('seen',{});
+  box.innerHTML=CONCEPTS.map((c,i)=>`<div class="card concept-card rise-in${seen[i]?' seen':''}" style="--i:${i+1}" data-i="${i}">
+    <div class="head" role="button" tabindex="0"><span class="num">${i+1}</span><strong>${c.t}</strong><span class="chev">▾</span></div>
+    <div class="concept-body"><div>${c.html}</div></div></div>`).join('');
+  box.querySelectorAll('.concept-card>.head').forEach(h=>h.addEventListener('click',()=>{
+    const card=h.parentElement, i=+card.dataset.i, open=!card.classList.contains('open');
+    card.classList.toggle('open',open); sfx(open?'pop':'tap');
+    if(open){ card.classList.add('seen'); const s=lsGet('seen',{}); s[i]=1; lsSet('seen',s); }
+  }));
+  $('mythGrid').innerHTML=MYTHS.map((m,i)=>`<div class="myth rise-in" style="--i:${i+5}"><div class="no">❌ ${m[0]}</div><div class="tapme">👆 눌러서 바로잡기</div><div class="yes">✅ ${m[1]}</div></div>`).join('');
+  $('mythGrid').querySelectorAll('.myth').forEach(m=>m.addEventListener('click',()=>{ if(!m.classList.contains('open')){ m.classList.add('open'); sfx('correct'); burstAt(m,{count:14,speed:6,size:6}); } }));
+  // ① 영양소
+  document.querySelectorAll('[data-nut]').forEach(b=>b.addEventListener('click',()=>runNut(b.dataset.nut)));
+  // ② 배설계
+  $('exWrap').innerHTML=exSVG('label');
+  $('exWrap').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>showPart($('exWrap'),$('exInfo'),EX_INFO,p.dataset.k)));
+  $('exTour').addEventListener('click',()=>ureaTour($('exWrap'),true,()=>{}));
+  // ③ 콩팥
+  $('kidWrap').innerHTML=kidSVG();
+  $('kidWrap').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>showPart($('kidWrap'),$('kidInfo'),KID_INFO,p.dataset.k)));
+  $('nephLbl').innerHTML=nephSVG('label');
+  $('nephLbl').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>showPart($('nephLbl'),$('kidInfo'),NEPH_INFO,p.dataset.k)));
+  $('zoomBtn').addEventListener('click',()=>{ const z=$('zoomBox'); const op=z.classList.contains('hidden'); z.classList.toggle('hidden',!op);
+    $('zoomBtn').textContent=op?'🔍 확대 닫기':'🔍 콩팥단위 확대하기';
+    if(op){ sfx('zoom'); z.classList.remove('zoom-in'); void z.offsetWidth; z.classList.add('zoom-in'); setTimeout(()=>burstAt($('nephLbl'),{count:24,speed:7}),500);
+      const ip=$('kidInfo'); ip.innerHTML='<b>콩팥단위</b> — 토리, 보먼주머니, 세뇨관을 눌러 보세요.'; } else sfx('tap'); });
+  // ④ 과정
+  $('procWrap').innerHTML=nephSVG('label');
+  $('procWrap').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>showPart($('procWrap'),$('procInfo'),NEPH_INFO,p.dataset.k)));
+  const PROC={f:['여과','<span class="pill-tag pt-f">토리 → 보먼주머니</span> 높은 혈압으로 물, 포도당, 아미노산, 무기염류, 요소 같은 <b>작은 물질</b>이 빠져나가요. 혈구·단백질은 커서 못 빠져나가요.','filter'],
+    r:['재흡수','<span class="pill-tag pt-r">세뇨관 → 모세혈관</span> 포도당·아미노산은 <b>모두</b>, 물과 무기염류는 <b>대부분</b> 다시 혈액으로 흡수돼요.','absorb'],
+    s:['분비','<span class="pill-tag pt-s">모세혈관 → 세뇨관</span> 여과되지 않고 혈액에 남아 있던 <b>노폐물</b>이 세뇨관으로 이동해요.','secrete']};
+  document.querySelectorAll('[data-proc]').forEach(b=>b.addEventListener('click',()=>{ const k=b.dataset.proc, sv=$('procWrap').querySelector('svg');
+    sv.classList.remove('show-f','show-r','show-s'); void sv.getBoundingClientRect(); sv.classList.add('show-'+k);
+    const ip=$('procInfo'); ip.innerHTML=`<b>${PROC[k][0]}</b> — ${PROC[k][1]}`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); sfx(PROC[k][2]); }));
+}
+function showPart(wrap,infoEl,INFO,k){
+  wrap.querySelectorAll('.part').forEach(p=>p.classList.toggle('sel',p.dataset.k===k));
+  const inf=INFO[k]; if(!inf) return; infoEl.innerHTML=`<b>${inf[0]}</b> — ${inf[1]}`; infoEl.classList.remove('flash'); void infoEl.offsetWidth; infoEl.classList.add('flash'); sfx('tap');
+}
+/* 요소(오줌) 따라가기 — exSVG 좌표 */
+const UREA_PATH=[[248,40],[248,178],[208,186],[172,178],[190,202],[205,215],[215,262],[222,312],[230,356],[238,392],[255,414],[260,446],[260,496]];
+const UREA_SEQ=[['artery',1],['kidney',3],['pelvis',4],['ureter',5],['bladder',10],['urethra',11]];
+function ureaTour(wrap,showInfo,done){
+  if(wrap._tour) return; wrap._tour=true; sfx('flow');
+  const g=wrap.querySelector('.ureaDots'); g.innerHTML='';
+  const c=document.createElementNS('http://www.w3.org/2000/svg','polygon'); c.setAttribute('points','0,-10 9,7 -9,7'); c.setAttribute('fill','#fd7e14'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2'); g.appendChild(c);
+  const seg=[]; let Lt=0; for(let i=1;i<UREA_PATH.length;i++){ const d=Math.hypot(UREA_PATH[i][0]-UREA_PATH[i-1][0],UREA_PATH[i][1]-UREA_PATH[i-1][1]); seg.push(d); Lt+=d; }
+  const idx=k=>{ let s=0; for(let i=0;i<k;i++) s+=seg[i]; return s/Lt; };
+  function at(s){ s=clamp(s,0,1)*Lt; for(let i=0;i<seg.length;i++){ if(s<=seg[i]){ const f=s/seg[i]; return [UREA_PATH[i][0]+(UREA_PATH[i+1][0]-UREA_PATH[i][0])*f,UREA_PATH[i][1]+(UREA_PATH[i+1][1]-UREA_PATH[i][1])*f]; } s-=seg[i]; } return UREA_PATH[UREA_PATH.length-1]; }
+  const T=REDUCED?1.2:5.2, t0=performance.now(); let si=-1;
+  function step(now){
+    const p=(now-t0)/1000/T, q=at(p); c.setAttribute('transform',`translate(${q[0]} ${q[1]})`);
+    let ns=-1; UREA_SEQ.forEach((s,k)=>{ if(p>=idx(s[1])-0.001) ns=k; });
+    if(ns!==si){ si=ns; if(si>=0){ wrap.querySelectorAll('.part').forEach(pp=>pp.classList.toggle('sel',pp.dataset.k===UREA_SEQ[si][0])); sfx('drip'); if(showInfo){ const inf=EX_INFO[UREA_SEQ[si][0]]; $('exInfo').innerHTML=`<b>${inf[0]}</b> — ${inf[1]}`; } } }
+    if(p<1) requestAnimationFrame(step); else { g.innerHTML=''; wrap._tour=false; sfx('flush'); confetti(innerWidth/2,innerHeight*.5,{count:24,speed:7,colors:['#ffd43b','#f5b700','#fd7e14']}); if(showInfo) $('exInfo').innerHTML='🎉 <b>몸 밖으로!</b> 콩팥동맥 → 콩팥(콩팥단위) → 콩팥깔때기 → 오줌관 → 방광 → 요도 → 몸 밖'; done&&done(); }
+  }
+  requestAnimationFrame(step);
+}
+</script>
+<script>
+/* ============ 탐구 탭 ============ */
+let curTab='plan';
+function setTab(t){
+  curTab=t; sfx('tap');
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('#screen-experiment .tabpane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  const tb=$('expTabs').getBoundingClientRect().top+window.scrollY; if(window.scrollY>tb-90) window.scrollTo(0,Math.max(0,tb-90));
+  lsSet('tab',t); kick();
+  if(t==='neph'){ simResize(); drawRec(); }
+  if(t==='pad'){ padResize(); }
+}
+
+/* ---------- ① 요소의 배설 경로 ---------- */
+const ROUTE=[['artery','콩팥동맥'],['kidney','콩팥(콩팥단위)'],['pelvis','콩팥깔때기'],['ureter','오줌관'],['bladder','방광'],['urethra','요도'],['out','몸 밖']];
+const ROUTE_HINT=['요소가 들어 있는 혈액이 콩팥으로 <b>들어가는</b> 혈관은?','혈액 속 요소를 걸러 오줌을 만드는 곳은?','만들어진 오줌이 콩팥 안에서 <b>모이는</b> 곳은?','오줌이 콩팥에서 방광으로 가는 <b>통로</b>는?','오줌을 잠시 <b>저장</b>하는 주머니는?','방광의 오줌이 몸 밖으로 나가는 <b>통로</b>는?','마지막은?'];
+const RT={n:lsGet('route',0)};
+function buildRoute(){
+  $('routeWrap').innerHTML=exSVG('label');
+  const chips=shuffle(ROUTE.map(r=>r[1]).concat(['콩팥정맥','큰창자']));
+  $('routeChips').innerHTML=chips.map(c=>`<button class="chip" data-rc="${c}">${c}</button>`).join('');
+  $('routeChips').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>routeTry(b.dataset.rc,b)));
+  $('routeWrap').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>{ const k=p.dataset.k; const r=ROUTE.find(x=>x[0]===k); const nm=r?r[1]:k==='vein'?'콩팥정맥':EX_INFO[k]?EX_INFO[k][0]:k; routeTry(nm,p); }));
+  $('routeReset').addEventListener('click',()=>{ RT.n=0; lsSet('route',0); sfx('peel'); renderRoute(); });
+  $('routeReplay').addEventListener('click',()=>ureaTour($('routeWrap'),false,()=>{}));
+  renderRoute();
+}
+function renderRoute(){
+  $('routeSlots').innerHTML=ROUTE.map((r,i)=>`${i?'<span class="arr">→</span>':''}<div class="rs${i<RT.n?' fill':i===RT.n?' next':''}">${i<RT.n?r[1]:'?'}</div>`).join('');
+  $('routeChips').querySelectorAll('.chip').forEach(b=>{ const i=ROUTE.findIndex(r=>r[1]===b.dataset.rc); b.classList.toggle('on',i>=0&&i<RT.n); });
+  $('routeInfo').innerHTML=RT.n<ROUTE.length?`👆 ${RT.n+1}번째 칸: ${ROUTE_HINT[RT.n]}`:'🎉 <b>완성!</b> 콩팥동맥 → 콩팥(콩팥단위) → 콩팥깔때기 → 오줌관 → 방광 → 요도 → 몸 밖';
+  $('routeReplay').classList.toggle('hidden',RT.n<ROUTE.length);
+}
+function routeTry(name,el){
+  if(RT.n>=ROUTE.length){ sfx('tap'); return; }
+  const want=ROUTE[RT.n][1];
+  if(name===want){ RT.n++; lsSet('route',RT.n); sfx('correct'); if(el) burstAt(el,{count:14,speed:5,size:6}); floatAt(el,'+1','#12a874');
+    if(RT.n===ROUTE.length){ renderRoute(); setTimeout(()=>{ ureaTour($('routeWrap'),false,()=>{ fireworks(); sfx('fanfare'); toast('🏅 요소의 배설 경로 완성!'); }); },300); }
+    else renderRoute(); }
+  else { sfx('wrong'); if(el&&el.classList){ el.classList.remove('shake'); void el.getBoundingClientRect(); el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),500); }
+    const msg=name==='콩팥정맥'?'콩팥정맥은 걸러진 혈액이 <b>나가는</b> 혈관이에요.':name==='큰창자'?'큰창자는 소화계예요. 대변은 <b>배출</b>이지 배설이 아니에요!':`'${name}'은(는) ${RT.n+1}번째가 아니에요.`;
+    $('routeInfo').innerHTML=`❌ ${msg}<br>💡 ${ROUTE_HINT[RT.n]}`; }
+}
+/* 방광 */
+const BL={v:0};
+function renderBl(){
+  const p=BL.v/600; $('blBar').style.width=(Math.min(1,p)*100)+'%'; $('blTxt').textContent='방광 '+BL.v+' mL';
+  $('blMsg').innerHTML=BL.v>=600?'😣 <b>가득 찼어요!</b> 방광에 약 600 mL가 모였어요. 요도로 내보내야 해요!':BL.v>=300?'😐 오줌이 마려워지기 시작해요. 방광 벽이 늘어나며 신호를 보내요.':'오줌관은 꿈틀운동으로 오줌을 방광으로 보내요.';
+  const r=$('routeWrap').querySelector('.blFill'); if(r) r.setAttribute('y',445-Math.min(1,p)*78);
+}
+</script>
+<script>
+/* ---------- ② 콩팥단위 시뮬레이션 ---------- */
+const COND={
+  normal:{name:'정상',blood:{rbc:6,pro:4,glu:6,ami:4,min:6,ure:8,was:4},filt:{glu:3,ami:2,min:3,ure:4},reab:{glu:3,ami:2,min:2},sec:{was:2},water:1},
+  glom:{name:'토리 손상',blood:{rbc:6,pro:4,glu:6,ami:4,min:6,ure:8,was:4},filt:{rbc:2,pro:2,glu:3,ami:2,min:3,ure:4},reab:{glu:3,ami:2,min:2},sec:{was:2},water:1},
+  sugar:{name:'혈당 높음',blood:{rbc:6,pro:4,glu:12,ami:4,min:6,ure:8,was:4},filt:{glu:6,ami:2,min:3,ure:4},reab:{glu:4,ami:2,min:2},sec:{was:2},water:1},
+  water:{name:'물 많이 마심',blood:{rbc:6,pro:4,glu:6,ami:4,min:6,ure:8,was:4},filt:{glu:3,ami:2,min:3,ure:4},reab:{glu:3,ami:2,min:2},sec:{was:2},water:3}
+};
+const STAGE_BTN=['① 혈액 들어오기 ▶','② 여과 ▶','③ 재흡수 ▶','④ 분비 ▶','⑤ 오줌 완성 ▶','↺ 새 혈액으로 다시'];
+const S={cond:'normal',stage:0,parts:[],auto:false,follow:'all',W:0,H:0,k:1,busy:false,recs:lsGet('recs',[]),pred:lsGet('pred',{}),predDone:lsGet('predDone',false),autoT:0};
+function fates(cond){
+  const C=COND[cond], out=[];
+  PT_ORDER.forEach(t=>{ const n=C.blood[t]||0, f=(C.filt[t]||0), r=(C.reab[t]||0), s=(C.sec[t]||0);
+    for(let i=0;i<n;i++){ let fate='stay'; if(i<r) fate='fr'; else if(i<f) fate='fu'; else if(i<f+s) fate='sec'; out.push({t,fate}); } });
+  return out;
+}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function makeParts(){
+  const list=shuffle(fates(S.cond)); S.parts=list.map((p,i)=>{
+    const w=[]; const add=(x,y,s)=>w.push({x,y,s});
+    add(60,314,1); add(GX+rnd(-20,20),GY+rnd(-20,20),1);
+    const capP=()=>{ const a=rnd(-1.1,1.1); return [GX+rnd(46,58)*Math.cos(a),GY+rnd(46,58)*Math.sin(a)]; };
+    const pel=()=>[rnd(588,700),rnd(392,446)];
+    if(p.fate==='stay'||p.fate==='sec'){ add(165,168,2); add(205,LANE+4,2); add(rnd(222,280),LANE+rnd(-5,5),2); add(rnd(450,480),LANE+rnd(-5,5),3);
+      if(p.fate==='stay') add(740,LANE+rnd(-4,4),5);
+      else { const sx=rnd(510,610); add(sx,LANE,4); add(sx,TUBE+rnd(-6,6),4); add(640,TUBE,5); add(640+rnd(-5,5),360,5); const q=pel(); add(q[0],q[1],5); } }
+    else { const c=capP(); add(c[0],c[1],2); add(186,TUBE,2); add(rnd(200,280),TUBE+rnd(-7,7),2);
+      if(p.fate==='fr'){ const rx=rnd(296,390); add(rx,TUBE,3); add(rx,LANE,3); add(rnd(450,480),LANE+rnd(-5,5),3); add(740,LANE+rnd(-4,4),5); }
+      else { add(rnd(440,480),TUBE+rnd(-7,7),3); add(640,TUBE,5); add(640+rnd(-5,5),360,5); const q=pel(); add(q[0],q[1],5); } }
+    return {t:p.t,fate:p.fate,x:-20,y:384,w,wi:0,delay:i*0.07,trail:[],sp:rnd(190,250)};
+  });
+}
+function simResize(){ const cv=$('simCv'), wrap=$('simWrap'); const r=wrap.getBoundingClientRect(); if(!r.width) return; const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); S.W=r.width; S.H=r.height; S.k=r.width/720; S.dpr=dpr; drawSim(); }
+function simReset(keepCap){ S.stage=0; S.busy=false; makeParts(); renderStageBar(); renderCnt(); renderWater(); $('simNext').textContent=STAGE_BTN[0]; $('simNext').disabled=false;
+  if(!keepCap) setCap('💡 '+COND[S.cond].name+' 조건의 혈액이 <b>콩팥동맥</b>을 따라 들어올 준비를 하고 있어요. <b>① 혈액 들어오기 ▶</b>를 눌러요.'); drawSim(); }
+function setCap(h){ const c=$('simCap'); c.innerHTML=h; c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); }
+function renderStageBar(){ [...$('stageBar').children].forEach((s,i)=>{ s.classList.toggle('on',i+1===S.stage&&S.busy); s.classList.toggle('done',i+1<S.stage||(i+1===S.stage&&!S.busy)); }); }
+const CAPS=[null,
+  c=>'🩸 <b>혈액 유입</b>: 콩팥동맥을 따라 혈구, 단백질, 포도당, 아미노산, 무기염류, 요소가 섞인 혈액이 <b>토리</b>로 들어왔어요.',
+  c=>c==='glom'?'⚠️ <b>여과</b>: 토리가 손상되어 원래는 여과되지 않는 <b>단백질과 혈구까지</b> 보먼주머니로 빠져나갔어요!':'🧹 <b>여과</b> <span class="pill-tag pt-f">토리 → 보먼주머니</span> 높은 혈압으로 크기가 작은 물질이 물과 함께 빠져나가요. <b>혈구·단백질</b>은 커서 혈액에 남아요. 작은 물질도 <b>일부만</b> 여과돼요.',
+  c=>c==='sugar'?'🍬 <b>재흡수</b>: 여과된 포도당이 너무 많아서 <b>모두 재흡수되지 못하고</b> 일부가 세뇨관에 남았어요!':'♻️ <b>재흡수</b> <span class="pill-tag pt-r">세뇨관 → 모세혈관</span> 포도당·아미노산은 <b>모두</b>, 물·무기염류는 <b>대부분</b> 다시 혈액으로 흡수돼요.',
+  c=>'📤 <b>분비</b> <span class="pill-tag pt-s">모세혈관 → 세뇨관</span> 여과되지 않고 혈액에 남아 있던 <b>노폐물</b>이 세뇨관으로 이동해요.',
+  c=>'🟡 <b>오줌 완성!</b> 세뇨관에 남은 액체가 <b>오줌</b>이 되어 콩팥깔때기에 모였어요. 콩팥정맥 혈액은 요소가 줄어 깨끗해졌어요.'+(c==='glom'?' 오줌에 <b>단백질·혈구</b>가 섞였어요 → 여과 과정에 문제!':c==='sugar'?' 오줌에 <b>포도당</b>이 나왔어요 → 당뇨병 환자처럼 재흡수가 다 되지 못했어요.':c==='water'?' 물이 덜 재흡수되어 오줌 양이 많고 <b>묽어요</b>.':'')];
+const STAGE_SFX=[null,'flow','filter','absorb','secrete','drip'];
+function simNext(){
+  if(S.busy) return;
+  if(S.stage>=5){ simReset(); return; }
+  S.stage++; S.busy=true; S.stageT=0; renderStageBar(); setCap(CAPS[S.stage](S.cond)); sfx(STAGE_SFX[S.stage]);
+  $('simNext').disabled=true; $('simNext').textContent='진행 중…'; kick();
+}
+function stageDone(){
+  S.busy=false; renderStageBar(); renderCnt(true); renderWater();
+  if(S.stage===5){ sfx('correct'); setTimeout(()=>sfx('drip'),200); burstAt($('simWrap'),{count:26,speed:7,colors:['#ffd43b','#f5b700','#fd7e14','#12b886']}); saveRec(); checkPred(); }
+  $('simNext').disabled=false; $('simNext').textContent=STAGE_BTN[S.stage];
+  if(S.auto){ if(S.stage<5) setTimeout(()=>{ if(S.auto&&!S.busy) simNext(); },REDUCED?300:1100); else { S.auto=false; $('simAuto').textContent='⏩ 자동 재생'; } }
+}
+addTask(dt=>{
+  if(!S.busy) return false;
+  S.stageT+=dt; let moving=false;
+  S.parts.forEach(p=>{
+    if(S.stage===1&&S.stageT<p.delay){ moving=true; return; }
+    let budget=p.sp*dt*(REDUCED?4:1);
+    while(budget>0&&p.wi<p.w.length&&p.w[p.wi].s<=S.stage){
+      const wp=p.w[p.wi], dx=wp.x-p.x, dy=wp.y-p.y, d=Math.hypot(dx,dy);
+      if(d<=budget){ p.x=wp.x; p.y=wp.y; budget-=d; p.wi++; } else { p.x+=dx/d*budget; p.y+=dy/d*budget; budget=0; }
+      moving=true;
+    }
+    if(S.follow===p.t){ p.trail.push([p.x,p.y]); if(p.trail.length>40) p.trail.shift(); }
+  });
+  drawSim();
+  if(!moving&&S.stageT>0.3){ stageDone(); return false; }
+  return true;
+});
+function drawSim(){
+  const cv=$('simCv'); if(!cv||!S.W) return; const ctx=cv.getContext('2d'); ctx.setTransform(S.dpr,0,0,S.dpr,0,0); ctx.clearRect(0,0,S.W,S.H);
+  const k=S.k; ctx.save(); ctx.scale(k,k);
+  const rs=Math.max(1,0.85/k*0.9); // 화면이 작으면 입자를 조금 크게
+  S.parts.forEach(p=>{ if(S.follow===p.t&&p.trail.length>1){ ctx.strokeStyle=PT[p.t].c; ctx.globalAlpha=.45; ctx.lineWidth=4; ctx.setLineDash([6,6]); ctx.beginPath(); p.trail.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; } });
+  S.parts.forEach(p=>{ if(p.x<-10) return; const dim=S.follow!=='all'&&S.follow!==p.t; drawP(ctx,p.t,p.x,p.y,PT[p.t].r*Math.min(1.6,rs)*(S.follow===p.t?1.25:1),dim?.15:1); });
+  ctx.restore();
+}
+function counts(){
+  const C=COND[S.cond], r={art:{},fil:{},uri:{},ven:{}};
+  PT_ORDER.forEach(t=>{ r.art[t]=0;r.fil[t]=0;r.uri[t]=0;r.ven[t]=0; });
+  fates(S.cond).forEach(p=>{ r.art[p.t]++; if(p.fate==='fr'||p.fate==='fu') r.fil[p.t]++; if(p.fate==='fu'||p.fate==='sec') r.uri[p.t]++; if(p.fate==='stay'||p.fate==='fr') r.ven[p.t]++; });
+  return r;
+}
+function renderCnt(anim){
+  const c=counts(), st=S.stage, done=!S.busy;
+  const show=[st>=1&&(done||st>1),st>=2&&(done||st>2),st>=5&&done,st>=5&&done];
+  const cols=[['art','🔴 콩팥동맥 혈액'],['fil','🟣 여과액 (보먼주머니)'],['uri','🟡 오줌'],['ven','🔵 콩팥정맥 혈액']];
+  let h='<thead><tr><th>물질</th>'+cols.map(x=>`<th>${x[1]}</th>`).join('')+'</tr></thead><tbody>';
+  PT_ORDER.forEach(t=>{ h+=`<tr><th style="text-align:left;white-space:nowrap">${iconSVG(t,16)} ${PT[t].n}</th>`;
+    cols.forEach((x,ci)=>{ const v=c[x[0]][t]; if(!show[ci]) h+='<td class="zero">?</td>'; else { const hot=(ci===2&&v>0&&(t==='pro'||t==='rbc'||t==='glu'))||(ci===2&&t==='ure'); h+=`<td class="${v===0?'zero':''}${hot?' hot':''}${anim?' new':''}">${v}</td>`; } });
+    h+='</tr>'; });
+  $('cntTbl').innerHTML=h+'</tbody>';
+}
+function renderWater(){
+  const w=COND[S.cond].water, ok=S.stage>=5&&!S.busy, r3=S.stage>=3&&!(S.stage===3&&S.busy);
+  $('wReab').style.width=r3?(100-w)+'%':'0'; $('wReabT').textContent=r3?(100-w):'–';
+  $('wUrine').style.width=ok?Math.max(2,w*3)+'%':'0'; $('wUrineT').textContent=ok?w:'–';
+}
+function saveRec(){
+  const c=counts(); const rec={cond:S.cond,pro:c.uri.pro,rbc:c.uri.rbc,glu:c.uri.glu,ure:c.uri.ure,water:COND[S.cond].water,ureV:c.ven.ure,ureA:c.art.ure};
+  S.recs=S.recs.filter(r=>r.cond!==S.cond); S.recs.push(rec); lsSet('recs',S.recs); renderRec(); drawRec();
+}
+function renderRec(){
+  const cn=['normal','glom','sugar','water'];
+  const rows=cn.map(k=>S.recs.find(r=>r.cond===k)).filter(Boolean);
+  $('recTbl').innerHTML='<tr><th>조건</th><th>오줌 속 단백질</th><th>혈구</th><th>포도당</th><th>요소</th><th>오줌 양(물)</th><th>요소: 콩팥동맥 → 콩팥정맥</th></tr>'+
+    (rows.length?rows.map(r=>`<tr><td><b>${COND[r.cond].name}</b></td><td>${r.pro}</td><td>${r.rbc}</td><td>${r.glu}</td><td>${r.ure}</td><td>${r.water}</td><td>${r.ureA} → ${r.ureV}</td></tr>`).join(''):'<tr><td colspan="7" class="muted">⑤단계까지 진행하면 자동으로 기록돼요.</td></tr>');
+}
+function drawRec(){
+  const cv=$('recCv'); const p=prepCanvas(cv); if(!p) return; const {ctx,W,H}=p; ctx.clearRect(0,0,W,H);
+  const cn=['normal','glom','sugar','water'], keys=[['pro','단백질'],['rbc','혈구'],['glu','포도당'],['ure','요소']];
+  const x0=36,y0=18,y1=H-46, gw=(W-x0-10)/4, maxV=6;
+  ctx.strokeStyle='#e2e3f3'; ctx.lineWidth=1; ctx.fillStyle='#8a90b0'; ctx.font='12px sans-serif'; ctx.textAlign='right';
+  for(let v=0;v<=maxV;v+=2){ const y=y1-(y1-y0)*v/maxV; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(W-8,y); ctx.stroke(); ctx.fillText(v,x0-6,y+4); }
+  cn.forEach((k,gi)=>{ const r=S.recs.find(x=>x.cond===k); const gx=x0+gi*gw; ctx.textAlign='center'; ctx.fillStyle='#3b3f66'; ctx.font='800 13px sans-serif'; ctx.fillText(COND[k].name,gx+gw/2,y1+18);
+    if(!r){ ctx.fillStyle='#b5bad0'; ctx.font='12px sans-serif'; ctx.fillText('기록 없음',gx+gw/2,y1-10); return; }
+    const bw=Math.min(22,(gw-20)/4);
+    keys.forEach((kk,i)=>{ const v=r[kk[0]], h=(y1-y0)*v/maxV, bx=gx+gw/2-2*bw-3+i*(bw+2); ctx.fillStyle=PT[kk[0]].c; ctx.fillRect(bx,y1-h,bw,h); ctx.fillStyle='#3b3f66'; ctx.font='800 11px sans-serif'; ctx.fillText(v,bx+bw/2,y1-h-4); });
+  });
+  ctx.textAlign='left'; let lx=x0; keys.forEach(kk=>{ ctx.fillStyle=PT[kk[0]].c; ctx.fillRect(lx,H-16,12,12); ctx.fillStyle='#5a5f80'; ctx.font='800 12px sans-serif'; ctx.fillText(kk[1],lx+16,H-6); lx+=ctx.measureText(kk[1]).width+34; });
+}
+/* 예측 */
+const PREDQ=[['glu','포도당'],['ure','요소'],['pro','단백질']], PRED_ANS={glu:'없다',ure:'있다',pro:'없다'};
+function buildPred(){
+  $('predBox').innerHTML=PREDQ.map(q=>`<div class="pred"><span class="q">${iconSVG(q[0],18)} ${q[1]}은(는) 오줌에…</span><div class="toggle">${['있다','없다'].map(a=>`<button class="chip${S.pred[q[0]]===a?' on':''}" data-pq="${q[0]}" data-pa="${a}">${a}</button>`).join('')}</div><span class="res" id="pr-${q[0]}"></span></div>`).join('');
+  $('predBox').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ S.pred[b.dataset.pq]=b.dataset.pa; lsSet('pred',S.pred); sfx('pick'); $('predBox').querySelectorAll(`[data-pq="${b.dataset.pq}"]`).forEach(x=>x.classList.toggle('on',x===b)); }));
+  if(S.predDone) showPredRes(false);
+}
+function checkPred(){ if(S.cond!=='normal') return; S.predDone=true; lsSet('predDone',true); showPredRes(true); }
+function showPredRes(fx){
+  let ok=0; PREDQ.forEach(q=>{ const a=S.pred[q[0]], good=a===PRED_ANS[q[0]]; if(good) ok++; $('pr-'+q[0]).innerHTML=a?(good?'<span style="color:#12a874">✔ 맞음</span>':'<span style="color:#e5484d">✖ 정답: '+PRED_ANS[q[0]]+'</span>'):'<span class="muted">정답: '+PRED_ANS[q[0]]+'</span>'; });
+  $('predMsg').innerHTML=`예측 결과: <b>${ok} / 3</b> 맞음 — 포도당은 <b>모두 재흡수</b>되어 없고, 요소는 오줌에 <b>많고</b>, 단백질은 <b>여과되지 않아</b> 없어요.`;
+  if(fx&&ok===3){ setTimeout(()=>{ sfx('combo'); fireworks(); toast('🔮 예측 3개 모두 적중!'); },500); }
+}
+function buildSim(){
+  $('simWrap').insertAdjacentHTML('afterbegin',nephSVG('sim'));
+  $('simLegend').innerHTML=PT_ORDER.map(t=>`<span>${iconSVG(t,18)}${PT[t].n}</span>`).join('');
+  $('simNext').addEventListener('click',simNext);
+  $('simAuto').addEventListener('click',()=>{ S.auto=!S.auto; $('simAuto').textContent=S.auto?'⏸ 자동 멈춤':'⏩ 자동 재생'; sfx('tap'); if(S.auto){ if(S.stage>=5) simReset(); if(!S.busy) simNext(); } });
+  $('simReset').addEventListener('click',()=>{ S.auto=false; $('simAuto').textContent='⏩ 자동 재생'; sfx('peel'); simReset(); });
+  $('condChips').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ S.cond=b.dataset.cond; $('condChips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b)); S.auto=false; $('simAuto').textContent='⏩ 자동 재생'; sfx('pick'); simReset(); }));
+  $('followChips').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ S.follow=b.dataset.f; $('followChips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b)); S.parts.forEach(p=>p.trail=[]); sfx('tap'); drawSim();
+    if(S.follow!=='all') toast(`🔎 ${PT[S.follow].n}만 따라가요 — 점선이 이동 경로예요`); }));
+  $('recClear').addEventListener('click',()=>{ S.recs=[]; lsSet('recs',[]); renderRec(); drawRec(); sfx('peel'); });
+  $('nephAnsBtn').addEventListener('click',()=>{ const h=$('nephAns').classList.toggle('hidden'); sfx('tap'); $('nephAnsBtn').textContent=h?'예시 답안 보기':'예시 답안 숨기기'; });
+  addEventListener('resize',()=>{ if(visible($('simWrap'))){ simResize(); drawRec(); } });
+  buildPred(); renderRec(); simReset();
+}
+</script>
+<script>
+/* ---------- ③ 오줌 검사실 ---------- */
+const LAB_TRUTH={가:{pro:false,glu:false},나:{pro:true,glu:false},다:{pro:false,glu:true}};
+const LAB_DX={가:'정상',나:'여과',다:'재흡수'};
+const LB={st:lsGet('lab',{}),dx:lsGet('dx',{})};
+function tubeSVG(id){
+  return `<svg viewBox="0 0 60 150"><path d="M14 8 L46 8 L46 112 Q46 140 30 140 Q14 140 14 112 Z" fill="rgba(255,255,255,.7)" stroke="#8a94c4" stroke-width="3"/>
+   <clipPath id="tc${id}"><path d="M14 8 L46 8 L46 112 Q46 140 30 140 Q14 140 14 112 Z"/></clipPath>
+   <g clip-path="url(#tc${id})"><rect class="liq" x="10" y="62" width="44" height="90" style="fill:#ffe9a8"/>
+    <circle class="bub" cx="24" cy="128" r="3" fill="#fff" style="animation-delay:0s"/><circle class="bub" cx="36" cy="132" r="2.5" fill="#fff" style="animation-delay:.3s"/><circle class="bub" cx="30" cy="124" r="2" fill="#fff" style="animation-delay:.55s"/></g>
+   <ellipse cx="30" cy="9" rx="17" ry="4" fill="none" stroke="#8a94c4" stroke-width="3"/>
+   <path class="drop" d="M30 -26 C 34 -18 36 -14 30 -10 C 24 -14 26 -18 30 -26 Z" fill="#4dabf7"/></svg>`;
+}
+const SAMPLES=['가','나','다'];
+function buildLab(){
+  let h='<div></div>'+SAMPLES.map(s=>`<div class="ch">시료 (${s})</div>`).join('');
+  [['bi','💧 뷰렛 용액<br><span class="muted">단백질 검출</span>'],['be','💧 베네딕트 용액<br><span class="muted">포도당 검출 (가열)</span>']].forEach(r=>{
+    h+=`<div class="rh">${r[1]}</div>`+SAMPLES.map(s=>`<button class="tube" id="tb-${r[0]}-${s}" data-r="${r[0]}" data-s="${s}" aria-label="시료 ${s}에 시약 넣기">${tubeSVG(r[0]+SAMPLES.indexOf(s))}<small>눌러서 넣기</small></button>`).join(''); });
+  $('labGrid').innerHTML=h;
+  $('labGrid').querySelectorAll('.tube').forEach(b=>b.addEventListener('click',()=>addReagent(b.dataset.r,b.dataset.s)));
+  $('heatBtn').addEventListener('click',heatAll);
+  $('labReset').addEventListener('click',()=>{ LB.st={}; LB.dx={}; lsSet('lab',{}); lsSet('dx',{}); sfx('flush'); renderLab(); buildDiag(); $('diagFb').innerHTML=''; });
+  renderLab(); buildDiag();
+}
+function tubeColor(r,s){
+  const st=LB.st[r+s]; if(!st) return '#ffe9a8';
+  if(r==='bi') return LAB_TRUTH[s].pro?'#9b4dca':'#74c0fc';
+  if(st==='heated') return LAB_TRUTH[s].glu?'#f76707':'#74c0fc';
+  return '#74c0fc';
+}
+function tubeText(r,s){
+  const st=LB.st[r+s]; if(!st) return '눌러서 넣기';
+  if(r==='bi') return LAB_TRUTH[s].pro?'보라색 → 단백질 있음!':'파란색 → 변화 없음';
+  if(st==='heated') return LAB_TRUTH[s].glu?'황적색 → 포도당 있음!':'파란색 → 변화 없음';
+  return '가열 전 (파란색)';
+}
+function renderLab(){ SAMPLES.forEach(s=>['bi','be'].forEach(r=>{ const b=$('tb-'+r+'-'+s); b.querySelector('.liq').style.fill=tubeColor(r,s); b.querySelector('small').textContent=tubeText(r,s); b.classList.toggle('done',!!LB.st[r+s]); })); }
+function addReagent(r,s){
+  const b=$('tb-'+r+'-'+s); if(LB.st[r+s]){ sfx('tap'); toast('이미 용액을 넣었어요'+(r==='be'&&LB.st[r+s]!=='heated'?' — 🔥 가열해 보세요':'')); return; }
+  b.classList.remove('dropping'); void b.offsetWidth; b.classList.add('dropping'); sfx('drip'); setTimeout(()=>sfx('drip'),180);
+  LB.st[r+s]='added'; lsSet('lab',LB.st);
+  setTimeout(()=>{ renderLab(); b.classList.remove('dropping');
+    if(r==='bi'){ if(LAB_TRUTH[s].pro){ sfx('sparkle'); burstAt(b,{count:22,speed:6,colors:['#9b4dca','#da77f2','#e5dbff']}); floatAt(b,'단백질!','#9b4dca'); $('labInfo').innerHTML=`🟣 <b>시료 (${s})</b>: 뷰렛 반응 <b>보라색</b> → 오줌에 <b>단백질</b>이 있어요! 단백질은 원래 토리에서 여과되지 않는데…?`; } else $('labInfo').innerHTML=`🔵 <b>시료 (${s})</b>: 뷰렛 반응 변화 없음 → 단백질 없음`; }
+    else $('labInfo').innerHTML=`💧 <b>시료 (${s})</b>에 베네딕트 용액을 넣었어요. 위의 <b>🔥 가열하기</b>를 눌러 물중탕으로 가열하세요.`; },550);
+}
+function heatAll(){
+  const tgt=SAMPLES.filter(s=>LB.st['be'+s]==='added'); if(!tgt.length){ sfx('wrong'); toast('먼저 베네딕트 용액을 넣어요 💧'); return; }
+  sfx('heat'); tgt.forEach(s=>$('tb-be-'+s).classList.add('heating')); $('labInfo').innerHTML='🔥 물중탕으로 가열하는 중… 보글보글';
+  setTimeout(()=>{ tgt.forEach(s=>{ LB.st['be'+s]='heated'; const b=$('tb-be-'+s); b.classList.remove('heating'); if(LAB_TRUTH[s].glu){ burstAt(b,{count:26,speed:7,colors:['#f76707','#ffa94d','#ffd8a8']}); floatAt(b,'포도당!','#e8590c'); } });
+    lsSet('lab',LB.st); renderLab(); sfx('sparkle');
+    const g=tgt.filter(s=>LAB_TRUTH[s].glu); $('labInfo').innerHTML=g.length?`🟠 <b>시료 (${g.join(', ')})</b>: 베네딕트 반응 <b>황적색</b> → 오줌에 <b>포도당</b>이 있어요! 포도당은 원래 모두 재흡수되는데…?`:'🔵 가열한 시료에서 황적색 변화가 없어요 → 포도당 없음'; },REDUCED?300:2000);
+}
+const DX_OPT=[['정상','🙂 정상'],['여과','⚠️ 여과에 문제'],['재흡수','🍬 포도당이 모두 재흡수되지 못함']];
+function buildDiag(){
+  $('diagBox').innerHTML=SAMPLES.map(s=>`<div class="diag-row"><b>시료 (${s})</b><div class="toggle">${DX_OPT.map(o=>`<button class="chip${LB.dx[s]===o[0]?' on':''}" data-ds="${s}" data-dv="${o[0]}">${o[1]}</button>`).join('')}</div></div>`).join('');
+  $('diagBox').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ LB.dx[b.dataset.ds]=b.dataset.dv; lsSet('dx',LB.dx); sfx('pick'); $('diagBox').querySelectorAll(`[data-ds="${b.dataset.ds}"]`).forEach(x=>x.classList.toggle('on',x===b)); }));
+  $('diagCheck').onclick=checkDiag;
+}
+function checkDiag(){
+  const tested=SAMPLES.every(s=>LB.st['bi'+s]&&LB.st['be'+s]==='heated');
+  if(!tested){ sfx('wrong'); $('diagFb').innerHTML='<div class="feedback no">🧪 먼저 모든 시험관에 용액을 넣고 베네딕트 시험관을 가열해서 결과를 확인해요.</div>'; return; }
+  if(!SAMPLES.every(s=>LB.dx[s])){ sfx('wrong'); $('diagFb').innerHTML='<div class="feedback no">세 시료 모두 진단을 골라 주세요.</div>'; return; }
+  const ok=SAMPLES.filter(s=>LB.dx[s]===LAB_DX[s]).length;
+  if(ok===3){ sfx('fanfare'); fireworks(); $('diagFb').innerHTML='<div class="feedback ok"><b class="big">🩺 진단 완벽!</b><br>(가) 정상 / (나) 오줌에 <b>단백질</b> → 단백질은 원래 여과되지 않으므로 <b>여과(토리)</b>에 문제가 있어요. / (다) 오줌에 <b>포도당</b> → 혈액 속 포도당이 너무 많아 여과된 포도당이 <b>모두 재흡수되지 못하고</b> 오줌으로 나왔어요(당뇨병).</div>'; }
+  else { sfx('wrong'); $('diagFb').innerHTML=`<div class="feedback no"><b class="big">${ok} / 3 정답</b><br>💡 단백질이 나오면 → 원래 <b>여과되지 않는</b> 물질이 빠져나온 것! 포도당이 나오면 → 원래 <b>모두 재흡수</b>되는 물질이 남은 것!</div>`; }
+}
+</script>
+<script>
+/* ---------- ④ 나만의 모식도 ---------- */
+const PAD={tool:'pen',color:'#e03131',strokes:lsGet('pad',[]),cur:null,W:0,H:0,bg:null};
+const PAD_H_RATIO=470/720;
+function buildPad(){
+  const pens=[['#e03131','빨강'],['#4263eb','파랑'],['#12b886','초록'],['#1b1d4a','검정']];
+  $('padTools').innerHTML=pens.map((p,i)=>`<button class="tool${i===0?' on':''}" data-pen="${p[0]}" aria-label="${p[1]} 펜"><span class="sw" style="background:${p[0]}"></span>✏️</button>`).join('')+
+    PT_ORDER.map(t=>`<button class="tool" data-stamp="${t}" aria-label="${PT[t].n} 스탬프">${iconSVG(t,22)}<span style="font-size:12px">${PT[t].n}</span></button>`).join('');
+  $('padTools').querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>{ $('padTools').querySelectorAll('.tool').forEach(x=>x.classList.toggle('on',x===b));
+    if(b.dataset.pen){ PAD.tool='pen'; PAD.color=b.dataset.pen; } else { PAD.tool='stamp'; PAD.stamp=b.dataset.stamp; } sfx('pick'); }));
+  const img=new Image(); img.onload=()=>{ PAD.bg=img; padDraw(); };
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(nephSVG('pad').replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" '));
+  const cv=$('padCv');
+  const pos=e=>{ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*720,(e.clientY-r.top)/r.height*470]; };
+  cv.addEventListener('pointerdown',e=>{ e.preventDefault(); const p=pos(e);
+    if(PAD.tool==='stamp'){ PAD.strokes.push({s:PAD.stamp,x:p[0],y:p[1]}); sfx('stick'); padSave(); padDraw(); confetti(e.clientX,e.clientY,{count:8,speed:4,size:5,colors:[PT[PAD.stamp].c]}); return; }
+    PAD.cur={c:PAD.color,p:[p]}; PAD.strokes.push(PAD.cur); try{cv.setPointerCapture(e.pointerId);}catch(_){} });
+  cv.addEventListener('pointermove',e=>{ if(!PAD.cur) return; const p=pos(e), l=PAD.cur.p[PAD.cur.p.length-1]; if(Math.hypot(p[0]-l[0],p[1]-l[1])<2.5) return; PAD.cur.p.push([Math.round(p[0]),Math.round(p[1])]); if(PAD.cur.p.length%6===0) sfx('pen'); padDraw(); });
+  const end=()=>{ if(PAD.cur){ if(PAD.cur.p.length>1) drawArrowHint(); PAD.cur=null; padSave(); padDraw(); } };
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',end); cv.addEventListener('pointerleave',end);
+  $('padUndo').addEventListener('click',()=>{ PAD.strokes.pop(); padSave(); padDraw(); sfx('peel'); });
+  $('padClear').addEventListener('click',()=>{ PAD.strokes=[]; padSave(); padDraw(); sfx('flush'); });
+  $('padSave').addEventListener('click',padExport);
+  addEventListener('resize',()=>{ if(visible(cv)) padResize(); });
+}
+function drawArrowHint(){}
+function padSave(){ lsSet('pad',PAD.strokes.slice(-400)); }
+function padResize(){ const cv=$('padCv'); const w=cv.parentElement.clientWidth; if(!w) return; const h=Math.round(w*PAD_H_RATIO); cv.setAttribute('height',h); cv.style.height=h+'px'; const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); PAD.W=w; PAD.H=h; PAD.dpr=dpr; padDraw(); }
+function padPaint(ctx,k){
+  ctx.save(); ctx.scale(k,k); if(PAD.bg) ctx.drawImage(PAD.bg,0,0,720,470); else { ctx.fillStyle='#fffdfb'; ctx.fillRect(0,0,720,470); }
+  PAD.strokes.forEach(s=>{ if(s.s){ drawP(ctx,s.s,s.x,s.y,PT[s.s].r*1.5,1); return; }
+    ctx.strokeStyle=s.c; ctx.lineWidth=5; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath(); s.p.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.stroke();
+    if(s.p.length>4){ const a=s.p[s.p.length-1], b=s.p[Math.max(0,s.p.length-6)], ang=Math.atan2(a[1]-b[1],a[0]-b[0]); ctx.fillStyle=s.c; ctx.beginPath(); ctx.moveTo(a[0]+Math.cos(ang)*8,a[1]+Math.sin(ang)*8); ctx.lineTo(a[0]+Math.cos(ang+2.5)*14,a[1]+Math.sin(ang+2.5)*14); ctx.lineTo(a[0]+Math.cos(ang-2.5)*14,a[1]+Math.sin(ang-2.5)*14); ctx.closePath(); ctx.fill(); } });
+  ctx.restore();
+}
+function padDraw(){ const cv=$('padCv'); if(!PAD.W) return; const ctx=cv.getContext('2d'); ctx.setTransform(PAD.dpr,0,0,PAD.dpr,0,0); ctx.clearRect(0,0,PAD.W,PAD.H); padPaint(ctx,PAD.W/720); }
+function padExport(){
+  try{ const c=document.createElement('canvas'); c.width=1440; c.height=940; const ctx=c.getContext('2d'); padPaint(ctx,2);
+    ctx.fillStyle='rgba(27,29,74,.55)'; ctx.font='bold 22px sans-serif'; ctx.fillText('나의 콩팥단위 모식도 · 배설계 가상실험실',24,925);
+    const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='나의_콩팥단위_모식도.png'; document.body.appendChild(a); a.click(); a.remove();
+    sfx('fanfare'); fireworks(); toast('💾 그림을 저장했어요! (안 되면 화면을 캡처해요)');
+  }catch(e){ sfx('wrong'); toast('저장이 막혔어요. 화면을 캡처해 주세요 📸'); }
+}
+</script>
+<style>
+.slot-num{font-size:15px;font-weight:900;color:#9aa6c4;}
+.board-tab .lk{margin-right:3px;}
+.slot .sticker{white-space:nowrap;}
+.complete-banner{padding-top:40px;}
+.stamp{font-size:18px;top:8px;}
+.trap-note{font-size:13px;color:#a35a00;font-weight:700;}
+</style>
+<script>
+/* ============ 스티커 붙이기 ============ */
+const BOARDS=[
+  {short:'배설계 이름표',title:'판 1 · 배설계 그림에 이름표 붙이기',desc:'그림 이름표형 — 빈칸에 알맞은 기관·혈관 이름을 붙여요. (교과서 226쪽 그림 Ⅵ-13)',color:'c2',type:'svg',
+   stickers:['콩팥','오줌관','방광','요도','콩팥동맥','콩팥정맥','큰창자','허파'],
+   slots:[{id:'kid',x:13.5,y:30,answer:'콩팥',name:'왼쪽 위 칸',hints:['허리의 등 쪽 좌우에 1개씩 있는 강낭콩 모양 기관이에요.','혈액을 걸러 오줌을 만들어요.']},
+          {id:'ure',x:13.5,y:60,answer:'오줌관',name:'왼쪽 가운데 칸',hints:['콩팥과 방광을 잇는 관이에요.','꿈틀운동으로 오줌을 보내요.']},
+          {id:'bla',x:13.5,y:82.4,answer:'방광',name:'왼쪽 아래 칸',hints:['오줌을 모아 두는 주머니예요.','성인은 약 600 mL까지 저장해요.']},
+          {id:'art',x:86.5,y:30,answer:'콩팥동맥',name:'오른쪽 위 칸',hints:['빨간색 혈관이에요.','노폐물이 많은 혈액이 콩팥으로 들어가요.']},
+          {id:'vei',x:86.5,y:46.4,answer:'콩팥정맥',name:'오른쪽 가운데 칸',hints:['파란색 혈관이에요.','걸러진 혈액이 콩팥에서 나가요.']},
+          {id:'uth',x:86.5,y:94,answer:'요도',name:'오른쪽 아래 칸',hints:['방광 아래쪽 관이에요.','오줌이 몸 밖으로 나가는 통로예요.']}],
+   render:()=>`<div class="svg-board" style="max-width:520px">${exSVG('board')}</div>`,
+   summary:'배설계 = <b>콩팥 → 오줌관 → 방광 → 요도</b>. 콩팥으로 <b>콩팥동맥</b>이 들어가고 <b>콩팥정맥</b>이 나와요.'},
+  {short:'콩팥단위 모식도',title:'판 2 · 콩팥단위 모식도 완성하기',desc:'그림 이름표형 — ①~⑤ 구조와 (가)~(다) 과정의 이름을 붙여요. (교과서 228쪽 그림 Ⅵ-14)',color:'c4',type:'neph',
+   stickers:['토리','보먼주머니','세뇨관','모세혈관','콩팥깔때기','여과','재흡수','분비','허파꽈리','융털'],
+   slots:[{id:'g',ph:'①',answer:'토리',hints:['모세혈관이 실뭉치처럼 뭉쳐 있어요.','혈액이 처음 걸러지는 곳이에요.']},
+          {id:'b',ph:'②',answer:'보먼주머니',hints:['토리를 감싸는 주머니예요.','여과된 액체를 받아요.']},
+          {id:'t',ph:'③',answer:'세뇨관',hints:['보먼주머니와 이어진 가늘고 긴 관이에요.','이 관에 남은 액체가 오줌이 돼요.']},
+          {id:'c',ph:'④',answer:'모세혈관',hints:['세뇨관을 둘러싼 혈관이에요.','물질을 다시 받아들이는 혈관이에요.']},
+          {id:'p',ph:'⑤',answer:'콩팥깔때기',hints:['오줌이 모이는 곳이에요.','오줌관과 연결돼요.']},
+          {id:'f',ph:'(가)',answer:'여과',hints:['토리 → 보먼주머니로의 이동이에요.','작은 물질이 빠져나가요.']},
+          {id:'r',ph:'(나)',answer:'재흡수',hints:['세뇨관 → 모세혈관으로의 이동이에요.','필요한 물질을 되찾아요.']},
+          {id:'s',ph:'(다)',answer:'분비',hints:['모세혈관 → 세뇨관으로의 이동이에요.','남은 노폐물을 내보내요.']}],
+   render(){ return `<div class="svg-board" style="max-width:640px">${nephSVG('board')}</div><div class="neph-slots">${this.slots.map(s=>`<div class="ns"><b>${s.ph}</b><div class="slot" id="slot-1-${s.id}"></div></div>`).join('')}</div>`; },
+   summary:'콩팥단위 = <b>토리 + 보먼주머니 + 세뇨관</b>(모세혈관이 둘러쌈). (가) <b>여과</b> 토리→보먼주머니, (나) <b>재흡수</b> 세뇨관→모세혈관, (다) <b>분비</b> 모세혈관→세뇨관'},
+  {short:'요소의 배설 경로',title:'판 3 · 요소가 몸 밖으로 나가는 경로',desc:'순서 배열형 — 간에서 만들어진 요소의 이동 순서대로 붙여요. (교과서 227쪽 분석해 보기)',color:'c1',type:'seq',
+   stickers:['콩팥동맥','콩팥단위','콩팥깔때기','오줌관','방광','요도','콩팥정맥','항문'],
+   slots:['콩팥동맥','콩팥단위','콩팥깔때기','오줌관','방광','요도'].map((a,i)=>({id:'q'+i,ph:String(i+1),answer:a,name:(i+1)+'번째 칸',hints:[['콩팥으로 들어가는 혈관이에요.','빨간색, 노폐물이 많은 혈액'],['오줌을 만드는 기본 단위예요.','토리·보먼주머니·세뇨관'],['오줌이 콩팥 안에서 모이는 곳이에요.','오줌관과 연결돼요'],['콩팥에서 방광으로 가는 관이에요.','꿈틀운동'],['오줌을 저장하는 주머니예요.','약 600 mL'],['몸 밖으로 나가는 통로예요.','방광 아래']][i]})),
+   render(){ return `<div class="seq-board"><span class="ends">🟤 간 (요소 생성)</span><span class="arr">→</span>${this.slots.map((s,i)=>`${i?'<span class="arr">→</span>':''}<div class="slot" id="slot-2-${s.id}"></div>`).join('')}<span class="arr">→</span><span class="ends">🚪 몸 밖</span></div>`; },
+   summary:'요소: 간 → <b>콩팥동맥 → 콩팥단위 → 콩팥깔때기 → 오줌관 → 방광 → 요도</b> → 몸 밖'},
+  {short:'물질 분류판',title:'판 4 · 콩팥단위에서 물질의 운명 분류하기',desc:'분류판형 — 각 물질이 어떻게 되는지 알맞은 칸에 붙여요. (지도서 363쪽 재흡수 정도)',color:'c3',type:'cls',
+   stickers:['혈구','단백질','포도당','아미노산','물','무기염류','요소','대변 찌꺼기','녹말'],
+   groups:[['A','🚫 여과되지 않아요<br>(혈액에 남음)',['혈구','단백질'],2],['B','♻️ 여과된 뒤<br>모두 재흡수',['포도당','아미노산'],2],['C','💧 여과된 뒤<br>대부분 재흡수',['물','무기염류'],2],['D','🟡 오줌으로 많이<br>나가는 노폐물',['요소'],1]],
+   render(){ return `<div class="cls-grid">${this.groups.map(g=>`<div class="cls-col"><h4>${g[1]}</h4>${Array.from({length:g[3]},(_,i)=>`<div class="slot" id="slot-3-${g[0]}${i}"></div>`).join('')}</div>`).join('')}</div>`; },
+   summary:'<b>여과 안 됨</b>: 혈구·단백질 / <b>모두 재흡수</b>: 포도당·아미노산 / <b>대부분 재흡수</b>: 물·무기염류 / <b>오줌으로</b>: 요소. 대변 찌꺼기와 녹말은 혈액에 없어요!'}
+];
+BOARDS[0].slots.forEach(s=>s.ph='?');
+BOARDS[1].slots.forEach(s=>s.name=s.ph+' 칸');
+BOARDS[3].slots=[]; BOARDS[3].groups.forEach(g=>{ for(let i=0;i<g[3];i++) BOARDS[3].slots.push({id:g[0]+i,ph:'?',answer:g[2],name:g[1].replace('<br>',' ').replace(/^\S+\s/,''),hints:{A:['크기가 큰 물질이에요.','토리를 통과하지 못해요.'],B:['몸에 꼭 필요한 영양소예요.','건강한 사람 오줌에서는 검출되지 않아요.'],C:['오줌에도 조금 들어 있어요.','90 % 이상 다시 흡수돼요.'],D:['간에서 암모니아가 바뀐 물질이에요.','오줌 속 노폐물의 대표예요.']}[g[0]]}); });
+const STK={cur:0,boards:[]}; let picked=null;
+function stkLoad(){ const s=lsGet('stk',null); STK.boards=BOARDS.map((b,i)=>Object.assign({placed:{},ok:{},tries:0,done:false,hint:{}},(s&&s.boards&&s.boards[i])||{})); STK.cur=s&&s.cur?s.cur:0; }
+function stkSave(){ lsSet('stk',{cur:STK.cur,boards:STK.boards}); }
+function unlocked(i){ return i===0||STK.boards[i-1].done; }
+function renderBoardTabs(){
+  $('boardTabs').innerHTML=BOARDS.map((b,i)=>`<button class="board-tab${i===STK.cur?' active':''}${unlocked(i)?'':' locked'}${STK.boards[i].done?' done':''}" data-b="${i}">${unlocked(i)?'':'<span class="lk">🔒</span>'}${i+1}. ${b.short}</button>`).join('');
+  $('boardTabs').querySelectorAll('.board-tab').forEach(t=>t.addEventListener('click',()=>{ const i=+t.dataset.b; if(!unlocked(i)){ sfx('wrong'); toast('🔒 앞 판을 먼저 완성해요'); return; } picked=null; STK.cur=i; stkSave(); sfx('tap'); renderBoardFrame(); }));
+}
+function renderBoardFrame(){
+  const b=BOARDS[STK.cur], bi=STK.cur;
+  renderBoardTabs(); $('boardTitle').textContent=b.title; $('boardDesc').textContent=b.desc;
+  let html=b.render();
+  if(b.type==='svg'){ html=html.replace('</div>',b.slots.map(s=>`<div class="slot abs" id="slot-${bi}-${s.id}" style="left:${s.x}%;top:${s.y}%"></div>`).join('')+'</div>'); }
+  $('stkBoard').innerHTML=html; $('stkMsg').innerHTML='<span class="trap-note">⚠️ 함정 스티커는 어디에도 붙이지 않아야 정답이에요.</span>';
+  const bd=$('stkBoard'); bd.classList.remove('rise-in'); void bd.offsetWidth; bd.style.animation='riseIn .45s both';
+  renderDone(false); renderStickers();
+}
+function stLabel(sid){ const [bi,i]=sid.split('-').map(Number); return BOARDS[bi].stickers[i]; }
+function renderStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi];
+  const used=new Set(Object.values(st.placed));
+  const tray=$('stkTray'); tray.innerHTML='<div class="tray-lbl">🗂️ 스티커 보관함 — 하나를 골라 빈칸을 눌러요</div>';
+  b.stickers.forEach((lab,i)=>{ const sid=bi+'-'+i; if(used.has(sid)) return;
+    const s=document.createElement('button'); s.className='sticker '+b.color+(picked===sid?' picked wiggle':''); s.dataset.sid=sid; s.style.setProperty('--tilt',(((i*7)%5)-2)*1.3+'deg'); s.textContent=lab;
+    s.addEventListener('click',()=>{ if(st.done) return; picked=picked===sid?null:sid; sfx(picked?'pick':'tap'); renderStickers(); });
+    tray.appendChild(s); });
+  if(tray.children.length===1) tray.insertAdjacentHTML('beforeend','<span class="muted">보관함이 비었어요</span>');
+  b.slots.forEach(sl=>{
+    const el=$('slot-'+bi+'-'+sl.id); if(!el) return; const sid=st.placed[sl.id], ok=!!st.ok[sl.id];
+    el.classList.toggle('ready',!!picked&&!ok); el.classList.toggle('ok',ok); el.innerHTML='';
+    if(sid){ const s=document.createElement('button'); s.className='sticker '+b.color; s.textContent=stLabel(sid);
+      s.addEventListener('click',e=>{ e.stopPropagation(); if(ok||st.done){ sfx('tap'); return; } if(picked){ place(sl.id); return; } delete st.placed[sl.id]; sfx('peel'); stkSave(); renderStickers(); });
+      el.appendChild(s); }
+    else el.innerHTML=`<span class="slot-num">${sl.ph||'?'}</span>`;
+    el.onclick=()=>{ if(ok||st.done) return; if(!picked){ sfx('tap'); toast('👇 먼저 보관함에서 스티커를 골라요'); return; } place(sl.id); };
+  });
+  $('stkCount').textContent=Object.keys(st.placed).length+' / '+b.slots.length; $('stkTry').textContent=st.tries;
+  $('stkCheck').disabled=st.done;
+}
+function place(slId){
+  const bi=STK.cur, st=STK.boards[bi]; const src=document.querySelector(`#stkTray .sticker[data-sid="${picked}"]`); const r0=src?src.getBoundingClientRect():null;
+  st.placed[slId]=picked; picked=null; sfx('stick'); stkSave(); renderStickers();
+  const dst=$('slot-'+bi+'-'+slId).querySelector('.sticker');
+  if(r0&&dst&&!REDUCED){ const r1=dst.getBoundingClientRect(); dst.style.transition='none'; dst.style.transform=`translate(${r0.left-r1.left}px,${r0.top-r1.top}px) scale(1.15) rotate(-6deg)`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ dst.style.transition='transform .42s cubic-bezier(.2,1.35,.4,1)'; dst.style.transform=''; })); }
+}
+function checkStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi]; if(st.done) return;
+  st.tries++; let wrong=0, empty=0, newOk=0; const msgs=[];
+  b.slots.forEach(sl=>{
+    if(st.ok[sl.id]) return; const el=$('slot-'+bi+'-'+sl.id), sid=st.placed[sl.id];
+    if(!sid){ empty++; return; }
+    if(Array.isArray(sl.answer)?sl.answer.includes(stLabel(sid)):stLabel(sid)===sl.answer){ st.ok[sl.id]=true; newOk++; setTimeout(()=>burstAt(el,{count:14,speed:5,size:6}),newOk*90); }
+    else { wrong++; el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); st.hint[sl.id]=Math.min((st.hint[sl.id]||0)+1,sl.hints.length);
+      msgs.push(`<span class="h">💡 <b>${sl.name}</b> — ${sl.hints[st.hint[sl.id]-1]}</span>`);
+      setTimeout(()=>{ if(st.placed[sl.id]===sid) delete st.placed[sl.id]; el.classList.remove('no'); stkSave(); renderStickers(); },850); }
+  });
+  const allOk=b.slots.every(sl=>st.ok[sl.id]);
+  if(allOk){ st.done=true; stkSave(); renderStickers(); $('stkMsg').innerHTML=''; setTimeout(()=>renderDone(true),350); }
+  else {
+    if(wrong){ sfx('wrong'); if(newOk) setTimeout(()=>sfx('correct'),250); }
+    else if(newOk) sfx('correct'); else sfx('tap');
+    let m=''; if(newOk) m+=`<span style="color:#12a874;font-weight:800">✔ ${newOk}칸 정답!</span> `;
+    if(wrong) m+=`<span style="color:#e5484d;font-weight:800">✖ ${wrong}칸은 다시 생각해 봐요.</span>`;
+    if(empty) m+=` <span class="muted">빈칸이 ${empty}개 남았어요.</span>`;
+    $('stkMsg').innerHTML=m+msgs.join(''); stkSave(); renderStickers();
+  }
+}
+function renderDone(fx){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi], next=bi<BOARDS.length-1, all=STK.boards.every(x=>x.done);
+  $('stkDone').innerHTML=st.done?`<div class="complete-banner"><div class="stamp">완성!</div><h3 style="margin:0 0 6px">🎉 ${b.short} 정리판 완성!</h3><p>${b.summary}</p><p class="muted">시도 ${st.tries}회 · 이 정리판이 바로 나의 개념 정리 노트예요 📒</p></div>`:'';
+  $('stkNext').classList.toggle('hidden',!(st.done&&next&&!all)); $('stkToLife').classList.toggle('hidden',!(all||(st.done&&!next)));
+  if(st.done&&fx){ sfx('fanfare'); setTimeout(()=>sfx('stamp'),180); fireworks(); renderBoardTabs();
+    if(next){ setTimeout(()=>{ sfx('unlock'); const t=$('boardTabs').children[bi+1]; if(t){ t.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:600,easing:'cubic-bezier(.3,1.6,.5,1)'}); burstAt(t,{count:20,speed:6}); } toast('🔓 다음 판이 열렸어요!'); },900); }
+    if(all) setTimeout(()=>toast('🏅 스티커 정리판 '+BOARDS.length+'개를 모두 완성했어요!'),1300);
+  }
+}
+
+</script>
+<script>
+/* ============ 실생활 ============ */
+const LIFE=[
+  ['🎬','영화관에서 오줌이 마려워요','음료수를 많이 마시고 영화를 보다 보면 중간에 화장실이 급해져요.','콩팥은 쉬지 않고 오줌을 만들어 <b>오줌관</b>으로 보내고, 오줌은 <b>방광</b>에 모여요. 방광에 오줌이 차서 벽이 늘어나면 "오줌이 마렵다"는 신호를 느껴요.','방광: 오줌 저장(약 600 mL)'],
+  ['🥤','물을 많이 마신 날','물을 많이 마시면 화장실에 자주 가고 오줌 색이 연해요.','몸에 물이 많으면 세뇨관에서 물을 <b>덜 재흡수</b>해요. 그래서 오줌 양이 많아지고 묽어져요. <span class="badge ext">확장</span>','재흡수와 몸속 물의 양 조절'],
+  ['🥵','땀을 많이 흘린 날','운동을 많이 하거나 더운 날에는 오줌 양이 적고 색이 진해요.','땀으로 물이 많이 빠져나가면 세뇨관에서 물을 <b>더 많이 재흡수</b>해요. 오줌 양은 줄고 요소 농도가 높아져 진해져요. <span class="badge ext">확장</span>','물의 재흡수'],
+  ['🌅','아침 첫 오줌이 진해요','자고 일어나서 본 오줌은 낮보다 색이 진해요.','잠자는 동안 물을 마시지 않으니 콩팥이 물을 최대한 <b>재흡수</b>해 아껴요. 그래서 오줌 속 노폐물 농도가 높아요.','오줌은 물 + 요소 등의 혼합물'],
+  ['🏥','건강 검진 소변 검사','학교 건강 검진에서 소변을 받아 검사해요.','오줌에 <b>단백질</b>이 나오면 여과(토리)에, <b>포도당</b>이 나오면 재흡수(혈당)에 문제가 있을 수 있다는 신호예요. 오줌으로 몸 상태를 알 수 있어요!','③ 오줌 검사실과 연결'],
+  ['🩺','인공 신장(혈액 투석)','콩팥이 제 기능을 못 하는 환자는 기계로 혈액을 걸러요.','혈액 투석기는 혈액을 몸 밖으로 꺼내 <b>노폐물을 걸러 내고</b> 다시 몸에 넣어 줘요. 콩팥이 하던 일을 기계가 대신하는 거예요. <span class="badge ext">확장</span>','콩팥의 여과 기능'],
+  ['🚽','설사와 오줌은 같은 걸까?','둘 다 몸 밖으로 나가는데 같은 "배설"일까요?','오줌은 몸속 생명활동으로 생긴 노폐물(요소)을 내보내는 <b>배설</b>이고, 대변(설사)은 흡수되지 않은 음식물 찌꺼기를 내보내는 <b>배출</b>이에요.','배설 vs 배출'],
+  ['🐦','새똥의 하얀 부분','새똥을 보면 하얀 부분이 섞여 있어요.','새는 질소 노폐물을 물에 잘 녹지 않는 <b>요산</b>으로 바꿔 내보내요. 하얀 부분이 요산이에요. 사람은 주로 <b>요소</b>로, 물고기는 주로 <b>암모니아</b>로 내보내요. <span class="badge ext">확장</span>','질소 노폐물(암모니아·요소)']
+];
+function buildLife(){
+  $('lifeGrid').innerHTML=LIFE.map((l,i)=>`<div class="life-card rise-in" style="--i:${i}"><span class="ic">${l[0]}</span><h3>${l[1]}</h3><p style="margin:0">${l[2]}</p><div class="more">👆 왜 그럴까?</div><div class="why"><p style="color:var(--color-text)">${l[3]}</p><span class="link-tag">🔗 ${l[4]}</span></div></div>`).join('');
+  $('lifeGrid').querySelectorAll('.life-card').forEach(c=>c.addEventListener('click',()=>{ if(c.classList.contains('open')) return; c.classList.add('open'); sfx('pop'); burstAt(c.querySelector('.ic'),{count:12,speed:5,size:6});
+    if($('lifeGrid').querySelectorAll('.life-card.open').length===LIFE.length){ setTimeout(()=>{ sfx('combo'); toast('🌟 생활 속 배설 카드를 모두 열었어요!'); burstAt($('toQuiz'),{count:30,speed:8}); },400); } }));
+}
+
+/* ============ 개념 확인 10문항 ============ */
+const QUIZ=[
+  {type:'개념 이해',q:'배설계를 구성하는 기관이 <b>아닌</b> 것은?',opts:['큰창자','콩팥','방광','오줌관'],exp:'배설계는 <b>콩팥, 오줌관, 방광, 요도</b>로 이루어져요. 큰창자는 소화계 기관이에요.'},
+  {type:'개념 이해',q:'단백질이 분해될 때 생기는 독성이 강한 물질과, 이 물질이 간에서 바뀐 물질을 순서대로 옳게 짝지은 것은?',opts:['암모니아 – 요소','요소 – 암모니아','이산화 탄소 – 물','포도당 – 아미노산'],exp:'단백질이 분해되면 독성이 강한 <b>암모니아</b>가 생기고, 간에서 독성이 약한 <b>요소</b>로 바뀌어 오줌으로 나가요.'},
+  {type:'오개념 확인',q:'다음 중 <b>배설</b>에 해당하는 것은?',opts:['콩팥에서 오줌을 만들어 요소를 내보낸다.','항문으로 대변을 내보낸다.','음식물을 소화하여 영양소를 흡수한다.','허파로 산소를 받아들인다.'],exp:'배설은 생명활동으로 생긴 노폐물을 몸 밖으로 내보내는 거예요. 대변을 내보내는 것은 흡수되지 않은 찌꺼기를 내보내는 <b>배출</b>이에요.'},
+  {type:'자료 분석 · 스티커 연계',q:'간에서 만들어진 요소가 몸 밖으로 나가는 경로로 옳은 것은?',opts:['콩팥동맥 → 콩팥단위 → 콩팥깔때기 → 오줌관 → 방광 → 요도','콩팥정맥 → 콩팥단위 → 오줌관 → 콩팥깔때기 → 방광 → 요도','콩팥동맥 → 콩팥깔때기 → 콩팥단위 → 방광 → 오줌관 → 요도','콩팥동맥 → 콩팥단위 → 방광 → 콩팥깔때기 → 오줌관 → 요도'],exp:'요소는 <b>콩팥동맥 → 콩팥(콩팥단위) → 콩팥깔때기 → 오줌관 → 방광 → 요도</b>를 거쳐 몸 밖으로 나가요. (① 실험, 스티커 판 3)'},
+  {type:'개념 이해',q:'토리에서 보먼주머니로 <b>여과되지 않는</b> 물질끼리 옳게 짝지은 것은?',opts:['혈구, 단백질','포도당, 요소','아미노산, 무기염류','물, 요소'],exp:'혈구와 단백질은 <b>크기가 커서</b> 여과되지 않고 혈액에 남아요. 포도당·아미노산·무기염류·요소·물은 크기가 작아 여과돼요.'},
+  {type:'자료 해석',q:'표는 건강한 사람의 혈장, 여과액, 오줌에 들어 있는 물질 A~C의 유무를 나타낸 것이다. <b>B</b>에 해당하는 물질은?',fig:`<div class="tbl-wrap"><table class="tbl" style="min-width:300px"><tr><th>물질</th><th>혈장</th><th>여과액</th><th>오줌</th></tr><tr><td>A</td><td>있음</td><td>없음</td><td>없음</td></tr><tr><td>B</td><td>있음</td><td>있음</td><td>없음</td></tr><tr><td>C</td><td>있음</td><td>있음</td><td>있음(농도 높음)</td></tr></table></div>`,
+   opts:['포도당','단백질','요소','혈구'],exp:'B는 여과는 되지만 오줌에는 없으므로 <b>모두 재흡수</b>되는 <b>포도당</b>이에요. A는 여과되지 않는 단백질, C는 오줌으로 나가는 요소예요.'},
+  {type:'가상실험 결과',q:'② 가상실험에서 건강한 사람의 콩팥동맥과 콩팥정맥 혈액 속 요소의 양을 비교한 결과로 옳은 것은?',opts:['콩팥정맥이 콩팥동맥보다 요소가 적다.','콩팥정맥이 콩팥동맥보다 요소가 많다.','콩팥동맥과 콩팥정맥의 요소 양이 같다.','콩팥정맥에는 요소가 전혀 없다.'],exp:'요소는 콩팥에서 걸러져 오줌으로 나가므로 <b>콩팥정맥의 요소 농도가 더 낮아요</b>. 하지만 일부만 여과되므로 콩팥정맥에도 요소가 남아 있어요(가상실험 8 → 4).'},
+  {type:'적용 · 스스로 확인하기',q:'어떤 사람의 오줌에서 많은 양의 단백질이 검출되었다. 오줌이 만들어지는 과정 중 어디에 문제가 있다고 볼 수 있는가?',opts:['토리에서 보먼주머니로의 여과','세뇨관에서 모세혈관으로의 재흡수','모세혈관에서 세뇨관으로의 분비','방광에서 오줌의 저장'],exp:'단백질은 원래 크기가 커서 <b>여과되지 않아요</b>. 오줌에 단백질이 많다면 단백질이 토리에서 보먼주머니로 여과된 것이므로 <b>여과 과정</b>에 문제가 있어요. (③ 오줌 검사실 시료 나)'},
+  {type:'통합 · 오줌 검사실',q:'당뇨병 환자의 오줌에 베네딕트 용액을 넣고 가열하였더니 황적색이 나타났다. 그 까닭으로 옳은 것은?',opts:['혈액 속 포도당이 너무 많아 여과된 포도당이 모두 재흡수되지 못했기 때문이다.','포도당이 토리에서 여과되지 않았기 때문이다.','포도당이 모세혈관에서 세뇨관으로 분비되지 못했기 때문이다.','요소가 포도당으로 바뀌었기 때문이다.'],exp:'베네딕트 반응 황적색 = <b>포도당</b>. 혈액 속 포도당이 많아 여과된 포도당을 세뇨관에서 <b>모두 재흡수하지 못해</b> 오줌으로 나와요. (② 혈당 높음 조건)'},
+  {type:'자료 해석 · 모식도',q:'그림은 콩팥단위에서 오줌이 만들어지는 과정 (가)~(다)를 나타낸 것이다. (가)~(다)를 순서대로 옳게 짝지은 것은?',fig:'%%NEPHQUIZ%%',opts:['(가) 여과 (나) 재흡수 (다) 분비','(가) 재흡수 (나) 여과 (다) 분비','(가) 여과 (나) 분비 (다) 재흡수','(가) 분비 (나) 재흡수 (다) 여과'],exp:'토리 → 보먼주머니는 <b>여과</b>, 세뇨관 → 모세혈관은 <b>재흡수</b>, 모세혈관 → 세뇨관은 <b>분비</b>예요. (스티커 판 2)'}
+];
+QUIZ[9].fig=`<div class="neph-wrap" style="max-width:520px">${nephSVG('quiz')}</div>`;
+let qz=null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(list,retry){ qz={list:shuffle(list||QUIZ.map((_,i)=>i)),i:0,score:0,wrong:[],t0:Date.now(),answered:false,streak:0,retry:!!retry,done:false}; if(cur!==5) goTo(5); renderQuestion(); }
+function renderQuestion(){
+  const qi=qz.list[qz.i], q=QUIZ[qi]; qz.answered=false; qz.order=shuffle(q.opts.map((_,i)=>i));
+  $('qNum').textContent=(qz.i+1)+' / '+qz.list.length; $('qBar').style.width=(qz.i/qz.list.length*100)+'%';
+  const card=$('qCard'); card.classList.remove('q-card'); void card.offsetWidth; card.classList.add('q-card');
+  card.innerHTML=`<span class="q-type">${q.type}</span>${qz.retry?' <span class="q-type" style="background:#fff0e2;color:#b35300">다시 풀기</span>':''}<div class="q-text">Q${qz.i+1}. ${q.q}</div>${q.fig?`<div class="q-fig">${q.fig}</div>`:''}
+    <div id="opts">${qz.order.map((oi,k)=>`<button class="opt" data-oi="${oi}"><span class="n">${'①②③④'[k]}</span><span>${q.opts[oi]}</span></button>`).join('')}</div><div id="fb"></div>`;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  $('qNext').classList.add('hidden');
+}
+function answer(btn){
+  if(qz.answered) return; qz.answered=true;
+  const qi=qz.list[qz.i], q=QUIZ[qi], ok=+btn.dataset.oi===0;
+  $('qCard').querySelectorAll('.opt').forEach(b=>{ if(+b.dataset.oi===0) b.classList.add('correct'); });
+  if(ok){ qz.score++; qz.streak++; sfx(qz.streak>=3?'combo':'correct'); burstAt(btn,{count:qz.streak>=3?60:34,speed:qz.streak>=3?11:8});
+    const r=btn.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,qz.streak>=3?`🔥 ${qz.streak}연속!`:'정답! +1',qz.streak>=3?'#ff6a00':'#12a874');
+    const cb=$('combo'); cb.textContent=qz.streak>=2?`🔥 ${qz.streak}연속`:''; cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump');
+  } else { qz.streak=0; btn.classList.add('wrong'); sfx('wrong'); qz.wrong.push(qi); $('combo').textContent=''; if(navigator.vibrate) try{navigator.vibrate(80);}catch(e){} }
+  $('fb').innerHTML=`<div class="feedback ${ok?'ok':'no'}"><b class="big">${ok?'⭕ 정답이에요!':'❌ 아쉬워요! 정답은 초록색 보기예요.'}</b><br>${q.exp}</div>`;
+  $('qBar').style.width=((qz.i+1)/qz.list.length*100)+'%';
+  const nb=$('qNext'); nb.textContent=qz.i===qz.list.length-1?'결과 보기 🏁':'다음 문제 →'; nb.classList.remove('hidden');
+  setTimeout(()=>{ const r=$('fb').getBoundingClientRect(); if(r.bottom>innerHeight) window.scrollBy({top:r.bottom-innerHeight+90,behavior:'smooth'}); },60);
+}
+function nextQ(){ sfx('tap'); if(qz.i<qz.list.length-1){ qz.i++; renderQuestion(); window.scrollTo(0,0); } else showResult(); }
+function showResult(){
+  qz.done=true; const total=qz.list.length, sc=qz.score, rate=sc/total, sec=Math.round((Date.now()-qz.t0)/1000);
+  goTo(6);
+  const stars=rate>=.9?3:rate>=.7?2:rate>=.4?1:0;
+  $('trophy').textContent=rate>=.9?'🏆':rate>=.7?'🥈':'💪';
+  $('trophy').style.animation='none'; void $('trophy').offsetWidth; $('trophy').style.animation='';
+  [...$('stars').children].forEach((s,i)=>{ s.classList.remove('on'); if(i<stars) setTimeout(()=>{ s.classList.add('on'); sfx('pop'); burstAt(s,{count:14,speed:6,shapes:['s'],colors:['#ffd43b','#ffb238']}); },500+i*320); });
+  $('scoreBig').parentElement.nextElementSibling; $('scoreBig').nextElementSibling.textContent=' / '+total;
+  let n=0; const el=$('scoreBig'); el.textContent='0'; const tm=setInterval(()=>{ if(n>=sc){ clearInterval(tm); return; } n++; el.textContent=n; sfx('tick'); },110);
+  $('resultMsg').textContent=qz.retry?`틀렸던 ${total}문제 중 ${sc}문제를 맞혔어요!`:rate===1?'완벽해요! 호흡 박사 인정! 🎉':rate>=.8?'아주 잘했어요! 호흡의 원리를 잘 이해했어요.':rate>=.5?'좋아요! 틀린 문제를 다시 풀어 보면 완벽해질 거예요.':'괜찮아요! 개념과 가상실험을 다시 보고 도전해 봐요.';
+  $('resultTime').textContent=`⏱ 걸린 시간 ${Math.floor(sec/60)}분 ${sec%60}초`;
+  $('wrongBox').innerHTML=qz.wrong.length?'<h3>📌 틀린 문제</h3>'+qz.wrong.map(qi=>`<p style="color:var(--color-text)">• ${QUIZ[qi].q}<br><span class="muted">정답: ${QUIZ[qi].opts[0]}</span></p>`).join(''):'<h3>🎯 틀린 문제가 없어요!</h3><p>모든 문제를 맞혔어요.</p>';
+  $('retryWrong').classList.toggle('hidden',!qz.wrong.length);
+  setTimeout(()=>{ if(rate>=.8){ sfx('fanfare'); fireworks(); } else { sfx('correct'); confetti(innerWidth/2,innerHeight*.3,{count:50,speed:9}); } },350);
+}
+
+
+/* ============ 시작 ============ */
+function init(){
+  const bb=$('bgBubbles'); for(let i=0;i<14;i++){ const s=document.createElement('span'); const z=14+Math.random()*40; s.style.width=s.style.height=z+'px'; s.style.left=Math.random()*100+'%'; s.style.animationDuration=(14+Math.random()*16)+'s'; s.style.animationDelay=(-Math.random()*20)+'s'; s.style.opacity=.35+Math.random()*.4; bb.appendChild(s); }
+  FX.cv=$('fx'); FX.ctx=FX.cv.getContext('2d'); fxResize(); addEventListener('resize',fxResize);
+  const sb=$('soundBtn'); const upd=()=>{ sb.textContent=SND.on?'🔊':'🔇'; }; upd();
+  sb.addEventListener('click',()=>{ SND.on=!SND.on; lsSet('sound',SND.on); upd(); if(SND.on) sfx('correct'); toast(SND.on?'🔊 효과음 켜짐':'🔇 효과음 꺼짐'); });
+  document.addEventListener('pointerdown',e=>{ const b=e.target.closest('.btn'); if(!b||b.disabled) return; const r=b.getBoundingClientRect(), z=Math.max(r.width,r.height); const s=document.createElement('span'); s.className='ripple'; s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px'; b.appendChild(s); setTimeout(()=>s.remove(),650); });
+  // 클릭 반짝이 효과
+  document.addEventListener('pointerdown',e=>{ if(e.target.closest('.chip,.tab,.part,.step-dot,.icon-btn,.tube,.board-tab,.btn')) confetti(e.clientX,e.clientY,{count:7,speed:3.5,size:5,g:.1,decay:.045,shapes:['c','s']}); });
+  document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ goTo(+g.dataset.go); return; } const t=e.target.closest('[data-tabgo]'); if(t){ setTab(t.dataset.tabgo); } });
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+  document.querySelectorAll('[data-save]').forEach(t=>{ const k=t.dataset.save; t.value=lsGet('note-'+k,''); let tm=null;
+    t.addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(()=>{ lsSet('note-'+k,t.value); const s=$('saved-'+k); if(s){ s.textContent='저장됨 ✓'; setTimeout(()=>s.textContent='',1500); } },400); }); });
+  document.querySelectorAll('[data-save-check]').forEach(c=>{ const k='chk-'+c.dataset.saveCheck; c.checked=!!lsGet(k,false); c.addEventListener('change',()=>{ lsSet(k,c.checked); if(c.checked){ sfx('pop'); burstAt(c,{count:12,speed:5,size:6}); if([...document.querySelectorAll('[data-save-check]')].every(x=>x.checked)){ sfx('combo'); toast('✅ 학습목표를 모두 달성했어요!'); } } }); });
+  // 도입
+  $('heroBox').innerHTML=heroSVG();
+  $('startBtn').addEventListener('click',()=>{ goTo(1); });
+  const pg=lsGet('progress',0); if(pg>0){ $('resumeBtn').classList.remove('hidden'); $('resumeBtn').addEventListener('click',()=>goTo(pg)); }
+  $('thinkAnsBtn').addEventListener('click',()=>{ const a=$('thinkAns'); const h=a.classList.toggle('hidden'); sfx('tap'); $('thinkAnsBtn').textContent=h?'예시 답안 보기':'예시 답안 숨기기'; });
+  let ib=10; $('drinkBtn').addEventListener('click',()=>{ ib=ib>=100?10:Math.min(100,ib+18); $('introBl').style.width=ib+'%'; $('introBlTxt').textContent=ib>=100?'방광 100% — 화장실 급해요! 😣':'방광 '+ib+'%'; sfx(ib>=100?'flush':'bubble'); if(ib>=100){ burstAt($('introBl'),{count:30,speed:7,colors:['#ffd43b','#f5b700']}); toast('🚽 오줌은 어디에서 만들어져 방광으로 올까요?'); } });
+  // 모듈
+  buildConcepts(); buildRoute(); buildSim(); buildLab(); buildPad(); buildLife(); stkLoad();
+  $('blAdd').addEventListener('click',()=>{ if(BL.v>=600){ sfx('wrong'); toast('😣 방광이 가득 찼어요! 요도로 내보내요'); return; } BL.v+=100; sfx('drip'); renderBl(); if(BL.v>=600){ sfx('wrong'); burstAt($('blBar'),{count:20,speed:6,colors:['#ffd43b','#f5b700']}); } });
+  $('blOut').addEventListener('click',()=>{ if(!BL.v){ sfx('tap'); toast('방광이 비어 있어요'); return; } BL.v=0; sfx('flush'); renderBl(); confetti(innerWidth/2,innerHeight*.6,{count:24,speed:7,colors:['#74c0fc','#ffd43b']}); });
+  renderBl();
+  $('stkCheck').addEventListener('click',checkStickers);
+  $('stkReset').addEventListener('click',()=>{ const st=STK.boards[STK.cur]; Object.assign(st,{placed:{},ok:{},tries:0,done:false,hint:{}}); picked=null; stkSave(); sfx('peel'); renderBoardFrame(); });
+  $('stkNext').addEventListener('click',()=>{ if(STK.cur<BOARDS.length-1){ STK.cur++; picked=null; stkSave(); sfx('unlock'); renderBoardFrame(); window.scrollTo(0,0); } });
+  $('toQuiz').addEventListener('click',()=>{ startQuiz(); });
+  $('qNext').addEventListener('click',nextQ);
+  $('retryWrong').addEventListener('click',()=>startQuiz(qz.wrong.slice(),true));
+  $('retryAll').addEventListener('click',()=>startQuiz());
+  enterHooks[2]=()=>{ setTab(curTab); };
+  enterHooks[3]=()=>{ renderBoardFrame(); };
+  enterHooks[5]=()=>{ if(!qz||qz.done) startQuiz(); };
+  curTab=lsGet('tab','plan');
+  goTo(0);
+}
+init();
+</script>
+</body>
+</html>
