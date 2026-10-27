@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부력 가상실험실</title>
+<style>
+:root{
+  --color-primary:#3361e8;
+  --color-primary-dark:#1f43b8;
+  --color-secondary:#0fb59b;
+  --color-accent:#ff8a3d;
+  --color-bg:#f1f0ff;
+  --color-surface:#ffffff;
+  --color-text:#1b1d4a;
+  --color-text-light:#5a5f80;
+  --color-success:#12a874;
+  --color-error:#e5484d;
+  --art:#e03131;
+  --ven:#4263eb;
+  --kid:#c2255c;
+  --urine:#f5b700;
+  --filt:#7048e8;
+  --reab:#12b886;
+  --sec:#f76707;
+  --line:#e2e3f3;
+  --radius:20px;
+  --shadow:0 10px 30px rgba(60,40,140,.10);
+  --shadow-s:0 4px 12px rgba(60,40,140,.10);
+  --font:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;font-family:var(--font);color:var(--color-text);}
+body{overflow-x:hidden;background:radial-gradient(1200px 600px at 10% -10%,#dfe8ff 0,transparent 60%),radial-gradient(900px 500px at 110% 10%,#d9fbf3 0,transparent 55%),var(--color-bg);min-height:100vh;}
+button{font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#bgBubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+#bgBubbles span{position:absolute;bottom:-80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(120,170,255,.25) 60%,rgba(120,170,255,.05));animation:rise linear infinite;}
+@keyframes rise{to{transform:translateY(-120vh) translateX(30px);}}
+#fx{position:fixed;inset:0;width:100vw !important;height:100vh;pointer-events:none;z-index:9000;background:transparent !important;border-radius:0 !important;}
+#app{position:relative;z-index:1;max-width:980px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:12px 16px 70px;}
+/* 상단 바 */
+.topbar{position:sticky;top:0;z-index:50;margin:0 -16px 14px;padding:10px 16px 8px;background:rgba(238,243,255,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.topbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brand{font-weight:800;font-size:15px;color:var(--color-primary-dark);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brand i{font-style:normal;margin-right:4px;}
+.icon-btn{border:none;background:#fff;border-radius:14px;min-width:48px;height:48px;font-size:21px;box-shadow:var(--shadow-s);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.icon-btn:active{transform:scale(.92);}
+.step-indicator{display:flex;gap:6px;}
+.step-dot{flex:1;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:12px;color:var(--color-text-light);min-width:0;background:none;border:none;padding:0;min-height:40px;}
+.step-dot i{display:block;width:100%;height:8px;border-radius:5px;background:#d7e0f5;position:relative;overflow:hidden;}
+.step-dot i::after{content:'';position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--color-secondary),#3ad1b8);border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.step-dot.done i::after{width:100%;}
+.step-dot.active i::after{width:100%;background:linear-gradient(90deg,var(--color-primary),#6a8cff);}
+.step-dot.active{color:var(--color-primary);font-weight:800;}
+.step-dot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* 화면 전환 */
+.screen{display:none;flex:1;flex-direction:column;}
+.screen.active{display:flex;animation:screenIn .5s cubic-bezier(.2,.8,.2,1);}
+.screen.active.back{animation:screenInBack .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes screenIn{from{opacity:0;transform:translateX(40px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes screenInBack{from{opacity:0;transform:translateX(-40px) scale(.985);}to{opacity:1;transform:none;}}
+.screen.active .rise-in{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 80ms);}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+h1{font-size:clamp(28px,5.4vw,42px);margin:6px 0 8px;line-height:1.25;letter-spacing:-.02em;}
+h2{font-size:clamp(21px,3.6vw,27px);margin:0 0 10px;letter-spacing:-.01em;}
+h3{font-size:18px;margin:0 0 8px;}
+p{line-height:1.7;color:var(--color-text-light);margin:6px 0;}
+b,strong{color:var(--color-text);}
+.grad-text{background:linear-gradient(100deg,#2448d8,#3a8bff 45%,#13b8a0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.card{background:var(--color-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.7);}
+.btn{position:relative;overflow:hidden;border:none;border-radius:16px;padding:14px 24px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,#3d6cff,#2448d8);min-height:52px;box-shadow:0 6px 0 #1a37a3,0 10px 20px rgba(36,72,216,.25);transition:transform .12s,box-shadow .12s;}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1a37a3,0 4px 10px rgba(36,72,216,.2);}
+.btn.secondary{background:#fff;color:var(--color-primary);box-shadow:0 5px 0 #c6d3f5,0 8px 16px rgba(36,72,216,.08);}
+.btn.secondary:active{box-shadow:0 1px 0 #c6d3f5;}
+.btn.mint{background:linear-gradient(135deg,#21c9a9,#0d9e86);box-shadow:0 6px 0 #0a7a67,0 10px 20px rgba(13,158,134,.25);}
+.btn.small{padding:10px 16px;font-size:15px;min-height:48px;border-radius:14px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none;}
+.btn.secondary .ripple{background:rgba(51,97,232,.2);}
+@keyframes ripple{to{transform:scale(4);opacity:0;}}
+.pulse{animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 6px 0 #1a37a3,0 0 0 0 rgba(61,108,255,.45);}50%{box-shadow:0 6px 0 #1a37a3,0 0 0 14px rgba(61,108,255,0);}}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:20px;}
+.btn-row.center{justify-content:center;}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 10px;}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#e3eaff;color:var(--color-primary-dark);font-size:13px;font-weight:800;}
+.badge.teal{background:#d8f6ef;color:#0a7f6c;}
+.badge.ext{background:#fff0e2;color:#b35300;font-size:12px;padding:3px 9px;vertical-align:middle;}
+.muted{font-size:13px;color:var(--color-text-light);}
+.row{display:flex;gap:14px;flex-wrap:wrap;}
+.row>*{flex:1 1 300px;min-width:0;}
+.hidden{display:none !important;}
+.gas-o2{color:var(--o2);font-weight:800;}
+.gas-co2{color:var(--co2);font-weight:800;}
+/* 도입 */
+#screen-intro{text-align:center;}
+.unit-tag{display:inline-block;font-size:14px;font-weight:800;color:#0a7f6c;background:#d8f6ef;padding:6px 14px;border-radius:999px;}
+.hero{width:min(260px,62vw);margin:4px auto 0;}
+.hero svg{width:100%;height:auto;display:block;overflow:visible;}
+.hero .lungs{transform-origin:130px 70px;animation:breathe 4s ease-in-out infinite;}
+.hero .dia{animation:diaMove 4s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:scale(.94);}50%{transform:scale(1.06);}}
+@keyframes diaMove{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
+.hero .puff{animation:puff 4s ease-in-out infinite;transform-origin:130px 10px;}
+@keyframes puff{0%,40%{opacity:0;transform:translateY(-14px) scale(.6);}50%{opacity:1;}90%,100%{opacity:0;transform:translateY(40px) scale(1);}}
+.goal-list{text-align:left;max-width:600px;margin:14px auto;padding:0;list-style:none;}
+.goal-list li{background:var(--color-surface);border-radius:14px;padding:13px 14px 13px 50px;margin-bottom:9px;box-shadow:var(--shadow-s);position:relative;line-height:1.55;}
+.goal-list li::before{content:attr(data-n);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:640px;margin:12px auto;}
+.flow div{background:var(--color-surface);border-radius:14px;padding:8px 2px;font-size:12px;box-shadow:var(--shadow-s);font-weight:700;color:var(--color-text-light);}
+.flow div b{display:block;font-size:22px;margin-bottom:2px;}
+.think{max-width:640px;margin:12px auto;text-align:left;}
+.breath-guide{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:8px 0 12px;}
+.breath-ball{width:96px;height:96px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffffff,#8fc6ff 45%,#3361e8);box-shadow:0 10px 30px rgba(51,97,232,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;transform:scale(.7);transition:transform 4s ease-in-out;}
+/* 개념 */
+.core-idea{position:relative;overflow:hidden;background:linear-gradient(130deg,#2448d8,#3a8bff 55%,#13b8a0);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:0 14px 30px rgba(36,72,216,.28);}
+.core-idea::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{50%{transform:translate(-12px,14px) scale(1.08);}}
+.core-idea .lbl{font-size:13px;font-weight:800;opacity:.92;letter-spacing:.06em;}
+.core-idea p{color:#fff;font-size:18px;margin:6px 0 0;line-height:1.65;position:relative;z-index:1;}
+.core-idea b{color:#fff;background:rgba(255,255,255,.18);padding:0 4px;border-radius:6px;}
+.concept-card>.head{display:flex;align-items:center;gap:12px;cursor:pointer;min-height:52px;}
+.concept-card>.head .num{flex:none;width:38px;height:38px;border-radius:12px;background:#e3eaff;color:var(--color-primary);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.concept-card>.head strong{flex:1;font-size:17px;}
+.concept-card>.head .chev{transition:transform .3s;color:var(--color-text-light);font-size:18px;}
+.concept-card.open>.head .chev{transform:rotate(180deg);}
+.concept-card.seen>.head .num{background:var(--color-secondary);color:#fff;}
+.concept-card .concept-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1);}
+.concept-card.open .concept-body{grid-template-rows:1fr;}
+.concept-card .concept-body>div{overflow:hidden;}
+.concept-card .concept-body>div>*:first-child{margin-top:12px;}
+.analogy{background:#fff7ee;border-left:5px solid var(--color-accent);border-radius:12px;padding:11px 13px;margin:8px 0;font-size:15px;line-height:1.65;}
+.info-panel{background:#f1f5ff;border-radius:14px;padding:12px 14px;min-height:66px;font-size:15px;line-height:1.65;transition:background .3s;}
+.info-panel.flash{animation:flashBg .6s;}
+@keyframes flashBg{0%{background:#dce6ff;}100%{background:#f1f5ff;}}
+.info-panel b{color:var(--color-primary-dark);}
+.diagram-wrap{max-width:560px;margin:0 auto;position:relative;}
+.diagram-wrap svg{width:100%;height:auto;display:block;}
+svg .part{cursor:pointer;transition:filter .2s;}
+svg .part:hover{filter:brightness(1.06);}
+svg .part.sel{filter:drop-shadow(0 0 6px rgba(51,97,232,.9));}
+.tbl-wrap{overflow-x:auto;}
+table.tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:15px;min-width:420px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;text-align:center;vertical-align:middle;line-height:1.45;}
+table.tbl tr>*:last-child{border-right:none;}
+table.tbl tr:last-child>*{border-bottom:none;}
+table.tbl th{background:#eef3ff;}
+table.tbl td.rev{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#effcf8;font-weight:700;color:#0a6d5d;}
+table.tbl td.q{color:#a6b1cc;font-weight:800;}
+@keyframes popIn{0%{transform:scale(.4);opacity:0;}100%{transform:none;opacity:1;}}
+.myth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;}
+.myth{background:var(--color-surface);border-radius:16px;box-shadow:var(--shadow-s);padding:14px;cursor:pointer;min-height:110px;position:relative;}
+.myth .no{color:#b4232a;font-weight:800;margin-bottom:6px;line-height:1.5;}
+.myth .yes{color:#0a6d5d;line-height:1.6;font-size:15px;display:none;}
+.myth .tapme{font-size:13px;color:var(--color-text-light);}
+.myth.open .yes{display:block;animation:riseIn .45s both;}
+.myth.open .tapme{display:none;}
+.myth.open .no{text-decoration:line-through;text-decoration-color:rgba(180,35,42,.5);}
+.area-demo{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.area-demo canvas{flex:1 1 260px;max-width:340px;}
+.area-demo .area-ctrl{flex:1 1 220px;}
+.meter{height:16px;border-radius:9px;background:#e6ecf8;overflow:hidden;margin:4px 0 10px;}
+.meter>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#21c9a9,#3361e8);transition:width .4s cubic-bezier(.2,.8,.2,1);}
+/* 탐구 */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:10px;scrollbar-width:thin;}
+.tab{flex:none;border:none;border-radius:14px;padding:10px 15px;font-size:15px;font-weight:800;background:#fff;color:var(--color-text-light);min-height:48px;box-shadow:var(--shadow-s);transition:all .2s;}
+.tab.active{background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;transform:translateY(-1px);}
+.tabpane{display:none;}
+.tabpane.active{display:block;animation:riseIn .45s both;}
+.plan-step{display:flex;gap:12px;margin-bottom:12px;}
+.plan-step .k{flex:none;width:86px;font-weight:800;color:var(--color-primary);font-size:15px;padding-top:2px;}
+.plan-step .v{flex:1;line-height:1.65;color:var(--color-text);font-size:15px;min-width:0;}
+.plan-step ol{margin:0;padding-left:20px;}
+textarea,.inp{width:100%;border-radius:14px;border:1.5px solid #d3dcf0;padding:11px;font-family:var(--font);font-size:15px;resize:vertical;background:#fff;color:var(--color-text);transition:border .2s,box-shadow .2s;}
+textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 4px rgba(51,97,232,.15);}
+textarea{min-height:68px;}
+.saved{font-size:12px;color:var(--color-success);height:16px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.ctrl label{font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
+.ctrl label em{font-style:normal;color:var(--color-primary);}
+input[type=range]{width:100%;height:44px;accent-color:var(--color-primary);}
+.toggle{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{border:2px solid #d3dcf0;background:#fff;border-radius:999px;padding:9px 15px;font-size:15px;font-weight:800;min-height:46px;color:var(--color-text);transition:all .2s;}
+.chip.on{border-color:var(--color-primary);background:#e8eeff;color:var(--color-primary-dark);}
+.chip.warn.on{border-color:var(--color-error);background:#ffeced;color:#a3161b;}
+canvas{display:block;width:100%;border-radius:16px;background:#fff;touch-action:manipulation;}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:10px 0;}
+.readout div{background:#f1f5ff;border-radius:14px;padding:9px 11px;}
+.readout small{display:block;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.readout b{font-size:21px;font-variant-numeric:tabular-nums;}
+.state-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-weight:800;font-size:15px;background:#eef1f8;color:var(--color-text-light);transition:all .3s;}
+.state-pill.in{background:#e0f1ff;color:#0f62b8;}
+.state-pill.out{background:#f1e9ff;color:#5b2fc4;}
+.model-wrap{max-width:420px;margin:0 auto;position:relative;touch-action:none;}
+.model-wrap svg{width:100%;height:auto;display:block;}
+.hold-btn{width:100%;border:none;border-radius:22px;min-height:84px;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(135deg,#45b3ff,#3361e8);box-shadow:0 8px 0 #2245b5,0 14px 28px rgba(51,97,232,.3);user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .12s,box-shadow .12s,background .3s;}
+.hold-btn.holding{transform:translateY(6px);box-shadow:0 2px 0 #2245b5,0 6px 16px rgba(51,97,232,.3);background:linear-gradient(135deg,#2ec4a6,#0f8f7b);}
+.gauge{position:relative;height:22px;border-radius:12px;background:linear-gradient(90deg,#7a4ff0 0%,#e9e3ff 38%,#eef2f8 50%,#e0f1ff 62%,#45b3ff 100%);margin:6px 0 2px;}
+.gauge i{position:absolute;top:-5px;width:6px;height:32px;border-radius:3px;background:#16204a;left:50%;transform:translateX(-50%);transition:left .12s;}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.lock-note{font-size:13px;color:var(--color-text-light);}
+.rec-table td,.rec-table th{font-size:14px;padding:7px;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--color-text-light);font-weight:700;margin:6px 0;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;}
+.legend i.tri{border-radius:2px;transform:rotate(45deg);width:11px;height:11px;}
+/* 스티커 */
+.board-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;}
+.board-tab{flex:none;border:none;background:#fff;border-radius:14px;padding:9px 13px;min-height:48px;font-weight:800;font-size:14px;color:var(--color-text-light);box-shadow:var(--shadow-s);}
+.board-tab.active{background:linear-gradient(135deg,#ffb238,#ff7a2f);color:#fff;}
+.board-tab.locked{opacity:.55;}
+.board-tab.done::after{content:' ✔';}
+.sticker-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;}
+.sticker-status .pill{background:#fff;border-radius:999px;padding:7px 13px;font-weight:800;font-size:14px;box-shadow:var(--shadow-s);}
+.sticker-board{position:relative;}
+.sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:76px;background:repeating-linear-gradient(45deg,#fffaf0,#fffaf0 12px,#fff4de 12px,#fff4de 24px);border:2px dashed #f2c98a;}
+.sticker-tray .tray-lbl{width:100%;font-size:13px;font-weight:800;color:#b36b00;}
+.sticker{position:relative;border:none;border-radius:13px;padding:11px 15px;font-size:16px;font-weight:800;min-height:48px;color:#3b2a00;background:linear-gradient(160deg,#fff,#fff3c4);box-shadow:0 3px 0 rgba(0,0,0,.12),0 6px 12px rgba(150,100,0,.12);transform:rotate(var(--tilt,0deg));transition:transform .18s,box-shadow .18s;}
+.sticker::before{content:'';position:absolute;inset:3px;border:1.5px dashed rgba(180,130,0,.35);border-radius:10px;pointer-events:none;}
+.sticker.c1{background:linear-gradient(160deg,#fff,#d6ecff);color:#0d3f78;}
+.sticker.c2{background:linear-gradient(160deg,#fff,#ffdbe2);color:#7c1430;}
+.sticker.c3{background:linear-gradient(160deg,#fff,#dcf8ee);color:#0a5747;}
+.sticker.c4{background:linear-gradient(160deg,#fff,#ece3ff);color:#3c1f8f;}
+.sticker.picked{transform:rotate(0) scale(1.12) translateY(-4px);box-shadow:0 12px 22px rgba(0,0,0,.22);outline:3px solid var(--color-primary);outline-offset:2px;z-index:3;}
+.sticker.wiggle{animation:wiggle .9s ease-in-out infinite;}
+@keyframes wiggle{0%,100%{transform:rotate(-2deg) scale(1.12) translateY(-4px);}50%{transform:rotate(2deg) scale(1.12) translateY(-4px);}}
+.slot{min-height:50px;min-width:86px;border:2.5px dashed #b6c3e2;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:4px;position:relative;background:rgba(255,255,255,.92);transition:border-color .2s,background .2s,transform .2s;}
+.slot .sticker{padding:8px 10px;font-size:15px;min-height:40px;transform:none;}
+.slot.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+@keyframes slotGlow{50%{box-shadow:0 0 0 5px rgba(51,97,232,.18);}}
+.slot.ok{border-style:solid;border-color:var(--color-success);background:#ecfbf5;}
+.slot.ok::after{content:'✔';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-success);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;animation:popIn .4s cubic-bezier(.3,1.6,.5,1);z-index:2;}
+.slot.no{border-style:solid;border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.slot.no::after{content:'✖';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-error);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+.slot .hint{font-size:12px;color:var(--color-text-light);line-height:1.3;text-align:center;}
+.slot.abs{position:absolute;transform:translate(-50%,-50%);}
+.slot.abs.no{animation:shakeAbs .45s;}
+@keyframes shakeAbs{0%,100%{transform:translate(-50%,-50%);}25%{transform:translate(calc(-50% - 7px),-50%);}75%{transform:translate(calc(-50% + 7px),-50%);}}
+.svg-board{position:relative;max-width:540px;margin:0 auto;}
+.svg-board svg{width:100%;height:auto;display:block;}
+.stk-msg{min-height:26px;font-size:15px;line-height:1.6;margin-top:8px;}
+.stk-msg .h{display:block;color:#a35a00;}
+.complete-banner{position:relative;text-align:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,#fff7e6,#ffe8f0);margin-top:12px;overflow:hidden;}
+.complete-banner p{color:var(--color-text);font-weight:700;}
+.stamp{position:absolute;right:14px;top:10px;font-size:22px;font-weight:900;color:#e5484d;border:4px solid #e5484d;border-radius:12px;padding:3px 10px;transform:rotate(-14deg);opacity:.9;animation:stamp .6s cubic-bezier(.2,1.8,.4,1);background:rgba(255,255,255,.6);}
+@keyframes stamp{0%{transform:rotate(-14deg) scale(3);opacity:0;}100%{transform:rotate(-14deg) scale(1);opacity:.9;}}
+.gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;}
+.gx-panel{background:#f7f9ff;border-radius:16px;padding:12px;}
+.gx-panel h4{margin:0 0 8px;font-size:15px;}
+.gx-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.gx-box{border-radius:16px;padding:14px 6px;text-align:center;font-weight:800;font-size:15px;color:#fff;min-height:118px;display:flex;align-items:center;justify-content:center;}
+.gx-box.alv{background:radial-gradient(circle at 35% 35%,#ffd0da,#ff8fa6);color:#6b1028;}
+.gx-box.cap{background:linear-gradient(180deg,#ff6b6b,#c92a4a);}
+.gx-box.cell{background:radial-gradient(circle at 40% 40%,#fff0c2,#f5c451);color:#5c3d00;}
+.gx-arrows{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.gx-arrows .arw{font-size:13px;font-weight:900;color:var(--color-text-light);line-height:1;}
+.gx-principle{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-weight:800;flex-wrap:wrap;}
+/* 실생활 */
+.life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.life-card{background:var(--color-surface);border-radius:18px;box-shadow:var(--shadow);padding:16px;cursor:pointer;transition:transform .2s;position:relative;overflow:hidden;}
+.life-card:active{transform:scale(.98);}
+.life-card .ic{font-size:40px;line-height:1;display:inline-block;transition:transform .4s cubic-bezier(.3,1.6,.5,1);}
+.life-card.open .ic{transform:scale(1.15) rotate(-8deg);}
+.life-card h3{margin:8px 0 6px;}
+.life-card .why{display:none;}
+.life-card.open .why{display:block;animation:riseIn .45s both;}
+.life-card .more{font-size:13px;font-weight:800;color:var(--color-primary);}
+.life-card.open .more{display:none;}
+.link-tag{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:#0a7f6c;background:#d8f6ef;border-radius:999px;padding:4px 10px;}
+/* 퀴즈 */
+.quiz-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.quiz-progress{flex:1;height:12px;border-radius:7px;background:#dde5f6;overflow:hidden;}
+.quiz-progress i{display:block;height:100%;background:linear-gradient(90deg,#21c9a9,#3361e8);border-radius:7px;transition:width .5s cubic-bezier(.2,.8,.2,1);width:0;}
+.combo{font-weight:900;color:#ff6a00;min-width:70px;text-align:right;font-size:15px;}
+.combo.bump{animation:bump .5s cubic-bezier(.3,1.8,.5,1);}
+@keyframes bump{0%{transform:scale(1.8);}100%{transform:scale(1);}}
+.q-card{animation:qIn .45s cubic-bezier(.2,.8,.2,1);}
+@keyframes qIn{from{opacity:0;transform:translateX(30px) rotate(1deg);}to{opacity:1;transform:none;}}
+.q-type{display:inline-block;font-size:12px;font-weight:800;background:#e3eaff;color:var(--color-primary-dark);padding:4px 10px;border-radius:999px;margin-bottom:6px;}
+.q-text{font-size:18px;font-weight:800;line-height:1.6;margin:4px 0 12px;}
+.q-fig{margin:6px 0 12px;}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid #d3dcf0;background:#fff;border-radius:16px;padding:13px 14px;font-size:16px;margin-bottom:10px;min-height:54px;line-height:1.5;color:var(--color-text);transition:transform .12s,border-color .2s,background .2s;}
+.opt:active{transform:scale(.98);}
+.opt .n{flex:none;width:28px;height:28px;border-radius:9px;background:#eef2fb;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.opt.correct{border-color:var(--color-success);background:#e9fbf4;animation:correctPop .5s cubic-bezier(.3,1.6,.5,1);}
+.opt.correct .n{background:var(--color-success);color:#fff;}
+.opt.wrong{border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.opt.wrong .n{background:var(--color-error);color:#fff;}
+@keyframes correctPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+.feedback{border-radius:16px;padding:13px 15px;margin-top:6px;line-height:1.65;font-size:15px;animation:riseIn .4s both;}
+.feedback.ok{background:#e9fbf4;}
+.feedback.no{background:#fff3e8;}
+.feedback b.big{font-size:17px;}
+/* 결과 */
+.result-hero{text-align:center;}
+.trophy{font-size:84px;line-height:1;display:inline-block;animation:trophy 1s cubic-bezier(.3,1.6,.5,1) both;}
+@keyframes trophy{0%{transform:scale(0) rotate(-30deg);}100%{transform:none;}}
+.score-big{font-size:64px;font-weight:900;line-height:1.1;}
+.stars{font-size:38px;letter-spacing:6px;}
+.stars span{display:inline-block;opacity:.18;filter:grayscale(1);}
+.stars span.on{opacity:1;filter:none;animation:starIn .5s cubic-bezier(.3,1.8,.5,1) both;}
+@keyframes starIn{0%{transform:scale(0) rotate(-90deg);}100%{transform:none;}}
+.check-list label{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.55;cursor:pointer;min-height:48px;}
+.check-list input{width:24px;height:24px;flex:none;accent-color:var(--color-success);margin-top:1px;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120px);background:#16204a;color:#fff;padding:12px 20px;border-radius:999px;font-weight:800;z-index:9500;transition:transform .4s cubic-bezier(.3,1.5,.5,1);box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:92vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.float-txt{position:fixed;z-index:9600;pointer-events:none;font-weight:900;font-size:22px;animation:floatUp 1.1s ease-out forwards;text-shadow:0 2px 0 #fff,0 0 8px #fff;}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6);}20%{opacity:1;transform:translate(-50%,-14px) scale(1.15);}100%{opacity:0;transform:translate(-50%,-70px) scale(1);}}
+footer{text-align:center;font-size:12px;color:#8a94b2;padding:24px 0 6px;letter-spacing:.03em;}
+@media (max-width:560px){
+  #app{padding:8px 12px 60px;}
+  .topbar{margin:0 -12px 12px;padding:8px 12px 6px;}
+  .step-dot{font-size:11px;}
+  .card{padding:15px;}
+  .plan-step{flex-direction:column;gap:4px;}
+  .plan-step .k{width:auto;}
+  .flow div{font-size:11px;}
+  .slot{min-width:76px;min-height:44px;}
+  .slot .sticker{font-size:13px;padding:6px 7px;min-height:34px;}
+  .sticker{font-size:15px;padding:10px 12px;}
+  .q-text{font-size:17px;}
+  .gx-box{min-height:104px;font-size:14px;}
+}
+
+
+
+
+/* ====== 부력 전용 ====== */
+:root{--buoy:#f08c00;--grav:#7048e8;--hand:#2f6fdb;--water:#4dabf7;--color-bg:#eef7ff;}
+body{background:radial-gradient(1100px 600px at 5% -10%,#cfe8ff 0,transparent 60%),radial-gradient(900px 500px at 110% 5%,#d3f9f0 0,transparent 55%),var(--color-bg);}
+.topbar{background:rgba(238,247,255,.86);}
+#bgBubbles span{background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(77,171,247,.32) 60%,rgba(77,171,247,.06));border:1px solid rgba(255,255,255,.6);}
+.grad-text{background:linear-gradient(100deg,#1864ab,#1c7ed6 40%,#0ca678 75%,#f08c00);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.core-idea{background:linear-gradient(130deg,#1864ab,#1c7ed6 50%,#0ca678);box-shadow:0 14px 30px rgba(24,100,171,.28);}
+.unit-tag{color:#0b5394;background:#d0ebff;}
+.hero{width:min(380px,86vw);}
+.bob{animation:bob 2.6s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(-3px);}50%{transform:translateY(5px);}}
+.hb{animation:hb 5s ease-in-out infinite;}
+@keyframes hb{0%,100%{transform:translate(0,4px) rotate(-2deg);}50%{transform:translate(5px,-9px) rotate(2deg);}}
+.bub{animation:bub 3.2s linear infinite;}
+@keyframes bub{0%{transform:translateY(0);opacity:0;}15%{opacity:.9;}100%{transform:translateY(-70px);opacity:0;}}
+.glow{animation:glow 1.1s ease-in-out infinite alternate;}
+@keyframes glow{to{opacity:.5;}}
+/* 생각 열기 */
+.swim{margin:8px 0 10px;}
+.swim svg{width:100%;height:auto;display:block;border-radius:16px;}
+.swimmer{transition:transform 1.6s cubic-bezier(.3,1.45,.5,1);}
+.swim-arrow{opacity:0;transition:opacity .5s .9s;}
+.swim-arrow.on{opacity:1;}
+/* 그림 */
+.fig{max-width:620px;margin:0 auto;}
+.fig svg{width:100%;height:auto;display:block;}
+.rig{max-width:760px;margin:0 auto;position:relative;}
+.rig svg{width:100%;height:auto;display:block;background:linear-gradient(#f4f9ff,#fff);border-radius:16px;}
+.status-line{font-weight:800;font-size:15px;margin:8px 0;min-height:26px;}
+.caption{background:#f1f8ff;border-left:5px solid var(--water);border-radius:12px;padding:10px 13px;font-size:15px;line-height:1.65;margin-top:8px;min-height:48px;}
+.f-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;font-weight:800;margin:6px 0;}
+.f-legend span{display:inline-flex;align-items:center;gap:5px;}
+.f-legend i{display:inline-block;width:26px;height:6px;border-radius:3px;}
+.eq-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px 0;font-weight:900;font-size:18px;}
+.eq-row .eq{background:#fff;border-radius:14px;padding:8px 12px;box-shadow:var(--shadow-s);text-align:center;min-width:92px;}
+.eq-row .eq small{display:block;font-size:12px;color:var(--color-text-light);font-weight:800;}
+.eq-row .eq.buoy{background:#fff4e0;color:#b35c00;}
+.eq-row .op{font-size:24px;color:var(--color-text-light);}
+.eq-row.pop .eq{animation:popIn .5s cubic-bezier(.3,1.6,.5,1) both;}
+.eq-row.pop .eq:nth-child(3){animation-delay:.15s;}
+.eq-row.pop .eq:nth-child(5){animation-delay:.3s;}
+.tablet{background:linear-gradient(160deg,#343a40,#16191d);border-radius:24px;padding:12px 12px 8px;box-shadow:0 12px 26px rgba(0,0,0,.25);}
+.tablet canvas{border-radius:12px;background:#fff;}
+.tablet .tb-h{color:#e9ecef;font-size:13px;font-weight:800;display:flex;justify-content:space-between;margin:0 4px 6px;}
+.tablet .tb-h b{color:#8ce99a;font-family:ui-monospace,Menlo,monospace;font-size:16px;}
+.tablet .dot{width:9px;height:9px;border-radius:50%;background:#868e96;margin:6px auto 0;}
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;}
+.mat-tbl td,.mat-tbl th{font-size:14px;padding:8px 6px;}
+.mat-tbl td.new{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#fff4e6;}
+.mat-tbl td.empty{color:#b5bad0;}
+.hbars{display:flex;flex-direction:column;gap:8px;margin:8px 0;}
+.hbar{display:grid;grid-template-columns:118px 1fr 80px;gap:8px;align-items:center;font-size:14px;font-weight:800;}
+.hbar .track{height:22px;border-radius:12px;background:#f1f3f9;overflow:hidden;}
+.hbar .track i{display:block;height:100%;border-radius:12px;width:0;transition:width .9s cubic-bezier(.2,.8,.2,1);}
+.hbar .v{text-align:right;font-variant-numeric:tabular-nums;}
+.qa{background:#fffaf2;border-radius:14px;padding:12px;margin-top:10px;}
+.qa h4{margin:0 0 6px;font-size:15px;line-height:1.5;}
+.pred-q{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.pred-q b{font-size:15px;}
+.pred-q .res{font-size:14px;font-weight:800;min-height:20px;}
+.hand-meter{display:flex;align-items:center;gap:10px;margin:10px 0;font-weight:800;}
+.hand-meter .meter{flex:1;margin:0;height:22px;border-radius:12px;}
+.hand-meter .meter>i{background:linear-gradient(90deg,#ffd43b,#f08c00);border-radius:12px;transition:width .1s;}
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;}
+.mini-h{font-size:15px;font-weight:800;margin:0 0 6px;}
+.result-chip{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:900;font-size:15px;background:#eef1f8;}
+.result-chip.up{background:#fff0d6;color:#b35c00;}
+.result-chip.down{background:#efe8ff;color:#4b2bb5;}
+.result-chip.eq{background:#d3f9d8;color:#0b6b2b;}
+/* 스티커 판 */
+.cmap{display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative;}
+.cm-center{grid-column:1/-1;justify-self:center;width:118px;height:118px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#a5d8ff 50%,#1c7ed6);color:#fff;font-size:26px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(28,126,214,.35);text-shadow:0 2px 0 rgba(0,0,0,.2);animation:bob 3s ease-in-out infinite;}
+.cm-item{background:#f6f9ff;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:6px;align-items:stretch;}
+.cm-item .k{font-weight:900;font-size:15px;color:#1864ab;}
+.cm-item .k small{display:block;font-weight:700;color:var(--color-text-light);font-size:12px;}
+.cls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+.cls-col{background:#f6f9ff;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.cls-col h4{margin:0 0 4px;font-size:15px;}
+.res-tbl td{font-size:15px;}
+.res-tbl td .slot{margin:0 auto;max-width:190px;}
+@media (max-width:560px){
+  .hbar{grid-template-columns:86px 1fr 62px;font-size:12px;}
+  .mat-tbl td,.mat-tbl th{font-size:12px;padding:6px 3px;}
+  .cmap{grid-template-columns:1fr;}
+  .cm-center{width:96px;height:96px;font-size:22px;}
+  .eq-row{font-size:15px;}
+  .eq-row .eq{min-width:74px;padding:6px 8px;}
+}
+.hb,.bob{transform-box:fill-box;transform-origin:center;}
+
+.hero svg{overflow:hidden;border-radius:22px;}
+.sensor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;align-items:start;}
+@media (max-width:560px){.sensor-grid{grid-template-columns:1fr;}}
+.concl{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+.concl .cm-item{flex-direction:row;align-items:center;flex-wrap:wrap;}
+.concl .cm-item .t{flex:1 1 200px;font-weight:700;line-height:1.5;}
+.concl .cm-item .slot{flex:1 1 150px;}
+.sensor-grid .rig{width:100%;max-width:470px;justify-self:center;margin:0;}
+table.tbl.res-tbl{min-width:0;}
+@media (max-width:560px){ table.tbl.res-tbl th,table.tbl.res-tbl td{padding:7px 4px;font-size:13px;} .res-tbl .slot{min-width:62px;} }
+
+.slot-num{font-size:15px;font-weight:900;color:#9aa6c4;}
+.board-tab .lk{margin-right:3px;}
+.slot .sticker{white-space:nowrap;}
+.complete-banner{padding-top:40px;}
+.stamp{font-size:18px;top:8px;}
+.trap-note{font-size:13px;color:#a35a00;font-weight:700;}
+
+</style>
+</head>
+<body>
+<div id="bgBubbles" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand"><i>🛟</i>부력 가상실험실</div>
+      <button class="icon-btn" id="soundBtn" aria-label="효과음 켜기/끄기" title="효과음">🔊</button>
+    </div>
+    <nav class="step-indicator" id="stepIndicator" aria-label="학습 단계"></nav>
+  </div>
+
+  <!-- 1. 도입 -->
+  <section class="screen" id="screen-intro">
+    <div class="rise-in" style="--i:0"><span class="unit-tag">중1 · Ⅴ. 힘의 작용 · 1. 여러 가지 힘</span></div>
+    <div class="hero rise-in" style="--i:1" id="heroBox"></div>
+    <h1 class="rise-in" style="--i:2"><span class="grad-text">부력</span></h1>
+    <p class="rise-in" style="--i:3">물속에 페트병을 눌러 넣으면 손을 밀어 올리는 힘이 느껴져요. 이 힘은 어느 쪽으로 작용하고, 무엇에 따라 커질까? 힘 센서로 직접 재어 보자.</p>
+    <div class="badges rise-in" style="--i:4">
+      <span class="badge">미래엔 과학 1 · 교과서 170~173쪽</span>
+      <span class="badge teal">성취기준 [9과05-02]</span>
+    </div>
+    <p class="muted rise-in" style="--i:4">[9과05-02] 중력, 탄성력, 마찰력, 부력을 이해하고, 각 힘의 특징을 크기와 방향으로 설명할 수 있다.</p>
+    <ul class="goal-list rise-in" style="--i:5">
+      <li data-n="1">부력의 뜻을 알고, 부력의 방향이 중력과 반대인 위쪽임을 설명할 수 있다.</li>
+      <li data-n="2">힘 센서로 물속에서 부력의 크기를 측정하고, 물에 잠긴 부피가 클수록 부력이 커짐을 설명할 수 있다.</li>
+      <li data-n="3">일상생활에서 액체와 기체의 부력을 이용하는 예를 설명할 수 있다.</li>
+    </ul>
+    <div class="flow rise-in" style="--i:6">
+      <div><b>🚪</b>도입</div><div><b>💡</b>개념</div><div><b>🧪</b>탐구</div><div><b>🏷️</b>스티커</div><div><b>🏠</b>실생활</div><div><b>✅</b>확인</div>
+    </div>
+    <div class="card think rise-in" style="--i:7">
+      <h3>💭 생각 열기 — "물속에서 몸이 뜰 수 있는 까닭은 무엇일까?"</h3>
+      <p style="margin-top:0">구명조끼를 입을지 고르고 <b>물에 들어가기</b>를 눌러 보세요.</p>
+      <div class="toggle" id="swimVest">
+        <button class="chip on" data-vest="0">🙂 그냥 들어가기</button>
+        <button class="chip" data-vest="1">🦺 구명조끼 입기</button>
+        <button class="btn small mint" id="swimBtn">🌊 물에 들어가기</button>
+      </div>
+      <div class="swim" id="swimBox"></div>
+      <p><b>물속에서 몸이 뜰 수 있는 까닭은 무엇일까요?</b> 생각을 적어 보세요.</p>
+      <textarea id="note-think" data-save="think" placeholder="예) 물속에서는 몸에 … 쪽으로 … 힘이 작용하기 때문이다."></textarea>
+      <div class="saved" id="saved-think"></div>
+      <button class="btn small secondary" id="thinkAnsBtn">예시 답안 보기</button>
+      <p class="hidden" id="thinkAns" style="color:var(--color-text)">물속에서는 <b>위쪽으로 몸을 밀어 올리는 힘</b>이 작용하기 때문이다. 구명조끼를 입으면 이 힘은 <b>커지게</b> 되어 더 잘 뜬다.</p>
+    </div>
+    <div class="btn-row center rise-in" style="--i:8">
+      <button class="btn secondary hidden" id="resumeBtn">이어서 하기</button>
+      <button class="btn pulse" id="startBtn">시작하기 →</button>
+    </div>
+  </section>
+
+  <!-- 2. 개념 -->
+  <section class="screen" id="screen-concept">
+    <h2>💡 핵심 아이디어와 개념</h2>
+    <div class="core-idea rise-in" style="--i:0">
+      <div class="lbl">KEY IDEA · 핵심 아이디어</div>
+      <p><b>부력</b>은 액체나 기체가 물체를 <b>중력과 반대 방향인 위쪽</b>으로 밀어 올리는 힘이다. 부력의 크기는 액체나 기체에 <b>잠긴 물체의 부피가 클수록 크다</b>.</p>
+    </div>
+    <div id="conceptCards"></div>
+    <h3 style="margin-top:8px">🔍 오개념 바로잡기 <span class="muted">— 카드를 눌러 확인해요</span></h3>
+    <div class="myth-grid" id="mythGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="0">← 이전</button>
+      <button class="btn" data-go="2" style="margin-left:auto">탐구하러 가기 →</button>
+    </div>
+  </section>
+
+  <!-- 3. 탐구 -->
+  <section class="screen" id="screen-experiment">
+    <h2>🧪 탐구하기</h2>
+    <div class="tabs" id="expTabs" role="tablist">
+      <button class="tab active" data-tab="plan">📝 탐구 계획서</button>
+      <button class="tab" data-tab="bottle">① 페트병 눌러 넣기</button>
+      <button class="tab" data-tab="sensor">② 힘 센서로 부력 측정</button>
+      <button class="tab" data-tab="balance">③ 양팔저울 수수께끼</button>
+      <button class="tab" data-tab="ship">④ 배와 알루미늄박</button>
+      <button class="tab" data-tab="air">⑤ 공기 속 부력</button>
+    </div>
+
+    <div class="tabpane active" id="tab-plan">
+      <div class="card">
+        <h3>📝 탐구 계획서 — 물속에서 부력 측정하기 <span class="badge" style="font-size:12px">교과서 172쪽 탐구</span></h3>
+        <div class="plan-step"><div class="k">문제 인식</div><div class="v">물속에 있는 물체에는 어느 방향으로 힘이 작용할까? 물체가 물에 잠기는 정도에 따라 그 힘(부력)의 크기는 어떻게 달라질까?</div></div>
+        <div class="plan-step"><div class="k">가설</div><div class="v"><textarea id="note-hyp" data-save="hyp" placeholder="예) 추가 물에 … 잠길수록 부력이 … 것이다."></textarea><div class="saved" id="saved-hyp"></div></div></div>
+        <div class="plan-step"><div class="k">변인</div><div class="v">
+          <b>조작 변인</b>: 추가 물에 잠긴 정도(잠기기 전 · 절반 · 완전히)<br>
+          <b>통제 변인</b>: 같은 추, 같은 물, 같은 힘 센서, 추가 비커 바닥이나 벽에 닿지 않게 하기<br>
+          <b>종속 변인</b>: 힘 센서의 측정값(N) → (가)에 비해 <b>감소한 값 = 부력의 크기</b></div></div>
+        <div class="plan-step"><div class="k">준비물</div><div class="v">힘 센서, 스마트 기기, 추, 물, 비커, 스탠드, 고정 막대, 집게 잡이, 실험복, 보안경, 실험용 장갑 (해 보기: 빈 페트병, 수조)</div></div>
+        <div class="plan-step"><div class="k">실험 과정</div><div class="v"><ol>
+          <li>① 탭(해 보기): 빈 페트병을 물속으로 눌러 넣으며 손에 느껴지는 힘의 방향과 크기를 관찰한다.</li>
+          <li>② 탭(탐구): 힘 센서에 추를 매달고 (가) 잠기기 전, (나) 절반 잠겼을 때, (다) 완전히 잠겼을 때의 측정값을 기록하고, 감소한 값(부력)을 구한다.</li>
+          <li>③ 탭: 무게가 같고 부피가 다른 두 물체를 양팔저울에 매달아 물에 잠기게 한다.</li>
+          <li>④ 탭: 알루미늄박의 모양을 바꾸고, 배에 짐을 실어 잠긴 부피와 부력을 비교한다.</li>
+          <li>⑤ 탭: 헬륨 풍선의 개수를 바꾸어 공기 속 부력과 중력을 비교한다.</li>
+        </ol></div></div>
+        <div class="plan-step"><div class="k">예상 결과</div><div class="v"><textarea id="note-exp" data-save="exp" placeholder="예) 추가 물에 완전히 잠겼을 때 힘 센서의 측정값이 가장 … 것이다."></textarea><div class="saved" id="saved-exp"></div></div></div>
+        <div class="analogy">🥽 <b>안전</b>: 유리 기구가 깨지지 않게 주의하고, 실험복·보안경·실험용 장갑을 착용해요.</div>
+      </div>
+      <div class="btn-row"><button class="btn" data-tabgo="bottle" style="margin-left:auto">① 실험 시작 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-bottle">
+      <div class="card">
+        <h3>① 물속에서 받는 힘 알아보기 <span class="badge" style="font-size:12px">교과서 170쪽 해 보기</span></h3>
+        <p style="margin-top:0">뚜껑을 닫은 빈 페트병을 <b>✋ 꾹 눌러 넣기</b> 버튼을 누르고 있는 동안 물속으로 밀어 넣어요. 손을 떼면 어떻게 될까요?</p>
+        <div class="ctrl"><label>페트병 놓는 방법</label><div class="toggle" id="pOri"></div></div>
+        <div class="rig" id="rigP"></div>
+        <div class="hand-meter"><span>✋ 손에 느껴지는 힘</span><div class="meter"><i id="pBar" style="width:0"></i></div></div>
+        <div class="readout"><div><small>물에 잠긴 정도</small><b id="pF">0 %</b></div><div><small>부력 (가상 값)</small><b id="pFb">0.0 N</b></div><div><small>손으로 누르는 힘</small><b id="pH">0.0 N</b></div></div>
+        <button class="hold-btn" id="pHold">✋ 꾹 눌러 넣기 (누르고 있기)</button>
+        <div class="caption" id="pCap">페트병은 물 위에 살짝 떠 있어요. 버튼을 누르고 있어 보세요.</div>
+        <div class="f-legend"><span><i style="background:var(--buoy)"></i>부력</span><span><i style="background:var(--grav)"></i>중력</span><span><i style="background:var(--hand)"></i>손이 누르는 힘</span></div>
+      </div>
+      <div class="card">
+        <h3>📋 완전히 잠겼을 때의 부력 비교 <span class="muted">(가상 값)</span></h3>
+        <div class="tbl-wrap"><table class="tbl mat-tbl" id="pTable"></table></div>
+        <p class="muted">세워서도, 눕혀서도 끝까지(완전히) 눌러 넣어 보세요. → 교과서 173쪽 스스로 확인하기 2</p>
+      </div>
+      <div class="card qa">
+        <h4>✏️ 교과서 질문 — 빈 페트병을 잡은 손에 어떤 느낌이 드는가? 그렇게 생각한 까닭은?</h4>
+        <textarea data-save="qa1" id="note-qa1" placeholder="예) 손을 … 쪽으로 밀어 올리는 힘이 느껴진다. 페트병이 많이 잠길수록 …"></textarea><div class="saved" id="saved-qa1"></div>
+        <button class="btn small secondary" data-ans="ans1">예시 답안 보기</button>
+        <p class="hidden" id="ans1" style="color:var(--color-text)">페트병을 눌러서 물에 잠기게 할 때 손에는 <b>위쪽으로 밀어 올리는 힘</b>이 느껴진다. 이때 페트병이 물속에 <b>많이 잠길수록</b> 위쪽으로 밀어 올리는 힘은 <b>커진다</b>.</p>
+        <h4 style="margin-top:12px">✏️ 스스로 확인하기 2 — 빈 페트병을 물속에 세워서 완전히 잠기게 했을 때와 눕혀서 완전히 잠기게 했을 때 부력의 크기를 비교해 보자.</h4>
+        <textarea data-save="qa1b" id="note-qa1b" placeholder="예) 두 경우 물에 잠긴 병의 부피가 … 므로 부력은 …"></textarea><div class="saved" id="saved-qa1b"></div>
+        <button class="btn small secondary" data-ans="ans1b">예시 답안 보기</button>
+        <p class="hidden" id="ans1b" style="color:var(--color-text)">빈 페트병을 세워서 완전히 잠기게 했을 때와 눕혀서 완전히 잠기게 했을 때 물에 잠긴 병의 <b>부피가 같으므로 부력도 같다</b>.</p>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="plan">← 계획서</button><button class="btn" data-tabgo="sensor" style="margin-left:auto">② 힘 센서 실험 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-sensor">
+      <div class="card">
+        <h3>② 물속에서 부력 측정하기 <span class="badge" style="font-size:12px">교과서 172쪽 탐구</span></h3>
+        <p style="margin-top:0">스탠드에 힘 센서와 추를 매달았어요. <b>(가)(나)(다) 버튼</b>을 누르면 추가 그 위치로 내려가고 측정값이 기록표에 자동으로 기록돼요. 슬라이더로 직접 내려 볼 수도 있어요.</p>
+        <div class="card" style="background:#fffaf2;box-shadow:none">
+          <h3 style="font-size:16px">🔮 먼저 예측해 보세요</h3>
+          <div id="predS"></div>
+          <div class="btn-row" style="padding-top:8px"><button class="btn small" id="predCheck">결과와 비교하기</button></div>
+          <p class="muted" id="predMsg">세 질문에 답하고, 실험으로 확인한 뒤 눌러요.</p>
+        </div>
+        <div class="ctrl"><label>매다는 추 <span class="badge ext">B는 응용 · 가상 값</span></label><div class="toggle" id="sKind"></div></div>
+        <div class="sensor-grid">
+          <div class="rig" id="rigS"></div>
+          <div>
+            <div class="tablet"><div class="tb-h"><span>📱 힘 센서 측정값</span><b id="sTab">5.10 N</b></div><canvas id="sGraph" height="200"></canvas><div class="dot"></div></div>
+            <div class="readout"><div><small>물에 잠긴 정도</small><b id="sF">0 %</b></div><div><small>부력 = 감소한 값</small><b id="sFb">0.00 N</b></div></div>
+          </div>
+        </div>
+        <div class="ctrl" style="margin-top:8px"><label>센서 높이 내리기 (추 내리기) <em id="sDv">0 mm</em></label><input type="range" id="sD" min="0" max="212" step="1" value="0" aria-label="추 내리기"></div>
+        <div class="preset-row">
+          <button class="btn small" data-sp="ga">(가) 잠기기 전</button>
+          <button class="btn small" data-sp="na">(나) 절반 정도 잠김</button>
+          <button class="btn small" data-sp="da">(다) 완전히 잠김</button>
+          <button class="btn small secondary" data-sp="deep">(다)보다 더 깊이</button>
+        </div>
+        <div class="caption" id="sCap">추가 물에 잠기기 전이에요. 힘 센서 측정값은 추의 무게(중력)와 같아요.</div>
+        <div class="f-legend"><span><i style="background:var(--buoy)"></i>부력</span><span><i style="background:var(--grav)"></i>중력(추의 무게)</span></div>
+      </div>
+      <div class="card">
+        <h3>📋 실험 기록표 <span class="muted">(단위 N · 추 A는 교과서 예시 답안 값)</span></h3>
+        <div class="tbl-wrap"><table class="tbl mat-tbl" id="sTable"></table></div>
+        <h3 style="margin-top:14px">📈 잠긴 정도–부력 그래프 겹쳐 보기</h3>
+        <div class="legend"><span><i style="background:#f08c00"></i>추 A</span><span><i class="tri" style="background:#7048e8"></i>추 B (부피 2배)</span></div>
+        <canvas id="bGraph" height="250"></canvas>
+        <div class="btn-row" style="padding-top:6px"><button class="btn small secondary" id="sClear">기록 지우기</button></div>
+      </div>
+      <div class="card qa">
+        <h4>✏️ 정리 1 — (나), (다)에서 측정값이 (가)에 비해 감소한 까닭은 무엇인가?</h4>
+        <textarea data-save="qa2" id="note-qa2" placeholder="예) 힘 센서의 측정값은 중력에서 … 를 뺀 값이다. …"></textarea><div class="saved" id="saved-qa2"></div>
+        <button class="btn small secondary" data-ans="ans2">예시 답안 보기</button>
+        <p class="hidden" id="ans2" style="color:var(--color-text)">힘 센서의 측정값은 <b>중력(추의 무게)에서 부력의 크기를 뺀 값</b>과 같다. (가)~(다)에서 중력의 크기는 일정하지만 추가 물에 더 많이 잠길수록 부력의 크기가 증가하기 때문에 (나), (다)에서 측정한 값이 (가)에 비해 감소한다.</p>
+        <h4 style="margin-top:12px">✏️ 정리 2 — (나), (다)에서 추에 작용하는 부력의 크기는 각각 얼마인가?</h4>
+        <textarea data-save="qa3" id="note-qa3" placeholder="예) (나) … N, (다) … N"></textarea><div class="saved" id="saved-qa3"></div>
+        <button class="btn small secondary" data-ans="ans3">예시 답안 보기</button>
+        <p class="hidden" id="ans3" style="color:var(--color-text)">(나)에서 추에 작용하는 부력의 크기는 <b>0.30 N</b>이고, (다)에서 추에 작용하는 부력의 크기는 <b>0.60 N</b>이다.</p>
+        <h4 style="margin-top:12px">✏️ 정리 3 — 물에 잠긴 추의 부피와 부력의 크기는 어떤 관계인지 설명해 보자.</h4>
+        <textarea data-save="qa4" id="note-qa4" placeholder="예) 물속에 잠긴 추의 부피가 … 수록 부력이 …"></textarea><div class="saved" id="saved-qa4"></div>
+        <button class="btn small secondary" data-ans="ans4">예시 답안 보기</button>
+        <p class="hidden" id="ans4" style="color:var(--color-text)">물속에 잠긴 추의 <b>부피가 클수록 부력이 크다</b>. (완전히 잠긴 뒤에는 더 깊이 내려도 잠긴 부피가 같으므로 부력도 같다.)</p>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="bottle">← ①</button><button class="btn" data-tabgo="balance" style="margin-left:auto">③ 양팔저울 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-balance">
+      <div class="card">
+        <h3>③ 양팔저울 수수께끼 <span class="badge" style="font-size:12px">교과서 192쪽 단원 평가 12번</span></h3>
+        <p style="margin-top:0">무게가 같은 두 물체 A, B를 양팔저울에 매달았더니 수평이 되었어요. 수조를 올려 두 물체를 물속에 <b>완전히 잠기게</b> 하면 저울은 어떻게 될까요?</p>
+        <div class="ctrl"><label>두 물체</label><div class="toggle" id="blMode"></div></div>
+        <div class="rig" id="rigBL"></div>
+        <div class="readout"><div><small>A의 부력</small><b id="blA">0.00 N</b></div><div><small>B의 부력</small><b id="blB">0.00 N</b></div><div><small>저울</small><b id="blS">수평</b></div></div>
+        <div class="btn-row" style="padding-top:4px">
+          <button class="btn" id="blUp">⬆ 수조 올리기</button>
+          <button class="btn secondary" id="blDown">⬇ 수조 내리기</button>
+        </div>
+        <div class="caption" id="blCap">두 물체의 무게는 5 N으로 같아요. 수조를 올려 보세요.</div>
+      </div>
+      <div class="card qa">
+        <h4>✏️ 단원 평가 12 — 무게가 같고 부피가 다른 두 물체를 물속에 완전히 잠기게 했을 때 양팔저울은 어떻게 변하는지 쓰고, 까닭을 설명하시오.</h4>
+        <textarea data-save="qa5" id="note-qa5" placeholder="예) 양팔저울은 … 쪽으로 기운다. 왜냐하면 …"></textarea><div class="saved" id="saved-qa5"></div>
+        <button class="btn small secondary" data-ans="ans5">예시 답안 보기</button>
+        <p class="hidden" id="ans5" style="color:var(--color-text)">양팔저울은 <b>A 쪽으로 기운다</b>. A와 B의 무게는 같지만 <b>부피가 큰 B에 작용하는 부력의 크기가 A에 작용하는 부력의 크기보다 크기</b> 때문이다.</p>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="sensor">← ②</button><button class="btn" data-tabgo="ship" style="margin-left:auto">④ 배와 알루미늄박 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-ship">
+      <div class="card">
+        <h3>④-1 알루미늄박을 뭉칠까, 펼칠까? <span class="badge" style="font-size:12px">교과서 173쪽 보충</span></h3>
+        <p style="margin-top:0">같은 알루미늄박 두 장 중 하나는 작게 <b>뭉치고</b>, 하나는 <b>접시 모양</b>으로 펼쳤어요. 물에 넣어 볼까요?</p>
+        <div class="rig" id="rigFO"></div>
+        <div class="btn-row" style="padding-top:4px"><button class="btn" id="foGo">💧 물에 넣기</button><button class="btn secondary" id="foReset">↺ 다시</button></div>
+        <div class="caption" id="foCap">두 알루미늄박의 무게(중력)는 같아요. 무엇이 다를까요?</div>
+      </div>
+      <div class="card">
+        <h3>④-2 배에 짐을 실으면? <span class="badge" style="font-size:12px">교과서 173쪽 그림 V-15</span></h3>
+        <p style="margin-top:0">배에 짐을 하나씩 실어 보세요. 물 위에 떠 있는 배에서는 <b>부력 = 중력(배와 짐의 무게)</b>이에요.</p>
+        <div class="rig" id="rigBO"></div>
+        <div class="readout"><div><small>짐</small><b id="boN">0개</b></div><div><small>배와 짐의 무게</small><b id="boW">2 N</b></div><div><small>부력</small><b id="boFb">2 N</b></div><div><small>물에 잠긴 깊이</small><b id="boD">0 cm</b></div></div>
+        <div class="btn-row" style="padding-top:4px"><button class="btn" id="boAdd">📦 짐 싣기</button><button class="btn secondary" id="boSub">짐 내리기</button></div>
+        <p class="muted">장난감 배 모형의 가상 값이에요 (배 2 N, 짐 1개 1 N).</p>
+      </div>
+      <div class="card qa">
+        <h4>✏️ 질문 — 짐을 가득 실은 배는 짐을 싣지 않은 배보다 부력이 더 크게 작용한다. 그 까닭을 설명해 보자.</h4>
+        <textarea data-save="qa6" id="note-qa6" placeholder="예) 짐을 실으면 배가 물에 더 … 잠긴 부피가 …"></textarea><div class="saved" id="saved-qa6"></div>
+        <button class="btn small secondary" data-ans="ans6">예시 답안 보기</button>
+        <p class="hidden" id="ans6" style="color:var(--color-text)">배에 짐을 많이 실어 무게가 증가하면 배의 아랫부분이 물에 더 잠긴다. 이에 따라 <b>물에 잠긴 배의 부피가 커지므로 부력의 크기도 커진다</b>. 알루미늄박도 접시 모양으로 펼치면 물에 잠긴 부분의 부피가 커서 부력이 크기 때문에 물 위에 뜬다.</p>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="balance">← ③</button><button class="btn" data-tabgo="air" style="margin-left:auto">⑤ 공기 속 부력 →</button></div>
+    </div>
+
+    <div class="tabpane" id="tab-air">
+      <div class="card">
+        <h3>⑤ 공기 속에서도 부력이? — 헬륨 풍선 <span class="badge" style="font-size:12px">교과서 171쪽</span> <span class="badge ext">확장 · 가상 값</span></h3>
+        <p style="margin-top:0">곰 인형 바구니에 헬륨 풍선을 매달고 <b>🎈 손 놓기</b>를 눌러 보세요. 풍선 개수에 따라 부력과 중력이 어떻게 바뀔까요?</p>
+        <div class="ctrl"><label>헬륨 풍선 개수</label><div class="toggle" id="abN"></div></div>
+        <div class="rig" id="rigAB"></div>
+        <div class="readout"><div><small>부력 (위쪽)</small><b id="abFb">0.00 N</b></div><div><small>중력 (아래쪽)</small><b id="abG">0.00 N</b></div><div><small>결과</small><b id="abR">손으로 잡고 있음</b></div></div>
+        <div class="btn-row" style="padding-top:4px"><button class="btn" id="abGo">🎈 손 놓기</button><button class="btn secondary" id="abReset">✋ 다시 잡기</button></div>
+        <div class="caption" id="abCap">풍선 1개의 부력 0.15 N, 곰 인형과 바구니 0.40 N, 풍선 1개의 무게 0.05 N (가상 값)</div>
+      </div>
+      <div class="card">
+        <h3>🏁 결과 기록</h3>
+        <div class="tbl-wrap"><table class="tbl mat-tbl" id="abTable"></table></div>
+        <div class="qa">
+          <h4>✏️ 질문 — 헬륨 풍선이 하늘로 올라가는 까닭을 부력과 중력으로 설명해 보자.</h4>
+          <textarea data-save="qa7" id="note-qa7" placeholder="예) 공기 중의 풍선에는 … 쪽으로 부력이 작용하며, 부력이 중력보다 …"></textarea><div class="saved" id="saved-qa7"></div>
+          <button class="btn small secondary" data-ans="ans7">예시 답안 보기</button>
+          <p class="hidden" id="ans7" style="color:var(--color-text)">공기 중에 있는 헬륨 풍선에는 <b>위쪽으로 부력</b>이 작용하며, <b>부력이 중력보다 클 때 위로 떠오른다</b>. 부력과 중력의 크기가 같으면 힘의 평형을 이루어 그 자리에 떠 있다.</p>
+        </div>
+      </div>
+      <div class="btn-row"><button class="btn secondary" data-tabgo="ship">← ④</button><button class="btn" data-go="3" style="margin-left:auto">스티커로 정리하기 →</button></div>
+    </div>
+  </section>
+
+  <!-- 4. 스티커 -->
+  <section class="screen" id="screen-sticker">
+    <h2>🏷️ 스티커 붙이기: 부력 개념 정리판</h2>
+    <p>스티커를 골라 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 <b>확인하기</b>! 어디에도 붙지 않는 <b>함정 스티커</b>도 숨어 있어요.</p>
+    <div class="board-tabs" id="boardTabs"></div>
+    <div class="sticker-status"><span class="pill">🏷️ 붙인 스티커 <span id="stkCount">0 / 0</span></span><span class="pill">🔁 시도 <span id="stkTry">0</span>회</span></div>
+    <div class="card"><h3 id="boardTitle"></h3><p class="muted" id="boardDesc"></p><div class="sticker-board" id="stkBoard"></div><div class="stk-msg" id="stkMsg"></div><div id="stkDone"></div></div>
+    <div class="card sticker-tray" id="stkTray"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="2">← 이전</button>
+      <button class="btn secondary" id="stkReset">↺ 이 판 처음부터</button>
+      <button class="btn" id="stkCheck">확인하기 ✔</button>
+      <button class="btn mint hidden" id="stkNext">다음 판 →</button>
+      <button class="btn mint hidden" id="stkToLife" data-go="4">실생활로 →</button>
+    </div>
+  </section>
+
+  <!-- 5. 실생활 -->
+  <section class="screen" id="screen-life">
+    <h2>🏠 생활 속 부력</h2>
+    <p>카드를 눌러 <b>왜 그럴까?</b>를 확인하세요.</p>
+    <div class="life-grid" id="lifeGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="3">← 이전</button>
+      <button class="btn" id="toQuiz" style="margin-left:auto">개념 확인 10문제 →</button>
+    </div>
+  </section>
+
+  <!-- 6. 퀴즈 -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-top"><b id="qNum">1 / 10</b><div class="quiz-progress"><i id="qBar"></i></div><span class="combo" id="combo"></span></div>
+    <div class="card q-card" id="qCard"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="4">← 실생활</button>
+      <button class="btn hidden" id="qNext" style="margin-left:auto">다음 문제 →</button>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result">
+    <div class="card result-hero">
+      <div class="trophy" id="trophy">🏆</div>
+      <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <div class="score-big"><span class="grad-text" id="scoreBig">0</span><span style="font-size:28px;color:var(--color-text-light)"> / 10</span></div>
+      <p id="resultMsg" style="font-size:17px;color:var(--color-text);font-weight:700"></p>
+      <p class="muted" id="resultTime"></p>
+    </div>
+    <div class="card" id="wrongBox"></div>
+    <div class="card check-list">
+      <h3>✅ 학습목표 자가 점검 — 이제 나는</h3>
+      <label><input type="checkbox" data-save-check="c1"> 부력의 뜻을 말할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c2"> 부력이 중력과 반대 방향인 위쪽으로 작용함을 화살표로 나타낼 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c3"> 힘 센서의 측정값이 감소한 값으로 부력의 크기를 구할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c4"> 물에 잠긴 부피가 클수록 부력이 크다는 것을 실험 결과로 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c5"> 액체와 기체의 부력을 이용하는 예를 들 수 있다.</label>
+    </div>
+    <p class="muted" style="text-align:center">📸 이 화면을 캡처해서 선생님께 제출하세요.</p>
+    <div class="btn-row center">
+      <button class="btn secondary hidden" id="retryWrong">틀린 문제 다시 풀기</button>
+      <button class="btn secondary" id="retryAll">처음부터 다시 풀기</button>
+      <button class="btn" data-go="0">처음 화면으로</button>
+    </div>
+  </section>
+
+  <footer>Made by Lee Jae Kwang</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ============ 저장 ============ */
+const LSP='vlab-buoy-';
+function lsGet(k,d){try{const v=localStorage.getItem(LSP+k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(LSP+k,JSON.stringify(v));}catch(e){}}
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+
+/* ============ 효과음 (Web Audio로 직접 합성, 외부 파일 없음) ============ */
+const SND={ctx:null,on:lsGet('sound',true),master:null,buf:null};
+function audio(){
+  if(!SND.on) return null;
+  try{
+    if(!SND.ctx){const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+      SND.ctx=new C(); SND.master=SND.ctx.createGain(); SND.master.gain.value=.55; SND.master.connect(SND.ctx.destination);}
+    if(SND.ctx.state==='suspended') SND.ctx.resume();
+    return SND.ctx;
+  }catch(e){return null;}
+}
+function tone(f,dur,o={}){
+  const c=audio(); if(!c) return;
+  const t=c.currentTime+(o.when||0), vol=o.vol||.25;
+  const os=c.createOscillator(), g=c.createGain();
+  os.type=o.type||'sine'; os.frequency.setValueAtTime(f,t);
+  if(o.to) os.frequency.exponentialRampToValueAtTime(o.to,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+(o.attack||.006)); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  os.connect(g); g.connect(SND.master); os.start(t); os.stop(t+dur+.05);
+}
+function noise(dur,o={}){
+  const c=audio(); if(!c) return;
+  if(!SND.buf){SND.buf=c.createBuffer(1,Math.floor(c.sampleRate*1.5),c.sampleRate); const d=SND.buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;}
+  const t=c.currentTime+(o.when||0);
+  const s=c.createBufferSource(); s.buffer=SND.buf; s.loop=true;
+  const fl=c.createBiquadFilter(); fl.type=o.type||'bandpass'; fl.Q.value=o.q||1;
+  fl.frequency.setValueAtTime(o.f1||800,t); fl.frequency.exponentialRampToValueAtTime(o.f2||2000,t+dur);
+  const g=c.createGain(), a=o.attack!=null?o.attack:dur*.4;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.vol||.15,t+a); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(fl); fl.connect(g); g.connect(SND.master); s.start(t); s.stop(t+dur+.05);
+}
+function sfx(n){
+  try{switch(n){
+    case 'tap': tone(660,.07,{type:'triangle',vol:.14}); break;
+    case 'tick': tone(1250,.035,{type:'square',vol:.04}); break;
+    case 'pick': tone(520,.1,{vol:.22,to:900}); break;
+    case 'stick': tone(320,.09,{type:'square',vol:.07,to:150}); noise(.09,{vol:.16,f1:2200,f2:600,attack:.004}); break;
+    case 'peel': noise(.18,{vol:.12,f1:900,f2:3500,attack:.01}); break;
+    case 'correct': tone(784,.12,{type:'triangle',vol:.28}); tone(1047,.24,{type:'triangle',vol:.28,when:.1}); break;
+    case 'wrong': tone(230,.28,{type:'sawtooth',vol:.1,to:130}); break;
+    case 'combo': [523,659,784,1047].forEach((f,i)=>tone(f,.15,{type:'triangle',vol:.24,when:i*.07})); noise(.5,{vol:.08,f1:4000,f2:9000,type:'highpass',when:.2,attack:.01}); break;
+    case 'fanfare': [[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.2],[784,.58,.14],[1047,.7,.6]].forEach(a=>tone(a[0],a[2],{type:'triangle',vol:.27,when:a[1]})); noise(1,{vol:.1,f1:3000,f2:9000,type:'highpass',when:.36,attack:.02}); break;
+    case 'pop': tone(380+Math.random()*320,.07,{vol:.22,to:1300}); break;
+    case 'whoosh': noise(.32,{vol:.09,f1:400,f2:2600,q:.7}); break;
+    case 'inhale': noise(1.3,{vol:.09,f1:450,f2:1500,q:.5}); break;
+    case 'exhale': noise(1.5,{vol:.09,f1:1400,f2:380,q:.5}); break;
+    case 'stamp': tone(110,.2,{type:'square',vol:.13,to:55}); noise(.16,{vol:.22,f1:900,f2:200,attack:.003}); break;
+    case 'burst': noise(.55,{vol:.16,f1:4000,f2:9500,type:'highpass',attack:.004}); tone(900,.14,{vol:.12,to:1900}); break;
+    case 'unlock': tone(660,.1,{type:'triangle',vol:.22}); tone(990,.28,{type:'triangle',vol:.22,when:.09}); break;
+    case 'drip': tone(1400,.09,{vol:.2,to:420}); tone(700,.05,{vol:.08,when:.08}); break;
+    case 'flush': noise(1.3,{vol:.2,f1:300,f2:1800,type:'lowpass',q:.6,attack:.15}); noise(.9,{vol:.08,f1:2500,f2:600,when:.4}); break;
+    case 'flow': noise(.7,{vol:.1,f1:250,f2:700,type:'lowpass',q:.8}); break;
+    case 'filter': noise(.6,{vol:.1,f1:3000,f2:1200,q:2}); [0,.12,.24].forEach(w=>tone(900+w*600,.06,{vol:.08,when:w})); break;
+    case 'absorb': [523,659,784].forEach((f,i)=>tone(f,.14,{type:'sine',vol:.16,when:i*.08,to:f*1.25})); break;
+    case 'secrete': [784,622,494].forEach((f,i)=>tone(f,.14,{type:'triangle',vol:.14,when:i*.08,to:f*.8})); break;
+    case 'zoom': tone(300,.45,{vol:.14,to:1500}); noise(.4,{vol:.06,f1:600,f2:5000}); break;
+    case 'sparkle': [1319,1568,2093].forEach((f,i)=>tone(f,.12,{type:'sine',vol:.12,when:i*.06})); break;
+    case 'heat': for(let i=0;i<8;i++) tone(250+Math.random()*350,.08,{vol:.12,to:700+Math.random()*500,when:i*.13}); break;
+    case 'pen': tone(1800,.02,{type:'triangle',vol:.03}); break;
+    case 'bubble': tone(300,.12,{vol:.18,to:700}); break;
+    case 'scrape': noise(.45,{vol:.16,f1:700,f2:1600,q:3,attack:.02}); noise(.3,{vol:.08,f1:2400,f2:1200,q:4,when:.12}); break;
+    case 'slide': noise(.8,{vol:.1,f1:1800,f2:500,type:'bandpass',q:.8,attack:.03}); break;
+    case 'thud': tone(95,.18,{type:'square',vol:.12,to:50}); noise(.12,{vol:.18,f1:500,f2:150,attack:.003}); break;
+    case 'slip': tone(900,.5,{type:'triangle',vol:.16,to:180}); noise(.4,{vol:.1,f1:3000,f2:800,when:.05}); break;
+    case 'step': tone(160,.07,{type:'square',vol:.07,to:90}); noise(.06,{vol:.12,f1:900,f2:400,attack:.003}); break;
+    case 'splash': noise(.5,{vol:.2,f1:2600,f2:400,q:.7,attack:.01}); tone(520,.12,{vol:.1,to:180}); noise(.3,{vol:.08,f1:5000,f2:2000,when:.12}); break;
+    case 'bloop': tone(220,.16,{vol:.22,to:620}); tone(660,.06,{vol:.08,when:.12}); break;
+    case 'glug': [0,.18,.36].forEach((w,i)=>tone(260-i*40,.12,{vol:.18,to:120-i*20,when:w})); break;
+    case 'rise': tone(300,.6,{vol:.16,to:1200}); [0,.15,.3].forEach(w=>tone(900+w*900,.06,{vol:.08,when:w+.2})); break;
+    case 'push': tone(160,.35,{type:'sawtooth',vol:.05,to:110}); noise(.4,{vol:.08,f1:300,f2:800,type:'lowpass'}); break;
+    case 'beep': tone(1760,.07,{type:'square',vol:.06}); tone(1760,.07,{type:'square',vol:.06,when:.11}); break;
+    case 'creak': tone(140,.5,{type:'sawtooth',vol:.05,to:260}); break;
+  }}catch(e){}
+}
+
+/* ============ 애니메이션 루프 & 폭죽(컨페티) ============ */
+const TASKS=[]; let loopOn=false, lastT=0;
+function addTask(fn){TASKS.push(fn);}
+function kick(){ if(!loopOn){loopOn=true; lastT=performance.now(); requestAnimationFrame(loop);} }
+function loop(t){
+  const dt=clamp((t-lastT)/1000,0.001,0.05); lastT=t; let any=false;
+  for(const f of TASKS){ try{ if(f(dt,t)) any=true; }catch(e){ console.error(e); } }
+  const fxAny=fxStep();
+  if(any||fxAny) requestAnimationFrame(loop); else loopOn=false;
+}
+const FX={cv:null,ctx:null,parts:[],dpr:1,dirty:false};
+const FXCOL=['#ff4d6d','#ffb238','#3361e8','#21c9a9','#7a4ff0','#45b3ff','#ffd43b','#ff8a3d'];
+function fxResize(){ if(!FX.cv) return; FX.dpr=Math.min(2,window.devicePixelRatio||1); FX.cv.width=Math.round(innerWidth*FX.dpr); FX.cv.height=Math.round(innerHeight*FX.dpr); }
+function confetti(x,y,o={}){
+  let n=o.count||40; if(REDUCED) n=Math.ceil(n/4);
+  const sp=o.speed||9, cols=o.colors||FXCOL, shapes=o.shapes||['r','c','s','b'];
+  for(let i=0;i<n;i++){
+    const a=(o.angle!=null?o.angle:-Math.PI/2)+(Math.random()-.5)*(o.spread!=null?o.spread:Math.PI*2);
+    const v=sp*(.4+Math.random()*.8);
+    FX.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:o.g!=null?o.g:.28,rot:Math.random()*6,vr:(Math.random()-.5)*.45,
+      s:(o.size||8)*(.6+Math.random()*.8),shape:shapes[i%shapes.length],col:cols[i%cols.length],life:1,dec:o.decay||(.009+Math.random()*.008),drag:o.drag||.985});
+  }
+  kick();
+}
+function burstAt(el,o={}){ if(!el) return; const r=el.getBoundingClientRect(); confetti(r.left+r.width/2,r.top+r.height/2,o); }
+function fireworks(){
+  sfx('burst'); const W=innerWidth,H=innerHeight;
+  for(let k=0;k<5;k++) setTimeout(()=>{ confetti(W*(.15+Math.random()*.7),H*(.18+Math.random()*.35),{count:60,speed:11,g:.17}); sfx('pop'); },k*260);
+  setTimeout(()=>{ const n=REDUCED?15:90; for(let i=0;i<n;i++) FX.parts.push({x:Math.random()*W,y:-20-Math.random()*240,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,g:.05,rot:Math.random()*6,vr:(Math.random()-.5)*.3,s:6+Math.random()*7,shape:['r','b','s'][i%3],col:FXCOL[i%FXCOL.length],life:1,dec:.004,drag:.995}); kick(); },300);
+}
+function starPath(c,r){ c.beginPath(); for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2, rr=i%2?r*.45:r; c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} c.closePath(); c.fill(); }
+function fxStep(){
+  const P=FX.parts, c=FX.ctx; if(!c) return false;
+  if(!P.length){ if(FX.dirty){ c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,FX.cv.width,FX.cv.height); FX.dirty=false; } return false; }
+  FX.dirty=true; c.setTransform(FX.dpr,0,0,FX.dpr,0,0); c.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i]; p.vx*=p.drag; p.vy=p.vy*p.drag+p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=p.dec;
+    if(p.life<=0||p.y>innerHeight+40){P.splice(i,1);continue;}
+    c.save(); c.globalAlpha=Math.min(1,p.life*1.6); c.translate(p.x,p.y); c.rotate(p.rot); c.fillStyle=p.col; const s=p.s;
+    if(p.shape==='c'){c.beginPath();c.arc(0,0,s/2,0,7);c.fill();}
+    else if(p.shape==='s') starPath(c,s*.7);
+    else if(p.shape==='b') c.fillRect(-s/2,-s/5,s,(s/2.5)*Math.abs(Math.cos(p.rot*2))+1);
+    else c.fillRect(-s/2,-s/2,s,s*.62);
+    c.restore();
+  }
+  return true;
+}
+function floatText(x,y,txt,color){
+  const d=document.createElement('div'); d.className='float-txt'; d.textContent=txt; d.style.left=x+'px'; d.style.top=y+'px'; d.style.color=color||'#12a874';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1200);
+}
+function floatAt(el,txt,color){ if(!el) return; const r=el.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,txt,color); }
+let toastTimer=null;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2300); }
+
+/* ============ 캔버스 도우미 ============ */
+function prepCanvas(cv){
+  const w=cv.clientWidth; if(!w) return null;
+  const H=+cv.getAttribute('height'); const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=H+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv._w=w; cv._dpr=dpr; cv._H=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); return {ctx,W:w,H:cv._H};
+}
+function visible(el){ return !!(el && el.offsetParent!==null); }
+
+/* ============ 화면 이동 ============ */
+const SCREENS=['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const STEP_NAMES=['도입','개념','탐구','스티커','실생활','개념 확인'];
+let cur=-1; const enterHooks={};
+function renderSteps(){
+  const box=$('stepIndicator');
+  if(!box.children.length){
+    STEP_NAMES.forEach((n,k)=>{ const b=document.createElement('button'); b.className='step-dot'; b.innerHTML='<i></i><span>'+n+'</span>'; b.setAttribute('aria-label',(k+1)+'단계 '+n);
+      b.addEventListener('click',()=>{ sfx('tap'); goTo(k===5?(qz&&qz.done?6:5):k); }); box.appendChild(b); });
+  }
+  const pos=Math.min(cur,6);
+  [...box.children].forEach((b,k)=>{ b.classList.toggle('active',k===pos||(pos===6&&k===5)); b.classList.toggle('done',k<pos); });
+}
+function goTo(i){
+  if(i===cur) return;
+  const back=i<cur, prev=cur;
+  SCREENS.forEach((id,k)=>{ const el=$(id); el.classList.toggle('active',k===i); el.classList.toggle('back',k===i&&back); });
+  cur=i; renderSteps(); window.scrollTo(0,0);
+  if(prev>=0) sfx('whoosh');
+  if(i<=5) lsSet('progress',i);
+  if(enterHooks[i]) enterHooks[i]();
+  kick();
+}
+
+</script>
+<script>
+'use strict';
+/* ============ 공통 그림 도우미 ============ */
+const C_BUOY='#f08c00', C_GRAV='#7048e8', C_HAND='#2f6fdb', C_WAT='rgba(77,171,247,.42)';
+let SVGID=0;
+const r1=v=>Math.round(v*10)/10;
+const f2=v=>(Math.round(v*100)/100).toFixed(2);
+function arw(x1,y1,x2,y2,c,w,dash){
+  w=w||6; const a=Math.atan2(y2-y1,x2-x1), L=Math.hypot(x2-x1,y2-y1); if(L<3) return '';
+  const h=Math.min(w*3,L*.7), hx=x2-Math.cos(a)*h, hy=y2-Math.sin(a)*h, px=Math.sin(a)*h*.6, py=-Math.cos(a)*h*.6;
+  return `<g><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#fff" stroke-width="${w+5}" stroke-linecap="round" opacity=".85"/><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"${dash?' stroke-dasharray="11 8"':''}/><polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(hx+px).toFixed(1)},${(hy+py).toFixed(1)} ${(hx-px).toFixed(1)},${(hy-py).toFixed(1)}" fill="${c}" stroke="#fff" stroke-width="1.5"/></g>`;
+}
+function txt(x,y,t,o){ o=o||{}; return `<text x="${x}" y="${y}" text-anchor="${o.a||'middle'}" font-size="${o.s||17}" font-weight="900" fill="${o.c||'#1b1d4a'}" stroke="#fff" stroke-width="${o.halo==null?4:o.halo}" paint-order="stroke">${t}</text>`; }
+function wv(x,w,y,amp,ph){ const n=Math.max(2,Math.round(w/44)), seg=w/n; let d=`M${x.toFixed(1)} ${y.toFixed(1)}`;
+  for(let i=0;i<n;i++){ const cx=x+seg*(i+.5), s=(i%2?1:-1)*amp*ph; d+=` Q${cx.toFixed(1)} ${(y+s).toFixed(1)} ${(x+seg*(i+1)).toFixed(1)} ${y.toFixed(1)}`; } return d; }
+/* 물: anim이면 SMIL로 출렁, 아니면 ph(−1~1)로 모양만 */
+function water(x,y,w,h,o){ o=o||{}; const amp=o.amp==null?3:o.amp, col=o.col||C_WAT, line=o.line||'#fff';
+  const body=ph=>wv(x,w,y,amp,ph)+` L${(x+w).toFixed(1)} ${(y+h).toFixed(1)} L${x.toFixed(1)} ${(y+h).toFixed(1)} Z`;
+  if(o.anim){ const d1=body(1), d2=body(-1), l1=wv(x,w,y,amp,1), l2=wv(x,w,y,amp,-1), du=o.dur||2.6;
+    return `<path d="${d1}" fill="${col}"><animate attributeName="d" dur="${du}s" repeatCount="indefinite" values="${d1};${d2};${d1}"/></path><path d="${l1}" fill="none" stroke="${line}" stroke-width="2.5" opacity=".75"><animate attributeName="d" dur="${du}s" repeatCount="indefinite" values="${l1};${l2};${l1}"/></path>`; }
+  const ph=o.ph==null?1:o.ph; return `<path d="${body(ph)}" fill="${col}"/><path d="${wv(x,w,y,amp,ph)}" fill="none" stroke="${line}" stroke-width="2.5" opacity=".75"/>`;
+}
+function beaker(x,y,w,h,o){ o=o||{}; let s=`<path d="M${x-6} ${y} L${x} ${y+6} L${x} ${y+h-12} Q${x} ${y+h} ${x+12} ${y+h} L${x+w-12} ${y+h} Q${x+w} ${y+h} ${x+w} ${y+h-12} L${x+w} ${y+6} L${x+w+6} ${y}" fill="none" stroke="#7d93b8" stroke-width="4" stroke-linejoin="round"/>`;
+  if(o.marks!==false){ for(let i=1;i<=4;i++){ const yy=y+h-i*h/5; s+=`<line x1="${x+w-18}" y1="${yy}" x2="${x+w-4}" y2="${yy}" stroke="#9fb3d3" stroke-width="2"/>`; } }
+  s+=`<rect x="${x+8}" y="${y+14}" width="7" height="${h-40}" rx="3" fill="#fff" opacity=".55"/>`; return s; }
+function bubbles(x,y,w,n,seed){ let s=''; for(let i=0;i<n;i++){ const xx=x+((i*53+seed*17)%w), d=(i*.47+seed*.3)%3.2, r=2+(i%3);
+  s+=`<circle class="bub" cx="${xx}" cy="${y}" r="${r}" fill="#fff" opacity=".8" style="animation-delay:-${d.toFixed(2)}s"/>`; } return s; }
+function balloonSVG(x,y,r,col,str){ const c=col||'#ff6b9a'; return `<g><path d="M${x} ${y+r*1.15} q-6 ${str*.3} 4 ${str*.6} t-3 ${str*.4}" stroke="#868e96" stroke-width="1.6" fill="none"/><ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r*1.15}" fill="${c}"/><ellipse cx="${x-r*.35}" cy="${y-r*.45}" rx="${r*.25}" ry="${r*.35}" fill="#fff" opacity=".55"/><path d="M${x-4} ${y+r*1.13} l4 6 l4 -6 z" fill="${c}"/></g>`; }
+
+/* ============ 도입 그림 ============ */
+function heroSVG(){
+  return `<svg viewBox="0 0 360 210" role="img" aria-label="물 위에 뜬 공과 하늘로 올라가는 헬륨 풍선, 위쪽으로 작용하는 부력">
+  <rect x="0" y="0" width="360" height="210" rx="22" fill="#e7f5ff"/>
+  <g class="hb">${balloonSVG(62,46,20,'#ff6b9a',44)}${balloonSVG(88,58,17,'#ffd43b',40)}
+    <g class="glow">${arw(118,64,118,18,C_BUOY,5)}</g>${txt(150,34,'부력',{s:14,c:C_BUOY})}</g>
+  <g class="bob">
+    <circle cx="232" cy="112" r="28" fill="#ff6b6b" stroke="#c92a2a" stroke-width="2"/><ellipse cx="232" cy="112" rx="12" ry="28" fill="#fff"/><ellipse cx="232" cy="112" rx="5" ry="28" fill="#4dabf7"/><circle cx="222" cy="98" r="5" fill="#fff" opacity=".7"/>
+    <g class="glow">${arw(232,112,232,46,C_BUOY,6)}</g>${txt(266,58,'부력',{s:15,c:C_BUOY})}
+    ${arw(232,112,232,172,C_GRAV,6)}${txt(266,172,'중력',{s:15,c:C_GRAV})}
+  </g>
+  ${water(0,118,360,92,{anim:true,amp:4,col:'rgba(77,171,247,.55)'})}
+  ${bubbles(20,198,320,9,2)}
+  </svg>`;
+}
+
+/* ============ 생각 열기: 수영 ============ */
+function swimSVG(){
+  return `<svg viewBox="0 0 400 210" role="img" aria-label="물에 들어가 떠 있는 사람">
+  <rect width="400" height="210" fill="#e7f5ff"/><rect x="0" y="80" width="70" height="130" fill="#ced4da"/><rect x="0" y="76" width="70" height="8" fill="#adb5bd"/>
+  <g class="swimmer" id="swimmer" style="transform:translateY(-40px)">
+    <circle cx="200" cy="70" r="17" fill="#ffd8a8" stroke="#e8a46a" stroke-width="2"/><circle cx="194" cy="67" r="2.2" fill="#333"/><circle cx="206" cy="67" r="2.2" fill="#333"/><path d="M194 76 q6 5 12 0" stroke="#333" stroke-width="2" fill="none"/>
+    <rect x="184" y="88" width="32" height="70" rx="12" fill="#4dabf7"/>
+    <rect x="166" y="94" width="18" height="10" rx="5" fill="#ffd8a8"/><rect x="216" y="94" width="18" height="10" rx="5" fill="#ffd8a8"/>
+    <g id="vest" style="display:none"><rect x="179" y="88" width="42" height="46" rx="10" fill="#ff922b" stroke="#d9480f" stroke-width="2"/><line x1="182" y1="104" x2="218" y2="104" stroke="#fff" stroke-width="4"/><line x1="182" y1="118" x2="218" y2="118" stroke="#fff" stroke-width="4"/></g>
+    <g class="swim-arrow" id="swimArrow"></g>
+  </g>
+  ${water(70,122,330,88,{anim:true,amp:4})}
+  ${txt(330,112,'수면',{s:13,c:'#1864ab'})}
+  </svg>`;
+}
+
+/* ============ 개념 ============ */
+const CONCEPTS=[
+ {t:'부력이란? — 액체와 기체 속에서 밀어 올리는 힘',html:`
+  <p>물에 들어가면 몸이 떠오르고, 헬륨 풍선은 하늘로 올라가요. <b>액체나 기체가 물체를 위쪽으로 밀어 올리는 힘</b>을 <b>부력</b>이라고 해요. 장면을 바꾸어 부력을 찾아보세요.</p>
+  <div class="toggle" id="c1Btns"><button class="chip on" data-c="water">🌊 물(액체) 속의 공</button><button class="chip" data-c="oil">🫗 식용유(액체) 속의 공</button><button class="chip" data-c="air">🎈 공기(기체) 속의 풍선</button></div>
+  <div class="fig" id="c1Fig" style="margin-top:8px"></div>
+  <div class="info-panel" id="c1Info"></div>
+  <div class="analogy">🤲 <b>비유</b>: 물이나 공기가 보이지 않는 손이 되어 물체를 아래에서 받쳐 밀어 올린다고 생각해 보세요. 이 "보이지 않는 손"이 부력이에요.</div>`},
+ {t:'부력의 방향 — 언제나 중력과 반대인 위쪽',html:`
+  <p>물체의 위치나 모양을 바꾸고, 비커를 기울여도 부력의 방향은 바뀔까요? 버튼을 눌러 보세요.</p>
+  <div class="toggle" id="c2Btns"><button class="chip" data-c="move">↔ 물체 옮기기</button><button class="chip" data-c="shape">🔷 모양 바꾸기</button><button class="chip" data-c="tilt">📐 비커 기울이기</button></div>
+  <div class="fig" id="c2Fig" style="margin-top:8px"></div>
+  <div class="info-panel" id="c2Info">부력(주황)은 <b>위쪽</b>, 중력(보라)은 <b>아래쪽</b>이에요. 버튼을 눌러 바꿔 보세요.</div>
+  <div class="f-legend"><span><i style="background:var(--buoy)"></i>부력</span><span><i style="background:var(--grav)"></i>중력</span></div>`},
+ {t:'부력의 크기 — 줄어든 무게만큼! (그림 V-14)',html:`
+  <p>용수철저울에 물체를 매달고 물에 잠기게 하면 눈금이 줄어들어요. <b>줄어든 값이 부력의 크기</b>예요. 슬라이더로 물체를 물에 잠기게 해 보세요.</p>
+  <div class="fig" id="c3Fig"></div>
+  <div class="ctrl"><label>물에 잠긴 부피 <em id="c3Fv">0 %</em></label><input type="range" id="c3F" min="0" max="100" step="1" value="0" aria-label="물에 잠긴 부피"></div>
+  <div class="btn-row" style="padding-top:0"><button class="btn small" id="c3Auto">▶ 자동으로 잠기게 하기</button></div>
+  <div class="eq-row" id="c3Eq"><div class="eq"><small>공기 중 무게</small>15 N</div><span class="op">−</span><div class="eq"><small>물속 측정값</small><span id="c3W">15 N</span></div><span class="op">=</span><div class="eq buoy"><small>부력의 크기</small><span id="c3B">0 N</span></div></div>
+  <div class="tbl-wrap"><table class="tbl"><tr><th>부력의 크기</th><th>부력의 방향</th></tr><tr><td>액체나 기체에 <b>잠긴 물체의 부피가 클수록</b> 크다.</td><td><b>중력과 반대 방향</b>인 위쪽</td></tr></table></div>`},
+ {t:'뜰까, 가라앉을까? — 부력과 중력 비교하기',html:`
+  <p>물속의 물체에는 아래쪽으로 <b>중력</b>, 위쪽으로 <b>부력</b>이 함께 작용해요. 두 힘의 크기를 비교하면 물체의 운동을 알 수 있어요. 물체를 골라 보세요.</p>
+  <div class="toggle" id="c4Btns"><button class="chip" data-c="sink">⚫ 쇠구슬</button><button class="chip" data-c="float">🍎 사과</button><button class="chip" data-c="rise">🏓 물속에서 놓은 탁구공</button></div>
+  <div class="fig" id="c4Fig" style="margin-top:8px"></div>
+  <div class="info-panel" id="c4Info">물체를 고르면 물속에 넣어 볼게요.</div>
+  <div class="tbl-wrap"><table class="tbl"><tr><th>두 힘의 비교</th><th>물체의 모습</th></tr>
+   <tr><td>부력 &lt; 중력</td><td>가라앉는다 (가라앉아도 부력은 작용해요!)</td></tr>
+   <tr><td>부력 = 중력</td><td>힘의 평형 → 물에 떠서 정지</td></tr>
+   <tr><td>부력 &gt; 중력</td><td>위로 떠오른다</td></tr></table></div>`}
+];
+const MYTHS=[
+ ['부력은 물속에서만 작용한다.','부력은 물과 같은 액체 속뿐만 아니라 공기와 같은 <b>기체 속에서도</b> 작용해요. 헬륨 풍선과 비행선이 떠오르는 까닭이에요.'],
+ ['가라앉는 물체에는 부력이 작용하지 않는다.','물속에 가라앉은 추에도 부력이 작용해요. 힘 센서 측정값이 (가)보다 줄어든 것이 그 증거예요. 다만 부력이 중력보다 작아서 가라앉는 거예요.'],
+ ['물속에서 물체가 가벼워지는 것은 물체의 질량이 줄어들기 때문이다.','물체의 질량과 중력은 그대로예요. 위쪽으로 <b>부력</b>이 함께 작용해서 힘 센서의 측정값(중력 − 부력)이 줄어든 거예요.'],
+ ['부력은 물체가 기울어진 쪽이나 물이 흐르는 쪽으로 작용한다.','부력은 물체의 위치·모양과 관계없이 언제나 <b>중력과 반대 방향인 위쪽</b>으로 작용해요.'],
+ ['완전히 잠긴 물체를 더 깊이 넣을수록 부력은 계속 커진다.','완전히 잠긴 뒤에는 <b>잠긴 부피가 더 늘지 않으므로</b> 부력도 같아요. 탐구 ②에서 (다)와 "더 깊이"의 측정값을 비교해 보세요.'],
+ ['페트병을 눕혀서 넣으면 세워서 넣을 때보다 부력이 크다.','완전히 잠기면 세우든 눕히든 <b>잠긴 부피가 같으므로 부력도 같아요</b>. (스스로 확인하기 2)'],
+ ['무거운 물체일수록 부력이 크다.','부력은 물체의 무게가 아니라 <b>잠긴 부피</b>에 따라 달라져요. 무게가 같아도 부피가 큰 물체가 완전히 잠기면 부력이 더 커요(탐구 ③ 양팔저울).'],
+ ['쇠로 만든 큰 배가 뜨는 것은 배가 가볍기 때문이다.','큰 배는 매우 무겁지만 속이 비어 있어 <b>물에 잠긴 부피가 커서</b> 부력이 커요. 알루미늄박을 펼치면 뜨는 것과 같은 까닭이에요.']
+];
+
+/* ---------- 개념 1: 어디에서 작용할까 ---------- */
+const C1_INFO={water:'물(<b>액체</b>) 속의 공에는 위쪽으로 <b>부력</b>이 작용해요. 그래서 물속에서 공을 놓으면 위로 떠올라요.',
+  oil:'식용유도 <b>액체</b>예요. 물이 아닌 다른 액체 속에서도 부력이 위쪽으로 작용해요.',
+  air:'공기(<b>기체</b>) 속에서도 부력이 작용해요! 헬륨 풍선에는 위쪽으로 부력이 작용하고, 부력이 중력보다 커서 위로 올라가요.'};
+function c1SVG(k){
+  let s=`<svg viewBox="0 0 520 250" role="img" aria-label="${k==='air'?'공기 속 헬륨 풍선':'액체 속의 공'}"><rect width="520" height="250" rx="18" fill="${k==='air'?'#e7f5ff':'#f8f9fa'}"/>`;
+  if(k==='air'){ s+=`<path d="M0 230 Q130 214 260 230 T520 230 L520 250 L0 250 Z" fill="#b2f2bb"/>`;
+    s+=`<g class="hb" style="animation:hb 4s ease-in-out infinite">${balloonSVG(260,110,38,'#ff6b9a',80)}${arw(330,130,330,40,C_BUOY,7)}${txt(380,60,'부력',{s:20,c:C_BUOY})}</g>`;
+    s+=`<g opacity=".7"><circle cx="70" cy="60" r="20" fill="#fff"/><circle cx="96" cy="56" r="26" fill="#fff"/><circle cx="124" cy="62" r="18" fill="#fff"/></g>${txt(90,120,'공기(기체)',{s:16,c:'#1864ab'})}`;
+  } else {
+    const col=k==='oil'?'rgba(250,200,60,.55)':C_WAT;
+    s+=water(102,70,316,166,{anim:true,amp:3,col})+beaker(100,40,320,200);
+    s+=`<g class="bob"><circle cx="260" cy="160" r="30" fill="#ff8787" stroke="#c92a2a" stroke-width="2"/><ellipse cx="250" cy="150" rx="9" ry="6" fill="#fff" opacity=".6"/></g>`;
+    s+=`<g class="glow">${arw(320,170,320,96,C_BUOY,7)}</g>${txt(372,110,'부력',{s:20,c:C_BUOY})}`+bubbles(130,230,260,7,1)+txt(160,224,k==='oil'?'식용유(액체)':'물(액체)',{s:16,c:'#1864ab'});
+  }
+  return s+'</svg>';
+}
+function showC1(k){ $('c1Fig').innerHTML=c1SVG(k); $('c1Btns').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.c===k)); const ip=$('c1Info'); ip.innerHTML=C1_INFO[k]; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); sfx(k==='air'?'rise':'bloop'); }
+
+/* ---------- 개념 2: 방향 ---------- */
+const C2={pos:0,shape:0,tilt:false};
+function clipBelow(pts,ys){ const out=[]; for(let i=0;i<pts.length;i++){ const a=pts[i], b=pts[(i+1)%pts.length], ai=a[1]>=ys, bi=b[1]>=ys;
+  if(ai) out.push(a); if(ai!==bi){ const t=(ys-a[1])/(b[1]-a[1]); out.push([a[0]+(b[0]-a[0])*t,ys]); } } return out; }
+function c2SVG(){
+  const cx=260, cy=150, W=280, H=180, ang=C2.tilt?-16:0, rad=ang*Math.PI/180;
+  const rot=(x,y)=>{ const dx=x-cx, dy=y-cy; return [cx+dx*Math.cos(rad)-dy*Math.sin(rad), cy+dx*Math.sin(rad)+dy*Math.cos(rad)]; };
+  const corners=[[cx-W/2,cy-H/2],[cx+W/2,cy-H/2],[cx+W/2,cy+H/2],[cx-W/2,cy+H/2]].map(p=>rot(p[0],p[1]));
+  const ys=112; const wp=clipBelow(corners,ys);
+  let s=`<svg viewBox="0 0 520 280" role="img" aria-label="비커 속 물체에 작용하는 부력과 중력"><rect width="520" height="280" rx="18" fill="#f8f9fa"/>`;
+  s+=`<polygon points="${wp.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="${C_WAT}"/>`;
+  s+=`<line x1="${Math.min(...wp.map(p=>p[0])).toFixed(1)}" y1="${ys}" x2="${Math.max(...wp.map(p=>p[0])).toFixed(1)}" y2="${ys}" stroke="#fff" stroke-width="3" opacity=".8"/>`;
+  s+=`<polyline points="${[corners[0],corners[3],corners[2],corners[1]].map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="#7d93b8" stroke-width="5" stroke-linejoin="round"/>`;
+  const PX=[[200,175],[300,160],[250,200]], P=PX[C2.pos], ox=P[0], oy=P[1];
+  const sh=['<rect x="-24" y="-24" width="48" height="48" rx="6" fill="#ffc078" stroke="#d9480f" stroke-width="2.5"/>','<circle r="27" fill="#69db7c" stroke="#2b8a3e" stroke-width="2.5"/>','<polygon points="0,-30 30,22 -30,22" fill="#b197fc" stroke="#5f3dc4" stroke-width="2.5"/>'][C2.shape];
+  s+=`<g transform="translate(${ox} ${oy})">${sh}</g>`;
+  s+=`<g class="glow">${arw(ox,oy,ox,oy-72,C_BUOY,7)}</g>${arw(ox,oy,ox,oy+62,C_GRAV,7)}`;
+  s+=txt(ox+38,oy-52,'부력',{a:'start',s:17,c:C_BUOY})+txt(ox+38,oy+58,'중력',{a:'start',s:17,c:C_GRAV});
+  s+=`<line x1="470" y1="40" x2="470" y2="250" stroke="#adb5bd" stroke-width="2" stroke-dasharray="6 6"/>${txt(470,30,'연직선',{s:13,c:'#868e96'})}`;
+  return s+'</svg>';
+}
+function c2Do(k){ if(k==='move') C2.pos=(C2.pos+1)%3; if(k==='shape') C2.shape=(C2.shape+1)%3; if(k==='tilt') C2.tilt=!C2.tilt;
+  $('c2Fig').innerHTML=c2SVG(); sfx(k==='tilt'?'splash':'bloop');
+  const ip=$('c2Info'); ip.innerHTML={move:'물체를 옮겨도 부력은 <b>위쪽</b> 그대로예요.',shape:'모양을 바꾸어도 부력은 <b>위쪽</b>이에요. (크기는 잠긴 부피에 따라 달라져요.)',tilt:C2.tilt?'비커를 기울여도 수면은 수평이고, 부력은 여전히 <b>위쪽(중력과 반대 방향)</b>이에요!':'비커를 바로 세웠어요. 부력은 언제나 위쪽!'}[k];
+  ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); }
+
+/* ---------- 개념 3: V-14 ---------- */
+const C3={f:0,auto:null};
+function c3SVG(){
+  const f=C3.f, read=15-6*f, top=135+f*72, hy=top-100;
+  let s=`<svg viewBox="0 0 520 320" role="img" aria-label="용수철저울에 매단 물체가 물에 잠기는 모습"><rect width="520" height="320" rx="18" fill="#f8f9fa"/>`;
+  s+=`<rect x="214" y="${hy+30}" width="52" height="64" rx="10" fill="#364fc7"/><rect x="222" y="${hy+40}" width="36" height="26" rx="4" fill="#e7f5ff"/><text x="240" y="${hy+59}" text-anchor="middle" font-size="15" font-weight="900" fill="#1b1d4a">${read.toFixed(0)} N</text><text x="222" y="${hy+36}" font-size="32">✋</text>`;
+  s+=`<line x1="240" y1="${hy+94}" x2="240" y2="${top}" stroke="#495057" stroke-width="3"/>`;
+  s+=`<rect x="214" y="${top}" width="52" height="70" rx="6" fill="#c5a542" stroke="#8a6d1f" stroke-width="2.5"/><rect x="221" y="${top+7}" width="7" height="56" rx="3" fill="#fff" opacity=".4"/>`;
+  const wl=210-f*10; s+=water(142,wl,196,310-wl,{amp:2.5,ph:Math.sin(f*9)})+beaker(140,170,200,140);
+  const cy=top+35; s+=arw(296,cy,296,cy+56,C_GRAV,6)+txt(304,cy+74,'중력 15 N',{a:'start',s:14,c:C_GRAV});
+  if(f>0.01) s+=arw(186,cy,186,cy-10-56*f,C_BUOY,6)+txt(180,cy-18-56*f,'부력 '+(6*f).toFixed(1)+' N',{a:'end',s:14,c:C_BUOY});
+  s+=txt(420,140,f<.01?'공기 중':f>.99?'완전히 잠김':'잠기는 중',{s:18,c:'#1864ab'});
+  return s+'</svg>';
+}
+function c3Render(){ const f=C3.f; $('c3Fig').innerHTML=c3SVG(); $('c3Fv').textContent=Math.round(f*100)+' %'; $('c3W').textContent=(15-6*f).toFixed(1).replace('.0','')+' N'; $('c3B').textContent=(6*f).toFixed(1).replace('.0','')+' N'; }
+
+/* ---------- 개념 4: 뜨고 가라앉기 ---------- */
+const C4_INFO={sink:'쇠구슬: <b>부력 &lt; 중력</b> → 가라앉아요. 바닥에서도 부력은 위쪽으로 작용하고 있어요!',float:'사과: 물에 떠서 멈추었을 때 <b>부력 = 중력</b> → 힘의 평형을 이루어 정지해요. (교과서 182쪽 탐구)',rise:'탁구공: 물속에서 놓으면 <b>부력 &gt; 중력</b> → 위로 떠올라요. 수면에 이르면 일부만 잠긴 채 떠서 부력 = 중력이 돼요.'};
+function c4Base(){ return `<rect width="560" height="290" rx="18" fill="#f8f9fa"/>${water(62,90,436,186,{anim:true,amp:3})}${beaker(60,50,440,228)}`; }
+function c4Obj(k){
+  if(k==='sink') return `<circle r="20" fill="#495057" stroke="#212529" stroke-width="2"/><ellipse cx="-6" cy="-7" rx="6" ry="4" fill="#fff" opacity=".5"/>${arw(0,0,0,-26,C_BUOY,6)}${arw(0,0,0,62,C_GRAV,6)}${txt(30,-14,'부력',{a:'start',s:14,c:C_BUOY})}${txt(30,52,'중력',{a:'start',s:14,c:C_GRAV})}`;
+  if(k==='float') return `<circle r="24" fill="#fa5252" stroke="#c92a2a" stroke-width="2"/><path d="M0 -24 q4 -12 12 -14" stroke="#5c940d" stroke-width="4" fill="none"/><ellipse cx="-8" cy="-8" rx="7" ry="5" fill="#fff" opacity=".5"/>${arw(0,0,0,-50,C_BUOY,6)}${arw(0,0,0,50,C_GRAV,6)}${txt(34,-30,'부력',{a:'start',s:14,c:C_BUOY})}${txt(34,44,'중력',{a:'start',s:14,c:C_GRAV})}`;
+  return `<circle r="18" fill="#fff" stroke="#f08c00" stroke-width="3"/>${arw(0,0,0,-64,C_BUOY,6)}${arw(0,0,0,24,C_GRAV,5)}${txt(28,-44,'부력',{a:'start',s:14,c:C_BUOY})}${txt(28,26,'중력',{a:'start',s:14,c:C_GRAV})}`;
+}
+function showC4(k){
+  $('c4Btns').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.c===k));
+  const start={sink:[200,20],float:[300,20],rise:[400,250]}[k], end={sink:[200,254],float:[300,98],rise:[400,94]}[k];
+  $('c4Fig').innerHTML=`<svg viewBox="0 0 560 290" role="img" aria-label="물속에서 뜨고 가라앉는 물체">${c4Base()}<g id="c4o" transform="translate(${start[0]} ${start[1]})">${c4Obj(k)}</g></svg>`;
+  const g=$('c4o'); const ip=$('c4Info'); ip.innerHTML='관찰 중… 👀';
+  const kf=k==='float'?[{transform:`translate(${start[0]}px,${start[1]}px)`},{transform:`translate(${end[0]}px,${end[1]+22}px)`,offset:.55},{transform:`translate(${end[0]}px,${end[1]-6}px)`,offset:.75},{transform:`translate(${end[0]}px,${end[1]}px)`}]
+    :[{transform:`translate(${start[0]}px,${start[1]}px)`},{transform:`translate(${end[0]}px,${end[1]}px)`}];
+  sfx(k==='sink'?'glug':k==='float'?'splash':'rise');
+  try{ const an=g.animate(kf,{duration:REDUCED?300:(k==='sink'?2200:1800),easing:k==='float'?'ease-out':k==='sink'?'cubic-bezier(.4,.1,.6,1)':'cubic-bezier(.2,.6,.3,1)',fill:'forwards'});
+    an.onfinish=()=>{ g.setAttribute('transform',`translate(${end[0]} ${end[1]})`); an.cancel(); ip.innerHTML=C4_INFO[k]; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); sfx(k==='sink'?'thud':'correct'); };
+  }catch(e){ g.setAttribute('transform',`translate(${end[0]} ${end[1]})`); ip.innerHTML=C4_INFO[k]; }
+}
+
+function buildConcepts(){
+  const box=$('conceptCards'); const seen=lsGet('seen',{});
+  box.innerHTML=CONCEPTS.map((c,i)=>`<div class="card concept-card rise-in${seen[i]?' seen':''}" style="--i:${i+1}" data-i="${i}">
+    <div class="head" role="button" tabindex="0"><span class="num">${i+1}</span><strong>${c.t}</strong><span class="chev">▾</span></div>
+    <div class="concept-body"><div>${c.html}</div></div></div>`).join('');
+  box.querySelectorAll('.concept-card>.head').forEach(h=>h.addEventListener('click',()=>{
+    const card=h.parentElement, i=+card.dataset.i, open=!card.classList.contains('open');
+    card.classList.toggle('open',open); sfx(open?'pop':'tap');
+    if(open){ card.classList.add('seen'); const s=lsGet('seen',{}); s[i]=1; lsSet('seen',s); }
+  }));
+  $('mythGrid').innerHTML=MYTHS.map((m,i)=>`<div class="myth rise-in" style="--i:${i+5}"><div class="no">❌ ${m[0]}</div><div class="tapme">👆 눌러서 바로잡기</div><div class="yes">✅ ${m[1]}</div></div>`).join('');
+  $('mythGrid').querySelectorAll('.myth').forEach(m=>m.addEventListener('click',()=>{ if(!m.classList.contains('open')){ m.classList.add('open'); sfx('correct'); burstAt(m,{count:14,speed:6,size:6}); } }));
+  $('c1Fig').innerHTML=c1SVG('water'); $('c1Info').innerHTML=C1_INFO.water;
+  $('c1Btns').querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>showC1(c.dataset.c)));
+  $('c2Fig').innerHTML=c2SVG();
+  $('c2Btns').querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c2Do(c.dataset.c)));
+  c3Render();
+  $('c3F').addEventListener('input',()=>{ if(C3.auto){ clearInterval(C3.auto); C3.auto=null; } const v=+$('c3F').value/100; if(Math.round(v*10)!==Math.round(C3.f*10)) sfx('tick'); if(C3.f===0&&v>0) sfx('splash'); C3.f=v; c3Render(); });
+  $('c3Auto').addEventListener('click',()=>{ if(C3.auto) return; C3.f=0; sfx('splash'); let v=0; C3.auto=setInterval(()=>{ v+=REDUCED?10:2; C3.f=Math.min(1,v/100); $('c3F').value=Math.round(C3.f*100); c3Render(); if(v%20===0) sfx('bubble');
+    if(v>=100){ clearInterval(C3.auto); C3.auto=null; const eq=$('c3Eq'); eq.classList.remove('pop'); void eq.offsetWidth; eq.classList.add('pop'); sfx('correct'); burstAt($('c3B'),{count:22,speed:7}); floatAt($('c3B'),'부력 6 N!','#f08c00'); } },40); });
+  $('c4Fig').innerHTML=`<svg viewBox="0 0 560 290" role="img" aria-label="물이 담긴 수조">${c4Base()}</svg>`;
+  $('c4Btns').querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>showC4(c.dataset.c)));
+}
+
+
+/* ============ 탐구 탭 ============ */
+let curTab='plan';
+function setTab(t){
+  curTab=t; sfx('tap');
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('#screen-experiment .tabpane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  const tb=$('expTabs').getBoundingClientRect().top+window.scrollY; if(window.scrollY>tb-90) window.scrollTo(0,Math.max(0,tb-90));
+  lsSet('tab',t);
+  if(t==='bottle') drawP();
+  if(t==='sensor'){ drawS(); drawSG(); drawBG(); }
+  if(t==='balance') drawBL();
+  if(t==='ship'){ drawFO(); drawBO(); }
+  if(t==='air') drawAB();
+  kick();
+}
+function chipGroup(id,items,cur,fn){
+  const el=$(id); el.innerHTML=items.map(it=>`<button class="chip${it[0]===cur?' on':''}" data-v="${it[0]}">${it[1]}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(fn(c.dataset.v)===false) return; el.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); }));
+}
+function setCap(id,html){ const el=$(id); if(el._h!==html){ el._h=html; el.innerHTML=html; } }
+
+/* ---------- ① 페트병 눌러 넣기 ---------- */
+const PB_FB=5.0, PB_W=0.3, PB_EQ=PB_W/PB_FB;
+const PB_DIM={lie:{w:200,h:70,n:'눕혀서'},stand:{w:70,h:200,n:'세워서'}};
+const P_TX=60,P_TW=480,P_WL=130,P_BOT=366,P_CX=300;
+const PB={ori:'lie',f:PB_EQ,v:0,hold:false,full:false,ph:0,recs:lsGet('recP',{})};
+function pGeom(){ const dm=PB_DIM[PB.ori], k=dm.w/(P_TW-8), s=PB.f*dm.h, yW=P_WL-k*clamp(s,0,dm.h), yB=yW+s; return {dm,yW,yB,yTop:yB-dm.h,fb:PB_FB*clamp(PB.f,0,1)}; }
+function pHand(){ const g=pGeom(); return PB.hold?Math.max(0,g.fb-PB_W):0; }
+function bottleSVG(ori,x,yTop){
+  const glass='rgba(231,245,255,.88)';
+  if(ori==='lie'){ const w=200,h=70,x0=x-100;
+    return `<g><rect x="${x0}" y="${yTop}" width="${w}" height="${h}" rx="28" fill="${glass}" stroke="#4dabf7" stroke-width="3"/><path d="M${x0+w-2} ${yTop+18} h24 v34 h-24" fill="${glass}" stroke="#4dabf7" stroke-width="3"/><rect x="${x0+w+22}" y="${yTop+13}" width="14" height="44" rx="4" fill="#1c7ed6"/><rect x="${x0+60}" y="${yTop+6}" width="70" height="${h-12}" fill="#ffe066" opacity=".85"/><text x="${x0+95}" y="${yTop+41}" text-anchor="middle" font-size="13" font-weight="900" fill="#5c3d00">빈 병</text><rect x="${x0+16}" y="${yTop+10}" width="34" height="8" rx="4" fill="#fff" opacity=".85"/></g>`; }
+  const w=70,h=200,x0=x-35;
+  return `<g><rect x="${x0}" y="${yTop}" width="${w}" height="${h}" rx="26" fill="${glass}" stroke="#4dabf7" stroke-width="3"/><path d="M${x0+18} ${yTop+2} v-24 h34 v24" fill="${glass}" stroke="#4dabf7" stroke-width="3"/><rect x="${x0+13}" y="${yTop-36}" width="44" height="14" rx="4" fill="#1c7ed6"/><rect x="${x0+6}" y="${yTop+70}" width="${w-12}" height="60" fill="#ffe066" opacity=".85"/><text x="${x}" y="${yTop+105}" text-anchor="middle" font-size="13" font-weight="900" fill="#5c3d00">빈 병</text><rect x="${x0+10}" y="${yTop+16}" width="8" height="40" rx="4" fill="#fff" opacity=".85"/></g>`;
+}
+function pSVG(){
+  const g=pGeom(), lie=PB.ori==='lie', top=lie?g.yTop:g.yTop-36, hand=pHand(), cy=(g.yTop+g.yB)/2;
+  let s=`<svg viewBox="0 0 600 380" role="img" aria-label="수조에 띄운 빈 페트병"><rect width="600" height="380" fill="#f4f9ff"/>`;
+  s+=bottleSVG(PB.ori,P_CX,g.yTop);
+  s+=water(P_TX+4,g.yW,P_TW-8,P_BOT-g.yW,{amp:1.5+Math.min(7,Math.abs(PB.v)*6),ph:Math.sin(PB.ph)});
+  s+=beaker(P_TX,40,P_TW,328,{marks:false});
+  if(PB.hold){ s+=`<rect x="${P_CX-19}" y="-10" width="38" height="${Math.max(0,top-36)}" fill="#4dabf7"/><rect x="${P_CX-26}" y="${top-46}" width="52" height="44" rx="16" fill="#ffd8a8" stroke="#e8a46a" stroke-width="2"/><path d="M${P_CX-14} ${top-6} v-14 M${P_CX-2} ${top-4} v-16 M${P_CX+10} ${top-6} v-14" stroke="#e8a46a" stroke-width="2"/>`;
+    if(hand>0.05){ const L=12+hand*16; s+=arw(P_CX+62,top-10-L,P_CX+62,top-6,C_HAND,6)+txt(P_CX+72,top-16-L/2,'손 '+r1(hand).toFixed(1)+' N',{a:'start',s:14,c:C_HAND}); } }
+  const bx=lie?P_CX-128:P_CX-64, gx=lie?P_CX+168:P_CX+64;
+  if(g.fb>0.02){ const L=14+g.fb*20; s+=`<g class="glow">${arw(bx,cy,bx,cy-L,C_BUOY,7)}</g>`+txt(bx-8,cy-L-8,'부력 '+g.fb.toFixed(1)+' N',{a:'end',s:15,c:C_BUOY}); }
+  s+=arw(gx,cy,gx,cy+20,C_GRAV,6)+txt(gx+8,cy+38,'중력 0.3 N',{a:'start',s:13,c:C_GRAV});
+  s+=txt(540,g.yW-8,'수면',{a:'end',s:13,c:'#1864ab'});
+  return s+'</svg>';
+}
+function drawP(){
+  const g=pGeom(), hand=pHand(); $('rigP').innerHTML=pSVG();
+  $('pF').textContent=Math.round(clamp(PB.f,0,1)*100)+' %'; $('pFb').textContent=g.fb.toFixed(1)+' N'; $('pH').textContent=hand.toFixed(1)+' N';
+  $('pBar').style.width=(hand/(PB_FB-PB_W)*100)+'%';
+  setCap('pCap',PB.hold?(PB.f>=1?'💯 <b>완전히 잠겼어요!</b> 이제 더 눌러도 잠긴 부피가 늘지 않아 부력도 그대로예요. 손을 떼 보세요!':'⬇ 누를수록 페트병이 물에 <b>더 많이 잠기고</b>, 손을 <b>위쪽으로 밀어 올리는 힘</b>이 커져요!')
+    :Math.abs(PB.v)>.05?'🚀 손을 떼자 페트병이 <b>위로 튀어 올랐어요!</b> 위쪽으로 작용하는 부력 때문이에요.'
+    :'🫧 페트병이 물 위에 살짝 떠 있어요. 이때는 <b>부력 = 중력</b>(힘의 평형). 버튼을 누르고 있어 보세요.');
+}
+function pRecord(){ PB.recs[PB.ori]=PB_FB; lsSet('recP',PB.recs); renderPTable(PB.ori); sfx('beep'); floatAt($('pFb'),'완전히 잠김! 5.0 N','#f08c00');
+  if(PB.recs.lie&&PB.recs.stand){ setTimeout(()=>{ sfx('combo'); toast('🎉 세워도 눕혀도 잠긴 부피가 같으니 부력도 같아요!'); burstAt($('pTable'),{count:30,speed:8}); },500); } }
+function renderPTable(nw){ const c=k=>PB.recs[k]!=null?`<td class="${nw===k?'new':''}">${PB.recs[k].toFixed(1)} N</td>`:'<td class="empty">?</td>';
+  $('pTable').innerHTML=`<tr><th>놓는 방법</th><th>세워서</th><th>눕혀서</th></tr><tr><th>완전히 잠겼을 때 부력</th>${c('stand')}${c('lie')}</tr><tr><th>잠긴 부피</th><td>병 전체</td><td>병 전체</td></tr>`; }
+function pStep(dt){
+  if(!visible($('rigP'))) return false;
+  PB.ph+=dt*4;
+  if(PB.hold){ PB.v=0; PB.f=Math.min(1,PB.f+dt*(REDUCED?1.2:.42)); if(PB.f>=1&&!PB.full){ PB.full=true; pRecord(); } }
+  else { const a=40*(PB_EQ-PB.f)-3.2*PB.v; PB.v+=a*dt; PB.f+=PB.v*dt; if(PB.f<-.3){ PB.f=-.3; PB.v=0; } }
+  drawP();
+  const moving=PB.hold||Math.abs(PB.v)>.004||Math.abs(PB.f-PB_EQ)>.003;
+  if(!moving){ PB.f=PB_EQ; PB.v=0; drawP(); }
+  return moving;
+}
+
+/* ---------- ② 힘 센서로 부력 측정 ---------- */
+const SK={A:{n:'추 A',w:56,fb:.60,col:'#e0b54a',st:'#8a6d1f'},B:{n:'추 B (부피 2배)',w:112,fb:1.20,col:'#c9a2f0',st:'#5f3dc4'}};
+const S_W=5.10, S_H=80, S_Y0=100, S_WL=270, S_BX=150, S_BW=160, S_DMAX=212, S_CX=230;
+const SE={kind:'A',d:0,target:null,arrive:null,ph:0,hist:[],t:0,lastS:-1,wet:false,recs:lsGet('recS',{A:{},B:{}}),pred:lsGet('predS',{}),nw:null};
+if(!SE.recs.A) SE.recs.A={}; if(!SE.recs.B) SE.recs.B={};
+function sK(){ return SK[SE.kind].w/(S_BW-6); }
+function sGeom(){ const kk=sK(), yT=S_Y0+SE.d, s=Math.round(clamp((yT+S_H-S_WL)/(1-kk),0,S_H)*1000)/1000, yW=S_WL-kk*s, f=s/S_H, fb=SK[SE.kind].fb*f; return {yT,s,yW,f,fb,read:S_W-fb}; }
+function sPresetD(p){ if(p==='ga') return 0; if(p==='deep') return S_DMAX; const f=p==='na'?.5:1; return 190+(1-sK())*f*S_H-S_Y0; }
+function sSVG(){
+  const g=sGeom(), k=SK[SE.kind], cx=S_CX, yT=g.yT, ay=yT-84, w=k.w, x0=cx-w/2;
+  let s=`<svg viewBox="22 8 384 412" role="img" aria-label="힘 센서에 매단 추와 물이 담긴 비커">`;
+  s+=`<rect x="30" y="398" width="330" height="16" rx="5" fill="#495057"/><rect x="62" y="16" width="12" height="384" rx="5" fill="#ced4da" stroke="#868e96"/>`;
+  s+=`<rect x="54" y="${ay-8}" width="28" height="22" rx="4" fill="#343a40"/><rect x="74" y="${ay-2}" width="${cx-74}" height="10" rx="4" fill="#868e96"/>`;
+  s+=`<rect x="${cx-36}" y="${ay+6}" width="72" height="54" rx="10" fill="#1d4ed8" stroke="#1e3a8a" stroke-width="2.5"/><rect x="${cx-28}" y="${ay+13}" width="56" height="24" rx="4" fill="#d3f9d8"/><text x="${cx}" y="${ay+31}" text-anchor="middle" font-size="15" font-weight="900" fill="#0b4d1d" font-family="ui-monospace,Menlo,monospace">${f2(g.read)}</text><text x="${cx}" y="${ay+53}" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">힘 센서</text>`;
+  s+=`<line x1="${cx}" y1="${ay+60}" x2="${cx}" y2="${yT}" stroke="#495057" stroke-width="2.5"/><circle cx="${cx}" cy="${ay+68}" r="5" fill="none" stroke="#495057" stroke-width="3"/>`;
+  s+=`<rect x="${x0}" y="${yT}" width="${w}" height="${S_H}" rx="6" fill="${k.col}" stroke="${k.st}" stroke-width="2.5"/><rect x="${x0+7}" y="${yT+8}" width="8" height="${S_H-16}" rx="4" fill="#fff" opacity=".4"/><text x="${cx}" y="${yT+S_H/2+7}" text-anchor="middle" font-size="20" font-weight="900" fill="#3b2a00">${SE.kind}</text>`;
+  s+=water(S_BX+3,g.yW,S_BW-6,396-g.yW,{amp:g.f>0&&g.f<1?2.5:1.5,ph:Math.sin(SE.ph)});
+  if(g.f>0) s+=bubbles(S_BX+20,388,S_BW-40,4,3);
+  s+=beaker(S_BX,160,S_BW,238);
+  const ac=yT+S_H/2, gx=cx+w/2+24, bx=cx-w/2-24;
+  s+=arw(gx,ac,gx,ac+52,C_GRAV,6)+txt(gx-4,ac+72,'중력 5.10 N',{a:'start',s:14,c:C_GRAV});
+  if(g.fb>0.005){ const L=g.fb*80+8; s+=`<g class="glow">${arw(bx,ac,bx,ac-L,C_BUOY,6)}</g>`+txt(86,46,'⬆ 부력 '+f2(g.fb)+' N',{a:'start',s:16,c:C_BUOY}); }
+  s+=txt(S_BX+S_BW+8,g.yW+5,'수면',{a:'start',s:13,c:'#1864ab'});
+  return s+'</svg>';
+}
+function sState(){ const g=sGeom(); if(g.f<=0) return 'ga'; if(g.f<1) return 'mid'; return SE.d>sPresetD('da')+18?'deep':'da'; }
+function drawS(){
+  const g=sGeom(); $('rigS').innerHTML=sSVG();
+  $('sTab').textContent=f2(g.read)+' N'; $('sF').textContent=Math.round(g.f*100)+' %'; $('sFb').textContent=f2(g.fb)+' N';
+  if(+$('sD').value!==Math.round(SE.d)) $('sD').value=Math.round(SE.d); $('sDv').textContent=(SE.d/20).toFixed(1)+' cm';
+  const st=sState();
+  setCap('sCap',st==='ga'?'(가) 추가 물에 잠기기 전: 측정값 = <b>추의 무게(중력)</b>':st==='mid'?`추가 물에 잠기는 중 — <b>잠긴 부피↑ → 부력↑ → 측정값↓</b> (지금 ${Math.round(g.f*100)} % 잠김)`
+    :st==='da'?`(다) 완전히 잠김: 측정값이 <b>${f2(S_W-g.fb)} N</b>으로 줄었어요. 줄어든 값 <b>${f2(g.fb)} N</b>이 부력이에요.`
+    :'🔎 (다)보다 더 깊이 내려도 <b>잠긴 부피가 같으니 측정값(부력)이 그대로</b>예요!');
+}
+function drawSG(){
+  const cv=$('sGraph'); const P=prepCanvas(cv); if(!P) return; const {ctx,W,H}=P;
+  ctx.clearRect(0,0,W,H); const L=40,R=W-10,T=16,B=H-24, y0=3.6,y1=5.4, span=12;
+  const Y=v=>B-(v-y0)/(y1-y0)*(B-T);
+  ctx.font='bold 11px sans-serif'; ctx.fillStyle='#868e96'; ctx.textAlign='right';
+  for(let v=3.6;v<=5.41;v+=.3){ const y=Y(v); ctx.strokeStyle='#edf0f5'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke(); ctx.fillText(v.toFixed(1),L-5,y+4); }
+  ctx.textAlign='center'; ctx.fillText('시간 →',(L+R)/2,H-6);
+  const now=SE.t, X=t=>R-(now-t)/span*(R-L);
+  ctx.strokeStyle='#2b8a3e'; ctx.lineWidth=3; ctx.lineJoin='round'; ctx.beginPath(); let st=false;
+  for(const p of SE.hist){ const x=X(p.t); if(x<L) continue; const y=Y(p.v); if(!st){ ctx.moveTo(x,y); st=true; } else ctx.lineTo(x,y); }
+  ctx.stroke();
+  if(SE.hist.length){ const p=SE.hist[SE.hist.length-1]; ctx.fillStyle='#2b8a3e'; ctx.beginPath(); ctx.arc(X(p.t),Y(p.v),5,0,7); ctx.fill(); }
+  ctx.save(); ctx.translate(12,(T+B)/2); ctx.rotate(-Math.PI/2); ctx.fillStyle='#868e96'; ctx.fillText('힘 (N)',0,0); ctx.restore();
+}
+function drawBG(){
+  const cv=$('bGraph'); const P=prepCanvas(cv); if(!P) return; const {ctx,W,H}=P;
+  ctx.clearRect(0,0,W,H); const L=54,R=W-24,T=16,B=H-44, ymax=1.4;
+  const X=f=>L+f*(R-L), Y=v=>B-v/ymax*(B-T);
+  ctx.font='bold 12px sans-serif'; ctx.fillStyle='#5a5f80'; ctx.textAlign='right';
+  for(let v=0;v<=1.41;v+=.2){ const y=Y(v); ctx.strokeStyle='#eef0f6'; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke(); ctx.fillText(v.toFixed(1),L-6,y+4); }
+  ctx.textAlign='center'; [[0,'잠기기 전'],[.5,'절반'],[1,'완전히']].forEach(([f,t])=>{ ctx.fillText(t,X(f),B+18); });
+  ctx.fillText('물에 잠긴 정도',(L+R)/2,H-6);
+  ctx.save(); ctx.translate(14,(T+B)/2); ctx.rotate(-Math.PI/2); ctx.fillText('부력 (N)',0,0); ctx.restore();
+  ctx.strokeStyle='#1b1d4a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(L,T); ctx.lineTo(L,B); ctx.lineTo(R,B); ctx.stroke();
+  [['A','#f08c00',false],['B','#7048e8',true]].forEach(([k,col,dash])=>{
+    const r=SE.recs[k], pts=[['ga',0],['na',.5],['da',1]].filter(p=>r[p[0]]!=null).map(p=>[X(p[1]),Y(S_W-r[p[0]])]);
+    if(!pts.length) return; ctx.strokeStyle=col; ctx.lineWidth=3; ctx.setLineDash(dash?[8,6]:[]); ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=col; pts.forEach(p=>{ ctx.beginPath(); if(dash){ ctx.rect(p[0]-6,p[1]-6,12,12); } else ctx.arc(p[0],p[1],6,0,7); ctx.fill(); });
+  });
+}
+function renderSTable(){
+  const cols=[['ga','(가) 잠기기 전'],['na','(나) 절반 잠김'],['da','(다) 완전히 잠김'],['deep','더 깊이']];
+  let h=`<tr><th>구분</th>${cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr>`;
+  ['A','B'].forEach(k=>{ const r=SE.recs[k]; if(k==='B'&&!Object.keys(r).length) return;
+    const cell=(c,dec)=>{ if(r[c]==null) return '<td class="empty">—</td>'; const cls=SE.nw===k+c?' class="new"':''; if(!dec) return `<td${cls}>${f2(r[c])}</td>`; return c==='ga'?`<td${cls}>—</td>`:`<td${cls}><b style="color:#d9480f">${f2(S_W-r[c])}</b></td>`; };
+    h+=`<tr><th>${SK[k].n}<br><small>측정값(N)</small></th>${cols.map(c=>cell(c[0],false)).join('')}</tr><tr><th><small>감소한 값 = 부력(N)</small></th>${cols.map(c=>cell(c[0],true)).join('')}</tr>`; });
+  $('sTable').innerHTML=h;
+}
+function sRecord(p){ const g=sGeom(); SE.recs[SE.kind][p]=Math.round(g.read*100)/100; SE.nw=SE.kind+p; lsSet('recS',SE.recs); renderSTable(); drawBG(); sfx('beep');
+  floatAt($('sTab'),p==='ga'?'기록! '+f2(g.read)+' N':'부력 '+f2(g.fb)+' N',p==='ga'?'#2b8a3e':'#f08c00'); if(p!=='ga') burstAt($('sFb'),{count:16,speed:6}); }
+function sGo(p){ const d=sPresetD(p); SE.target=d; SE.arrive=()=>sRecord(p); sfx('whoosh'); kick(); }
+function sStep(dt){
+  if(!visible($('rigS'))) return false;
+  SE.t+=dt; SE.ph+=dt*3;
+  if(SE.target!=null){ const sp=(REDUCED?500:120)*dt, dd=SE.target-SE.d; if(Math.abs(dd)<=sp){ SE.d=SE.target; SE.target=null; const a=SE.arrive; SE.arrive=null; if(a) a(); } else SE.d+=Math.sign(dd)*sp; }
+  const g=sGeom();
+  if(g.f>0&&!SE.wet){ SE.wet=true; sfx('splash'); } else if(g.f<=0&&SE.wet){ SE.wet=false; sfx('drip'); }
+  if(SE.t-SE.lastS>=.05){ SE.lastS=SE.t; SE.hist.push({t:SE.t,v:g.read}); while(SE.hist.length&&SE.hist[0].t<SE.t-13) SE.hist.shift(); }
+  drawS(); drawSG();
+  return true;
+}
+const PRED=[['p1','추가 물에 많이 잠길수록 힘 센서의 측정값은?',['커진다','작아진다','변하지 않는다'],'작아진다'],
+  ['p2','추가 완전히 잠긴 뒤 더 깊이 내리면 부력은?',['커진다','변하지 않는다','작아진다'],'변하지 않는다'],
+  ['p3','무게는 같고 부피가 2배인 추 B가 완전히 잠기면, 부력은 추 A보다?',['크다','같다','작다'],'크다']];
+function buildPred(){
+  $('predS').innerHTML=PRED.map(p=>`<div class="pred-q"><b>${p[1]}</b><div class="toggle" id="pq-${p[0]}"></div><div class="res" id="pr-${p[0]}"></div></div>`).join('');
+  PRED.forEach(p=>chipGroup('pq-'+p[0],p[2].map(o=>[o,o]),SE.pred[p[0]],v=>{ SE.pred[p[0]]=v; lsSet('predS',SE.pred); sfx('tap'); $('pr-'+p[0]).textContent=''; }));
+}
+function checkPred(){
+  if(PRED.some(p=>!SE.pred[p[0]])){ sfx('wrong'); setCap('predMsg','🤔 세 질문에 모두 답해 주세요.'); return; }
+  const A=SE.recs.A, need=[];
+  if(A.na==null||A.da==null) need.push('추 A로 (나), (다)'); if(A.deep==null) need.push('추 A로 "더 깊이"'); if(SE.recs.B.da==null) need.push('추 B로 (다)');
+  if(need.length){ sfx('wrong'); setCap('predMsg','🔬 먼저 실험해 보세요: '+need.join(', ')); return; }
+  let ok=0; PRED.forEach(p=>{ const right=SE.pred[p[0]]===p[3]; if(right) ok++; $('pr-'+p[0]).innerHTML=right?`<span style="color:#12a874">✔ 예측 적중! 실험 결과: ${p[3]}</span>`:`<span style="color:#e5484d">✖ 실험 결과는 "${p[3]}"였어요.</span>`; });
+  setCap('predMsg',`예측 ${ok} / ${PRED.length} 적중!`);
+  if(ok===PRED.length){ sfx('fanfare'); fireworks(); toast('🔮 예측을 모두 맞혔어요!'); } else sfx(ok?'correct':'wrong');
+}
+
+/* ---------- ③ 양팔저울 ---------- */
+const BLO={diff:{A:{h:46,fb:.5},B:{h:92,fb:1.0}},same:{A:{h:46,fb:.5},B:{h:46,fb:.5}}};
+const PV={x:300,y:50}, ARM=170, OBJ_W=56, OBJ_BOT=225;
+const BL={mode:'diff',r:0,rt:0,th:0,said:false};
+function blGeom(){ const rad=BL.th*Math.PI/180, lx=PV.x-ARM*Math.cos(rad), ly=PV.y+ARM*Math.sin(rad), rx=PV.x+ARM*Math.cos(rad), ry=PV.y-ARM*Math.sin(rad);
+  const wy=236+(100-236)*BL.r, o=BLO[BL.mode];
+  const mk=(x,hy,q)=>{ const bot=OBJ_BOT+(hy-PV.y), top=bot-q.h, f=clamp((bot-wy)/q.h,0,1); return {x,hy,top,bot,h:q.h,f,fb:q.fb*f}; };
+  return {lx,ly,rx,ry,wy,A:mk(lx,ly,o.A),B:mk(rx,ry,o.B)}; }
+function blSVG(){
+  const g=blGeom(); let s=`<svg viewBox="0 0 600 420" role="img" aria-label="양팔저울에 매단 두 물체와 수조"><rect width="600" height="420" fill="#f8fbff"/>`;
+  [[130],[470]].forEach(([cx])=>{ const tb=g.wy+160; s+=`<rect x="${cx-40}" y="${tb}" width="80" height="${Math.max(0,405-tb)}" fill="#dee2e6" stroke="#adb5bd"/>`; for(let y=tb+16;y<405;y+=22) s+=`<path d="M${cx-34} ${y} L${cx+34} ${y+16} M${cx+34} ${y} L${cx-34} ${y+16}" stroke="#adb5bd" stroke-width="2"/>`; });
+  s+=`<rect x="20" y="405" width="560" height="12" rx="4" fill="#495057"/><rect x="${PV.x-7}" y="${PV.y}" width="14" height="355" fill="#868e96"/>`;
+  s+=`<rect x="${PV.x-50}" y="392" width="100" height="14" rx="4" fill="#343a40"/>`;
+  [g.A,g.B].forEach((q,i)=>{ s+=`<line x1="${q.x}" y1="${q.hy}" x2="${q.x}" y2="${q.top}" stroke="#495057" stroke-width="2.5"/>`;
+    s+=`<rect x="${q.x-OBJ_W/2}" y="${q.top}" width="${OBJ_W}" height="${q.h}" rx="6" fill="${i?'#b197fc':'#ffa94d'}" stroke="${i?'#5f3dc4':'#d9480f'}" stroke-width="2.5"/><text x="${q.x}" y="${q.top+q.h/2+8}" text-anchor="middle" font-size="22" font-weight="900" fill="#fff" stroke="#1b1d4a" stroke-width="3" paint-order="stroke">${i?'B':'A'}</text>`; });
+  [130,470].forEach(cx=>{ s+=water(cx-63,g.wy,126,150,{amp:2,ph:Math.sin(BL.r*20)})+beaker(cx-65,g.wy-26,130,186,{marks:false}); });
+  [g.A,g.B].forEach(q=>{ if(q.fb>0.01){ const L=10+q.fb*60, x=q.x+OBJ_W/2+16, y=(q.top+q.bot)/2; s+=`<g class="glow">${arw(x,y,x,y-L,C_BUOY,6)}</g>`+txt(x+6,y-L-8,'부력 '+q.fb.toFixed(2)+' N',{s:13,c:C_BUOY}); } });
+  s+=`<line x1="${g.lx}" y1="${g.ly}" x2="${g.rx}" y2="${g.ry}" stroke="#8d6e3a" stroke-width="10" stroke-linecap="round"/>`;
+  const rad=BL.th*Math.PI/180; s+=`<path d="M${PV.x-40} ${PV.y+64} A70 70 0 0 0 ${PV.x+40} ${PV.y+64}" fill="none" stroke="#ced4da" stroke-width="3"/><line x1="${PV.x}" y1="${PV.y}" x2="${(PV.x+66*Math.sin(rad)).toFixed(1)}" y2="${(PV.y+66*Math.cos(rad)).toFixed(1)}" stroke="#e03131" stroke-width="3"/>`;
+  s+=`<polygon points="${PV.x},${PV.y-6} ${PV.x-14},${PV.y+18} ${PV.x+14},${PV.y+18}" fill="#343a40"/>`;
+  s+=txt(g.lx,g.ly-14,'A 5 N',{s:14})+txt(g.rx,g.ry-14,'B 5 N',{s:14});
+  s+=txt(130,g.wy+186,BL.mode==='diff'?'A: 부피 작음':'A',{s:13,c:'#d9480f'})+txt(470,g.wy+186,BL.mode==='diff'?'B: 부피 큼 (A의 2배)':'B: A와 같은 부피',{s:13,c:'#5f3dc4'});
+  return s+'</svg>';
+}
+function drawBL(){ const g=blGeom(); $('rigBL').innerHTML=blSVG(); $('blA').textContent=g.A.fb.toFixed(2)+' N'; $('blB').textContent=g.B.fb.toFixed(2)+' N';
+  $('blS').textContent=Math.abs(BL.th)<.4?'수평':BL.th>0?'A 쪽으로 기움':'B 쪽으로 기움';
+  setCap('blCap',BL.r<=0?'두 물체의 무게는 5 N으로 같아서 저울이 <b>수평</b>이에요. 수조를 올려 보세요.'
+    :BL.r<1||Math.abs(BL.th-blTarget(g))>.3?'수조가 올라가요… 물체가 물에 잠기기 시작해요 🫧'
+    :BL.mode==='diff'?'⚖️ <b>A 쪽으로 기울었어요!</b> 무게는 같지만 부피가 큰 <b>B에 작용하는 부력이 더 커서</b> B 쪽이 위로 밀려 올라갔어요.'
+    :'⚖️ 부피가 같으면 부력도 같아서 <b>수평</b>을 유지해요.'); }
+function blTarget(g){ return clamp((g.B.fb-g.A.fb)*14,-12,12); }
+function blStep(dt){
+  if(!visible($('rigBL'))) return false;
+  const dr=BL.rt-BL.r, sp=(REDUCED?2:.35)*dt; BL.r=Math.abs(dr)<=sp?BL.rt:BL.r+Math.sign(dr)*sp;
+  let g=blGeom(); const tt=blTarget(g); BL.th+=(tt-BL.th)*Math.min(1,dt*2.2); if(Math.abs(tt-BL.th)<.02) BL.th=tt;
+  drawBL(); g=blGeom();
+  const moving=BL.r!==BL.rt||Math.abs(blTarget(g)-BL.th)>.02;
+  if(!moving&&BL.r===1&&!BL.said){ BL.said=true; if(BL.mode==='diff'){ sfx('fanfare'); burstAt($('rigBL'),{count:30,speed:8}); toast('⚖️ 부피가 큰 B의 부력이 더 커요!'); } else sfx('correct'); }
+  return moving;
+}
+
+/* ---------- ④-1 알루미늄박 ---------- */
+const FO={t:-1,run:false,sp:false,gl:false};
+function foilBall(x,y){ return `<g><circle cx="${x}" cy="${y}" r="13" fill="#ced4da" stroke="#868e96" stroke-width="2"/><path d="M${x-8} ${y-4} l5 3 l3 -6 l4 5 l5 -2 M${x-6} ${y+6} l4 -3 l4 4 l5 -4" stroke="#868e96" stroke-width="1.6" fill="none"/></g>`; }
+function foilDish(x,y){ return `<g><path d="M${x-58} ${y-4} L${x-46} ${y+8} L${x+46} ${y+8} L${x+58} ${y-4}" fill="#e9ecef" stroke="#868e96" stroke-width="2.5" stroke-linejoin="round"/><path d="M${x-40} ${y+2} h80" stroke="#fff" stroke-width="2"/></g>`; }
+function foSVG(){
+  const t=FO.t; let by=40, dy=40;
+  if(t>=0){ by=t<.35?40+100*(t/.35)**2:Math.min(244,140+106*Math.min(1,(t-.35)/1.6)**1.4); dy=t<.35?40+100*(t/.35)**2:136+6*Math.exp(-3*(t-.35))*Math.cos(9*(t-.35)); }
+  let s=`<svg viewBox="0 0 600 310" role="img" aria-label="뭉친 알루미늄박과 접시 모양 알루미늄박을 물에 넣는 실험"><rect width="600" height="310" fill="#f8fbff"/>`;
+  s+=foilBall(150,by)+foilDish(450,dy);
+  [150,450].forEach(cx=>{ s+=water(cx-88,140,176,118,{amp:2,ph:Math.sin((t>0?t:0)*6)})+beaker(cx-90,90,180,170,{marks:false}); });
+  s+=txt(150,28,'뭉친 알루미늄박',{s:15,c:'#495057'})+txt(450,28,'접시 모양 알루미늄박',{s:15,c:'#495057'});
+  if(t>2.1){ s+=arw(186,by,186,by+30,C_GRAV,6)+`<g class="glow">${arw(110,by,110,by-10,C_BUOY,6)}</g>`+txt(118,by-18,'부력 작음',{a:'end',s:13,c:C_BUOY})+txt(196,by+24,'중력',{a:'start',s:13,c:C_GRAV});
+    s+=arw(520,dy,520,dy+36,C_GRAV,6)+`<g class="glow">${arw(380,dy,380,dy-36,C_BUOY,6)}</g>`+txt(372,dy-40,'부력',{a:'end',s:13,c:C_BUOY})+txt(528,dy+26,'중력',{a:'start',s:13,c:C_GRAV});
+    s+=txt(150,300,'부력 < 중력 → 가라앉음',{s:14,c:'#5f3dc4'})+txt(450,300,'부력 = 중력 → 뜸',{s:14,c:'#b35c00'}); }
+  return s+'</svg>';
+}
+function drawFO(){ $('rigFO').innerHTML=foSVG(); }
+function foStep(dt){
+  if(!FO.run) return false; if(!visible($('rigFO'))){ FO.run=false; return false; }
+  FO.t+=dt*(REDUCED?3:1);
+  if(FO.t>.35&&!FO.sp){ FO.sp=true; sfx('splash'); } if(FO.t>.6&&!FO.gl){ FO.gl=true; sfx('glug'); }
+  drawFO();
+  if(FO.t>2.3){ FO.run=false; sfx('correct'); setCap('foCap','뭉친 알루미늄박은 물에 잠긴 부피가 작아서 <b>부력이 작아 가라앉고</b>, 접시 모양은 물에 잠긴 부분의 부피가 커서 <b>부력이 커 물 위에 떠요</b>. 두 알루미늄박의 무게(중력)는 같아요!'); burstAt($('rigFO'),{count:20,speed:6}); }
+  return FO.run;
+}
+
+/* ---------- ④-2 배에 짐 싣기 ---------- */
+const BO={n:0,dep:16,said:false};
+const boW=()=>2+BO.n, boDepT=()=>8*boW();
+function boSVG(){
+  const bot=170+BO.dep, top=bot-80, W=boW();
+  let s=`<svg viewBox="0 0 600 300" role="img" aria-label="짐을 실은 배가 물에 잠긴 모습"><rect width="600" height="300" fill="#e7f5ff"/>`;
+  s+=`<rect x="0" y="170" width="600" height="130" fill="#74c0fc"/>`;
+  s+=`<polygon points="150,${top} 450,${top} 418,${bot} 182,${bot}" fill="#c92a2a" stroke="#7a1414" stroke-width="3"/><rect x="150" y="${top}" width="300" height="12" fill="#fff"/>`;
+  for(let i=1;i<=5;i++){ const y=bot-i*8; s+=`<line x1="400" y1="${y}" x2="412" y2="${y}" stroke="#fff" stroke-width="2"/>`; }
+  const cols=['#ffd43b','#69db7c','#4dabf7','#ff922b'];
+  for(let i=0;i<BO.n;i++) s+=`<g><rect x="${176+i*62}" y="${top-40}" width="56" height="40" rx="4" fill="${cols[i]}" stroke="#495057" stroke-width="2"/><path d="M${176+i*62} ${top-20} h56 M${204+i*62} ${top-40} v40" stroke="#495057" stroke-width="1.5" opacity=".5"/><text x="${204+i*62}" y="${top-14}" text-anchor="middle" font-size="12" font-weight="900" fill="#343a40">1 N</text></g>`;
+  if(!BO.n) s+=`<rect x="280" y="${top-30}" width="40" height="30" rx="4" fill="#fff" stroke="#495057" stroke-width="2"/>`;
+  s+=water(0,170,600,130,{amp:3,ph:Math.sin(BO.dep*.6),col:'rgba(28,126,214,.38)'});
+  const cy=top+40, L=10+W*11; s+=`<g class="glow">${arw(282,cy,282,cy-L,C_BUOY,7)}</g>`+arw(318,cy,318,cy+L,C_GRAV,7);
+  s+=txt(272,cy-L-6,'부력 '+W+' N',{a:'end',s:15,c:C_BUOY})+txt(328,cy+L+4,'중력 '+W+' N',{a:'start',s:15,c:C_GRAV});
+  s+=`<line x1="470" y1="170" x2="470" y2="${bot}" stroke="#1864ab" stroke-width="3"/><line x1="462" y1="${bot}" x2="478" y2="${bot}" stroke="#1864ab" stroke-width="3"/>`+txt(482,(170+bot)/2+5,'잠긴 깊이',{a:'start',s:13,c:'#1864ab'});
+  return s+'</svg>';
+}
+function drawBO(){ $('rigBO').innerHTML=boSVG(); const W=boW(); $('boN').textContent=BO.n+'개'; $('boW').textContent=W+' N'; $('boFb').textContent=W+' N'; $('boD').textContent=(BO.dep/8).toFixed(1)+' cm'; }
+function boStep(dt){ if(!visible($('rigBO'))) return false; const t=boDepT(), d=t-BO.dep; if(Math.abs(d)<.05){ BO.dep=t; drawBO(); return false; } BO.dep+=d*Math.min(1,dt*3); drawBO(); return true; }
+function boSet(n){ if(n<0||n>4){ sfx('wrong'); toast(n<0?'실은 짐이 없어요':'짐은 4개까지 실을 수 있어요'); return; } const up=n>BO.n; BO.n=n; sfx(up?'thud':'peel'); setTimeout(()=>sfx('splash'),120);
+  floatAt($('boFb'),up?'부력 ↑':'부력 ↓',up?'#f08c00':'#7048e8'); if(BO.n===4&&!BO.said){ BO.said=true; toast('🚢 짐을 실을수록 배가 더 잠기고 부력이 커져요!'); } kick(); }
+
+/* ---------- ⑤ 공기 속 부력 ---------- */
+const AB={n:3,h:120,v:0,state:'held',t:0,recs:lsGet('recAB',{})};
+const abB=()=>15*AB.n, abG=()=>40+5*AB.n;
+function abSVG(){
+  const bob=AB.state==='hover'?Math.sin(AB.t*2.4)*3:0, yb=350-AB.h+bob, top=yb-40, bc=top-120;
+  let s=`<svg viewBox="0 0 600 380" role="img" aria-label="헬륨 풍선을 매단 곰 인형 바구니"><rect width="600" height="380" fill="#d0ebff"/>`;
+  s+=`<g opacity=".8"><circle cx="90" cy="70" r="22" fill="#fff"/><circle cx="118" cy="64" r="28" fill="#fff"/><circle cx="148" cy="72" r="20" fill="#fff"/><circle cx="470" cy="50" r="18" fill="#fff"/><circle cx="494" cy="44" r="24" fill="#fff"/></g>`;
+  s+=`<rect x="0" y="350" width="600" height="30" fill="#8ce99a"/><rect x="0" y="350" width="600" height="5" fill="#51cf66"/>`;
+  const POS=[[0,0],[-46,14],[46,14],[-24,-34],[24,-34]], COL=['#ff6b9a','#ffd43b','#69db7c','#4dabf7','#b197fc'];
+  for(let i=0;i<AB.n;i++){ const bx=300+POS[i][0], by=bc+POS[i][1]; s+=`<line x1="${bx}" y1="${by+30}" x2="300" y2="${top}" stroke="#868e96" stroke-width="1.6"/>`; }
+  for(let i=0;i<AB.n;i++){ const bx=300+POS[i][0], by=bc+POS[i][1]; s+=`<ellipse cx="${bx}" cy="${by}" rx="26" ry="30" fill="${COL[i]}"/><ellipse cx="${bx-8}" cy="${by-12}" rx="6" ry="9" fill="#fff" opacity=".55"/><path d="M${bx-4} ${by+29} l4 6 l4 -6z" fill="${COL[i]}"/>`; }
+  s+=`<path d="M270 ${top} L330 ${top} L322 ${yb} L278 ${yb} Z" fill="#c08b4f" stroke="#7a5426" stroke-width="2.5"/><path d="M272 ${top+12} h56 M274 ${top+26} h52" stroke="#7a5426" stroke-width="1.5"/><text x="300" y="${top+4}" text-anchor="middle" font-size="30">🧸</text>`;
+  if(AB.state==='held') s+=`<text x="330" y="${yb-6}" font-size="38">✋</text>`;
+  const B=abB(), G=abG();
+  s+=`<g class="glow">${arw(390,bc+10,390,bc+10-B*.9,C_BUOY,7)}</g>`+txt(402,bc-B*.45,'부력 '+(B/100).toFixed(2)+' N',{a:'start',s:15,c:C_BUOY});
+  s+=arw(210,top+20,210,top+20+G*.9,C_GRAV,7)+txt(198,top+30+G*.45,'중력 '+(G/100).toFixed(2)+' N',{a:'end',s:15,c:C_GRAV});
+  return s+'</svg>';
+}
+function abResult(){ const n=10*AB.n-40; return n<0?'down':n===0?'eq':'up'; }
+function drawAB(){ $('rigAB').innerHTML=abSVG(); $('abFb').textContent=(abB()/100).toFixed(2)+' N'; $('abG').textContent=(abG()/100).toFixed(2)+' N';
+  $('abR').textContent={held:'손으로 잡고 있음',down:'아래로 내려옴',ground:'땅에 내려앉음',hover:'제자리에 떠 있음',up:'위로 올라감',gone:'하늘로 날아감!'}[AB.state]; }
+function renderABTable(nw){ let h='<tr><th>풍선</th><th>부력</th><th>중력</th><th>결과</th></tr>';
+  for(let n=1;n<=5;n++){ const r=AB.recs[n]; h+=`<tr><td>${n}개</td><td>${(15*n/100).toFixed(2)} N</td><td>${((40+5*n)/100).toFixed(2)} N</td><td class="${r?'':'empty'}${nw===n?' new':''}">${r?{down:'<span class="result-chip down">⬇ 내려옴 (부력&lt;중력)</span>',eq:'<span class="result-chip eq">⏸ 제자리 (부력=중력)</span>',up:'<span class="result-chip up">⬆ 올라감 (부력&gt;중력)</span>'}[r]:'?'}</td></tr>`; }
+  $('abTable').innerHTML=h; }
+function abGo(){ if(AB.state!=='held') return; const r=abResult(); AB.v=0; AB.state=r==='eq'?'hover':r; AB.recs[AB.n]=r; lsSet('recAB',AB.recs); renderABTable(AB.n);
+  sfx(r==='up'?'rise':r==='eq'?'sparkle':'whoosh');
+  setCap('abCap',r==='up'?'⬆ <b>부력 &gt; 중력</b> → 위로 떠올라요! 헬륨 풍선이 하늘로 올라가는 까닭이에요.':r==='eq'?'⏸ <b>부력 = 중력</b> → 힘의 평형! 손을 놓아도 그 자리에 떠 있어요.':'⬇ <b>부력 &lt; 중력</b> → 아래로 내려와요. 그래도 부력은 위쪽으로 작용하고 있어요!');
+  if(r==='eq'){ burstAt($('rigAB'),{count:24,speed:6}); }
+  if([1,2,3,4,5].every(n=>AB.recs[n])) setTimeout(()=>{ sfx('combo'); toast('🎈 풍선 1~5개 실험 완료!'); },800);
+  kick(); }
+function abStep(dt){
+  if(!visible($('rigAB'))) return false; AB.t+=dt;
+  if(AB.state==='down'){ AB.v=Math.max(-170,AB.v-(REDUCED?900:260)*dt); AB.h+=AB.v*dt; if(AB.h<=0){ AB.h=0; AB.state='ground'; sfx('thud'); } }
+  else if(AB.state==='up'){ AB.v=Math.min(150,AB.v+(REDUCED?900:90)*dt); AB.h+=AB.v*dt; if(AB.h>520){ AB.state='gone'; sfx('sparkle'); } }
+  drawAB();
+  return AB.state==='down'||AB.state==='up'||AB.state==='hover';
+}
+
+function buildExperiments(){
+  chipGroup('pOri',[['lie','눕혀서'],['stand','세워서']],PB.ori,v=>{ if(PB.hold) return false; PB.ori=v; PB.f=PB_EQ; PB.v=0; PB.full=false; sfx('bloop'); drawP(); });
+  const hb=$('pHold');
+  const down=e=>{ e.preventDefault(); if(PB.hold) return; PB.hold=true; PB.full=PB.f>=1; hb.classList.add('holding'); sfx('push'); kick(); };
+  const up=()=>{ if(!PB.hold) return; PB.hold=false; hb.classList.remove('holding'); if(PB.f>.25){ sfx('splash'); setTimeout(()=>sfx('rise'),60); } kick(); };
+  hb.addEventListener('pointerdown',down); ['pointerup','pointerleave','pointercancel'].forEach(ev=>hb.addEventListener(ev,up)); hb.addEventListener('contextmenu',e=>e.preventDefault());
+  hb.addEventListener('keydown',e=>{ if((e.key===' '||e.key==='Enter')&&!e.repeat) down(e); }); hb.addEventListener('keyup',e=>{ if(e.key===' '||e.key==='Enter') up(); });
+  renderPTable();
+  chipGroup('sKind',[['A','🟨 추 A'],['B','🟪 추 B (무게 같음, 부피 2배)']],SE.kind,v=>{ if(SE.target!=null) return false; SE.kind=v; SE.d=0; SE.wet=false; sfx('stick'); drawS(); kick(); });
+  $('sD').addEventListener('input',()=>{ SE.target=null; SE.arrive=null; const v=+$('sD').value; if(Math.round(v/10)!==Math.round(SE.d/10)) sfx('tick'); SE.d=v; kick(); });
+  document.querySelectorAll('[data-sp]').forEach(b=>b.addEventListener('click',()=>sGo(b.dataset.sp)));
+  $('sClear').addEventListener('click',()=>{ SE.recs={A:{},B:{}}; SE.nw=null; lsSet('recS',SE.recs); renderSTable(); drawBG(); sfx('peel'); toast('기록을 지웠어요'); });
+  $('predCheck').addEventListener('click',checkPred); buildPred(); renderSTable();
+  chipGroup('blMode',[['diff','무게 같음 · 부피 다름'],['same','무게 같음 · 부피 같음']],BL.mode,v=>{ if(BL.r!==BL.rt) return false; BL.mode=v; BL.r=0; BL.rt=0; BL.th=0; BL.said=false; sfx('tap'); drawBL(); });
+  $('blUp').addEventListener('click',()=>{ if(BL.rt===1) return; BL.rt=1; BL.said=false; sfx('creak'); setTimeout(()=>sfx('splash'),900); kick(); });
+  $('blDown').addEventListener('click',()=>{ if(BL.rt===0) return; BL.rt=0; BL.said=false; sfx('drip'); kick(); });
+  $('foGo').addEventListener('click',()=>{ if(FO.run) return; FO.t=0; FO.run=true; FO.sp=false; FO.gl=false; sfx('whoosh'); setCap('foCap','풍덩! 어떻게 될까요? 👀'); kick(); });
+  $('foReset').addEventListener('click',()=>{ FO.t=-1; FO.run=false; sfx('tap'); drawFO(); setCap('foCap','두 알루미늄박의 무게(중력)는 같아요. 무엇이 다를까요?'); });
+  $('boAdd').addEventListener('click',()=>boSet(BO.n+1)); $('boSub').addEventListener('click',()=>boSet(BO.n-1));
+  chipGroup('abN',[1,2,3,4,5].map(n=>[String(n),'🎈'.repeat(n)]),String(AB.n),v=>{ if(AB.state!=='held'){ toast('✋ 먼저 "다시 잡기"를 눌러요'); sfx('wrong'); return false; } AB.n=+v; sfx('pop'); drawAB(); });
+  $('abGo').addEventListener('click',abGo);
+  $('abReset').addEventListener('click',()=>{ AB.state='held'; AB.h=120; AB.v=0; sfx('tap'); setCap('abCap','풍선 1개의 부력 0.15 N, 곰 인형과 바구니 0.40 N, 풍선 1개의 무게 0.05 N (가상 값)'); drawAB(); });
+  renderABTable();
+  document.querySelectorAll('[data-ans]').forEach(b=>b.addEventListener('click',()=>{ const a=$(b.dataset.ans); const h=a.classList.toggle('hidden'); sfx('tap'); b.textContent=h?'예시 답안 보기':'예시 답안 숨기기'; }));
+  addTask(pStep); addTask(sStep); addTask(blStep); addTask(foStep); addTask(boStep); addTask(abStep);
+  addEventListener('resize',()=>{ if(curTab==='sensor'){ drawSG(); drawBG(); } });
+}
+
+
+/* ============ 스티커 붙이기 ============ */
+const BOARDS=[
+  {short:'부력 개념 지도',title:'판 1 · 부력 개념 지도 완성하기',desc:'관계도형 — 교과서 173쪽 "이 단원에서 배운 내용을 정리해 보자"처럼 부력의 뜻·크기·방향·작용하는 곳을 붙여요.',color:'c1',type:'cmap',
+   stickers:['밀어 올리는 힘','잠긴 부피가 클수록 크다','중력과 반대(위쪽)','액체와 기체 속','질량이 클수록 크다','중력과 같은 방향','액체 속에서만'],
+   slots:[{id:'m',answer:'밀어 올리는 힘',name:'뜻',hints:['페트병을 누를 때 손에 느껴진 힘을 떠올려요.','액체나 기체가 물체를 어떻게 하는 힘인가요?']},
+          {id:'s',answer:'잠긴 부피가 클수록 크다',name:'크기',hints:['무게가 아니라 무엇에 따라 달라졌나요?','탐구 ②: 절반 0.30 N, 완전히 0.60 N']},
+          {id:'d',answer:'중력과 반대(위쪽)',name:'방향',hints:['비커를 기울여도 부력 화살표는 어디를 향했나요?','중력은 아래쪽이에요.']},
+          {id:'w',answer:'액체와 기체 속',name:'작용하는 곳',hints:['헬륨 풍선은 어디에 떠 있나요?','물·식용유뿐 아니라 공기 속에서도!']}],
+   render(){ const it=(id,k,sm)=>`<div class="cm-item"><div class="k">${k}<small>${sm}</small></div><div class="slot" id="slot-0-${id}"></div></div>`;
+     return `<div class="cmap"><div class="cm-center">부력</div>${it('m','뜻','액체나 기체가 물체를 …')}${it('s','크기','어떨 때 클까?')}${it('d','방향','어느 쪽으로?')}${it('w','작용하는 곳','어디에서?')}</div>`; },
+   summary:'부력은 <b>액체나 기체가 물체를 밀어 올리는 힘</b>으로, <b>중력과 반대 방향(위쪽)</b>으로 작용하고, <b>잠긴 부피가 클수록 커요</b>.'},
+  {short:'탐구 결과 정리',title:'판 2 · 힘 센서 실험 결과 정리하기',desc:'실험 결과형 — 교과서 172쪽 탐구의 측정값을 보고 부력의 크기와 결론을 붙여요.',color:'c3',type:'table',
+   stickers:['0 N','0.30 N','0.60 N','커진다','부력이 커져서','4.80 N','작아진다','질량이 줄어서'],
+   slots:[{id:'ga',answer:'0 N',name:'(가) 부력',hints:['추가 아직 물에 잠기지 않았어요.','잠긴 부피가 0이면 물의 부력도 …']},
+          {id:'na',answer:'0.30 N',name:'(나) 부력',hints:['5.10 N − 4.80 N = ?','감소한 값이 부력이에요.']},
+          {id:'da',answer:'0.60 N',name:'(다) 부력',hints:['5.10 N − 4.50 N = ?','감소한 값이 부력이에요.']},
+          {id:'r',answer:'커진다',name:'결론 칸',hints:['(가)→(나)→(다)로 갈수록 부력은?','0 → 0.30 → 0.60 N']},
+          {id:'c',answer:'부력이 커져서',name:'까닭 칸',hints:['추의 무게(중력)는 그대로예요.','측정값 = 중력 − 부력']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-1-${id}"></div>`;
+     return `<div class="tbl-wrap"><table class="tbl res-tbl"><tr><th>구분</th><th>(가) 잠기기 전</th><th>(나) 절반 잠김</th><th>(다) 완전히 잠김</th></tr>
+       <tr><th>측정값</th><td>5.10 N</td><td>4.80 N</td><td>4.50 N</td></tr>
+       <tr><th>부력<br><small>(감소한 값)</small></th><td>${sl('ga')}</td><td>${sl('na')}</td><td>${sl('da')}</td></tr>
+       </table></div>
+       <div class="concl"><div class="cm-item"><span class="t">🔎 결론: 추가 물에 많이 잠길수록(잠긴 부피가 클수록) 부력은</span>${sl('r')}</div>
+       <div class="cm-item"><span class="t">💡 까닭: 중력은 일정한데 측정값이 감소한 까닭은</span>${sl('c')}</div></div>`; },
+   summary:'힘 센서 측정값 = <b>중력 − 부력</b>. (가)에 비해 감소한 값이 부력이고, <b>잠긴 부피가 클수록 부력이 커져요</b> (0 → 0.30 → 0.60 N).'},
+  {short:'부력의 이용',title:'판 3 · 생활 속 부력 분류하기',desc:'분류판형 — 물(액체)의 부력을 이용한 예와 공기(기체)의 부력을 이용한 예로 나누어 붙여요. (교과서 171쪽)',color:'c2',type:'cls',
+   stickers:['구명조끼','헬륨 풍선','튜브','트램펄린','비행선','배','열기구','부표','스케이트 날'],
+   groups:[['A','🌊 물(<b>액체</b>)의 부력을 이용',['구명조끼','튜브','배','부표'],4],['B','☁️ 공기(<b>기체</b>)의 부력을 이용',['헬륨 풍선','비행선','열기구'],3]],
+   render(){ return `<div class="cls-grid">${this.groups.map(g=>`<div class="cls-col"><h4>${g[1]}</h4>${Array.from({length:g[3]},(_,i)=>`<div class="slot" id="slot-2-${g[0]}${i}"></div>`).join('')}</div>`).join('')}</div>`; },
+   summary:'구명조끼·튜브·배·부표는 <b>물(액체)</b>의 부력, 헬륨 풍선·비행선·열기구는 <b>공기(기체)</b>의 부력을 이용해요. 트램펄린은 탄성력, 스케이트 날은 마찰력!'},
+  {short:'어느 쪽이 클까',title:'판 4 · 부력이 더 큰 쪽은?',desc:'표 채우기형 — 탐구 ①~④의 결과를 떠올려 두 경우 중 부력이 더 큰 쪽을 붙여요. 같으면 "같다"!',color:'c4',type:'table',
+   stickers:['짐 실은 배','접시 모양 박','같다','같다','부피 큰 B','빈 배','뭉친 박','부피 작은 A'],
+   slots:[{id:'a',answer:'짐 실은 배',name:'배 칸',hints:['짐을 실으면 배가 물에 어떻게 되나요?','더 많이 잠기면 부력은 커져요.']},
+          {id:'b',answer:'접시 모양 박',name:'알루미늄박 칸',hints:['물 위에 뜬 쪽은 어느 쪽이었나요?','펼치면 잠긴 부분의 부피가 커요.']},
+          {id:'c',answer:'같다',name:'페트병 칸',hints:['둘 다 완전히 잠겼어요.','잠긴 부피가 같으면?']},
+          {id:'d',answer:'같다',name:'깊이 칸',hints:['완전히 잠긴 뒤 잠긴 부피가 늘어나나요?','탐구 ②의 (다)와 "더 깊이" 측정값']},
+          {id:'e',answer:'부피 큰 B',name:'양팔저울 칸',hints:['무게는 같아요. 부피를 비교해요.','저울은 A 쪽으로 기울었어요.']}],
+   render(){ const row=(a,b,id)=>`<tr><td style="text-align:left">${a}</td><td style="text-align:left">${b}</td><td><div class="slot" id="slot-3-${id}"></div></td></tr>`;
+     return `<div class="tbl-wrap"><table class="tbl res-tbl"><tr><th>비교 1</th><th>비교 2</th><th>부력이 더 큰 쪽</th></tr>${row('🚢 짐을 싣지 않은 배','🚢 짐을 가득 실은 배','a')}${row('⚪ 작게 뭉친 알루미늄박','🥣 접시 모양 알루미늄박','b')}${row('세워서 완전히 잠긴 페트병','눕혀서 완전히 잠긴 페트병','c')}${row('🟨 완전히 잠긴 추','🟨 같은 추를 더 깊이 넣음','d')}${row('🅰 무게 5 N, 부피 작은 A (완전히 잠김)','🅱 무게 5 N, 부피 큰 B (완전히 잠김)','e')}</table></div>`; },
+   summary:'부력을 결정하는 것은 <b>잠긴 부피</b>! 잠긴 부피가 크면 부력이 크고, 잠긴 부피가 같으면 모양·놓는 방향·깊이와 관계없이 부력도 같아요.'}
+];
+BOARDS.forEach(b=>{ if(b.slots) b.slots.forEach(s=>s.ph='?'); });
+BOARDS[2].slots=[]; BOARDS[2].groups.forEach(g=>{ for(let i=0;i<g[3];i++) BOARDS[2].slots.push({id:g[0]+i,ph:'?',answer:g[2],name:g[0]==='A'?'물(액체) 칸':'공기(기체) 칸',hints:{A:['물에 뜨거나 물 위에서 쓰는 물건이에요.','물이 위로 밀어 올리는 힘을 이용해요.'],B:['하늘로 떠오르는 것이에요.','공기가 위로 밀어 올리는 힘을 이용해요.']}[g[0]]}); });
+const STK={cur:0,boards:[]}; let picked=null;
+function stkLoad(){ const s=lsGet('stk',null); STK.boards=BOARDS.map((b,i)=>Object.assign({placed:{},ok:{},tries:0,done:false,hint:{}},(s&&s.boards&&s.boards[i])||{})); STK.cur=s&&s.cur?s.cur:0; }
+function stkSave(){ lsSet('stk',{cur:STK.cur,boards:STK.boards}); }
+function unlocked(i){ return i===0||STK.boards[i-1].done; }
+function renderBoardTabs(){
+  $('boardTabs').innerHTML=BOARDS.map((b,i)=>`<button class="board-tab${i===STK.cur?' active':''}${unlocked(i)?'':' locked'}${STK.boards[i].done?' done':''}" data-b="${i}">${unlocked(i)?'':'<span class="lk">🔒</span>'}${i+1}. ${b.short}</button>`).join('');
+  $('boardTabs').querySelectorAll('.board-tab').forEach(t=>t.addEventListener('click',()=>{ const i=+t.dataset.b; if(!unlocked(i)){ sfx('wrong'); toast('🔒 앞 판을 먼저 완성해요'); return; } picked=null; STK.cur=i; stkSave(); sfx('tap'); renderBoardFrame(); }));
+}
+function renderBoardFrame(){
+  const b=BOARDS[STK.cur], bi=STK.cur;
+  renderBoardTabs(); $('boardTitle').textContent=b.title; $('boardDesc').textContent=b.desc;
+  let html=b.render();
+  if(b.type==='svg'){ html=html.replace('</div>',b.slots.map(s=>`<div class="slot abs" id="slot-${bi}-${s.id}" style="left:${s.x}%;top:${s.y}%"></div>`).join('')+'</div>'); }
+  $('stkBoard').innerHTML=html; $('stkMsg').innerHTML='<span class="trap-note">⚠️ 함정 스티커는 어디에도 붙이지 않아야 정답이에요.</span>';
+  const bd=$('stkBoard'); bd.classList.remove('rise-in'); void bd.offsetWidth; bd.style.animation='riseIn .45s both';
+  renderDone(false); renderStickers();
+}
+function stLabel(sid){ const [bi,i]=sid.split('-').map(Number); return BOARDS[bi].stickers[i]; }
+function renderStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi];
+  const used=new Set(Object.values(st.placed));
+  const tray=$('stkTray'); tray.innerHTML='<div class="tray-lbl">🗂️ 스티커 보관함 — 하나를 골라 빈칸을 눌러요</div>';
+  b.stickers.forEach((lab,i)=>{ const sid=bi+'-'+i; if(used.has(sid)) return;
+    const s=document.createElement('button'); s.className='sticker '+b.color+(picked===sid?' picked wiggle':''); s.dataset.sid=sid; s.style.setProperty('--tilt',(((i*7)%5)-2)*1.3+'deg'); s.textContent=lab;
+    s.addEventListener('click',()=>{ if(st.done) return; picked=picked===sid?null:sid; sfx(picked?'pick':'tap'); renderStickers(); });
+    tray.appendChild(s); });
+  if(tray.children.length===1) tray.insertAdjacentHTML('beforeend','<span class="muted">보관함이 비었어요</span>');
+  b.slots.forEach(sl=>{
+    const el=$('slot-'+bi+'-'+sl.id); if(!el) return; const sid=st.placed[sl.id], ok=!!st.ok[sl.id];
+    el.classList.toggle('ready',!!picked&&!ok); el.classList.toggle('ok',ok); el.innerHTML='';
+    if(sid){ const s=document.createElement('button'); s.className='sticker '+b.color; s.textContent=stLabel(sid);
+      s.addEventListener('click',e=>{ e.stopPropagation(); if(ok||st.done){ sfx('tap'); return; } if(picked){ place(sl.id); return; } delete st.placed[sl.id]; sfx('peel'); stkSave(); renderStickers(); });
+      el.appendChild(s); }
+    else el.innerHTML=`<span class="slot-num">${sl.ph||'?'}</span>`;
+    el.onclick=()=>{ if(ok||st.done) return; if(!picked){ sfx('tap'); toast('👇 먼저 보관함에서 스티커를 골라요'); return; } place(sl.id); };
+  });
+  $('stkCount').textContent=Object.keys(st.placed).length+' / '+b.slots.length; $('stkTry').textContent=st.tries;
+  $('stkCheck').disabled=st.done;
+}
+function place(slId){
+  const bi=STK.cur, st=STK.boards[bi]; const src=document.querySelector(`#stkTray .sticker[data-sid="${picked}"]`); const r0=src?src.getBoundingClientRect():null;
+  st.placed[slId]=picked; picked=null; sfx('stick'); stkSave(); renderStickers();
+  const dst=$('slot-'+bi+'-'+slId).querySelector('.sticker');
+  if(r0&&dst&&!REDUCED){ const r1=dst.getBoundingClientRect(); dst.style.transition='none'; dst.style.transform=`translate(${r0.left-r1.left}px,${r0.top-r1.top}px) scale(1.15) rotate(-6deg)`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ dst.style.transition='transform .42s cubic-bezier(.2,1.35,.4,1)'; dst.style.transform=''; })); }
+}
+function checkStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi]; if(st.done) return;
+  st.tries++; let wrong=0, empty=0, newOk=0; const msgs=[];
+  b.slots.forEach(sl=>{
+    if(st.ok[sl.id]) return; const el=$('slot-'+bi+'-'+sl.id), sid=st.placed[sl.id];
+    if(!sid){ empty++; return; }
+    if(Array.isArray(sl.answer)?sl.answer.includes(stLabel(sid)):stLabel(sid)===sl.answer){ st.ok[sl.id]=true; newOk++; setTimeout(()=>burstAt(el,{count:14,speed:5,size:6}),newOk*90); }
+    else { wrong++; el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); st.hint[sl.id]=Math.min((st.hint[sl.id]||0)+1,sl.hints.length);
+      msgs.push(`<span class="h">💡 <b>${sl.name}</b> — ${sl.hints[st.hint[sl.id]-1]}</span>`);
+      setTimeout(()=>{ if(st.placed[sl.id]===sid) delete st.placed[sl.id]; el.classList.remove('no'); stkSave(); renderStickers(); },850); }
+  });
+  const allOk=b.slots.every(sl=>st.ok[sl.id]);
+  if(allOk){ st.done=true; stkSave(); renderStickers(); $('stkMsg').innerHTML=''; setTimeout(()=>renderDone(true),350); }
+  else {
+    if(wrong){ sfx('wrong'); if(newOk) setTimeout(()=>sfx('correct'),250); }
+    else if(newOk) sfx('correct'); else sfx('tap');
+    let m=''; if(newOk) m+=`<span style="color:#12a874;font-weight:800">✔ ${newOk}칸 정답!</span> `;
+    if(wrong) m+=`<span style="color:#e5484d;font-weight:800">✖ ${wrong}칸은 다시 생각해 봐요.</span>`;
+    if(empty) m+=` <span class="muted">빈칸이 ${empty}개 남았어요.</span>`;
+    $('stkMsg').innerHTML=m+msgs.join(''); stkSave(); renderStickers();
+  }
+}
+function renderDone(fx){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi], next=bi<BOARDS.length-1, all=STK.boards.every(x=>x.done);
+  $('stkDone').innerHTML=st.done?`<div class="complete-banner"><div class="stamp">완성!</div><h3 style="margin:0 0 6px">🎉 ${b.short} 정리판 완성!</h3><p>${b.summary}</p><p class="muted">시도 ${st.tries}회 · 이 정리판이 바로 나의 개념 정리 노트예요 📒</p></div>`:'';
+  $('stkNext').classList.toggle('hidden',!(st.done&&next&&!all)); $('stkToLife').classList.toggle('hidden',!(all||(st.done&&!next)));
+  if(st.done&&fx){ sfx('fanfare'); setTimeout(()=>sfx('stamp'),180); fireworks(); renderBoardTabs();
+    if(next){ setTimeout(()=>{ sfx('unlock'); const t=$('boardTabs').children[bi+1]; if(t){ t.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:600,easing:'cubic-bezier(.3,1.6,.5,1)'}); burstAt(t,{count:20,speed:6}); } toast('🔓 다음 판이 열렸어요!'); },900); }
+    if(all) setTimeout(()=>toast('🏅 스티커 정리판 '+BOARDS.length+'개를 모두 완성했어요!'),1300);
+  }
+}
+
+
+/* ============ 실생활 ============ */
+const LIFE=[
+  ['🦺','구명조끼','배를 탈 때나 물놀이할 때 구명조끼를 입어요.','구명조끼 속에는 가볍고 부피가 큰 재료가 들어 있어 몸이 물에 잠긴 <b>부피가 커지고 부력이 커져요</b>. 그래서 위급한 상황에서도 몸이 물 위에 떠 생명을 구할 수 있어요.','물(액체)의 부력 · 잠긴 부피'],
+  ['🛟','물놀이 튜브','튜브를 끼면 수영을 못 해도 물에 떠요.','공기가 든 큰 튜브가 물에 잠기면 <b>위쪽으로 큰 부력</b>이 작용해 더 쉽게 물에 뜰 수 있어요.','물(액체)의 부력'],
+  ['🏊','물속에서는 친구가 가벼워요','수영장에서는 친구를 번쩍 들어 올릴 수 있어요.','친구의 질량과 중력은 그대로지만, 물속에서는 <b>부력이 위쪽으로</b> 친구를 함께 밀어 올려 주어 훨씬 가볍게 느껴져요. 탐구 ②에서 측정값이 줄어든 것과 같아요.','부력의 방향 · 측정값 = 중력 − 부력'],
+  ['🚢','짐을 실은 화물선','짐을 가득 실은 배는 빈 배보다 물에 더 깊이 잠겨요.','짐을 실어 무게가 커지면 배가 더 잠기고, <b>물에 잠긴 부피가 커져 부력도 커져요</b>. 그래서 무거운 짐을 싣고도 떠 있을 수 있어요. (그림 V-15)','잠긴 부피와 부력의 크기'],
+  ['🟠','바다의 부표','바다 위에 떠 있는 부표가 배의 길을 알려 줘요.','부표는 <b>물의 부력</b>을 이용해 물 위에 떠 있으면서 위험한 곳이나 뱃길을 표시해 배가 안전하게 항해하게 해요.','물(액체)의 부력 이용'],
+  ['🎈','하늘로 올라가는 헬륨 풍선','헬륨 풍선은 손을 놓으면 하늘로 날아가요.','공기 중의 헬륨 풍선에도 <b>공기의 부력</b>이 위쪽으로 작용해요. 부력이 중력보다 크기 때문에 위로 떠올라요. (탐구 ⑤)','기체의 부력 · 부력 > 중력'],
+  ['🔥','열기구','관광지에서 커다란 열기구가 하늘로 떠올라요.','버너로 기구 속 공기를 데우면 열기구 전체가 가벼워져 <b>공기의 부력이 중력보다 커지면</b> 떠올라요. <span class="badge ext">확장</span>','기체의 부력 이용'],
+  ['🛸','기상 관측 비행선','헬륨을 채운 비행선이 하늘에 떠서 날씨를 관측해요.','비행선은 헬륨을 채운 큰 몸체가 <b>공기의 부력</b>을 받아 위로 떠올라요. 하늘에 오래 떠 있을 수 있어 기상 관측에 이용해요.','기체의 부력 이용']
+];
+function buildLife(){
+  $('lifeGrid').innerHTML=LIFE.map((l,i)=>`<div class="life-card rise-in" style="--i:${i}"><span class="ic">${l[0]}</span><h3>${l[1]}</h3><p style="margin:0">${l[2]}</p><div class="more">👆 왜 그럴까?</div><div class="why"><p style="color:var(--color-text)">${l[3]}</p><span class="link-tag">🔗 ${l[4]}</span></div></div>`).join('');
+  $('lifeGrid').querySelectorAll('.life-card').forEach(c=>c.addEventListener('click',()=>{ if(c.classList.contains('open')) return; c.classList.add('open'); sfx('bloop'); burstAt(c.querySelector('.ic'),{count:12,speed:5,size:6});
+    if($('lifeGrid').querySelectorAll('.life-card.open').length===LIFE.length){ setTimeout(()=>{ sfx('combo'); toast('🌟 생활 속 부력 카드를 모두 열었어요!'); burstAt($('toQuiz'),{count:30,speed:8}); },400); } }));
+}
+
+/* ============ 개념 확인 10문항 ============ */
+function miniSensor(cx,f,lab){
+  const top=60+f*75, ay=top-34;
+  let s=`<rect x="${cx-12}" y="${ay-24}" width="24" height="20" rx="4" fill="#1d4ed8"/><line x1="${cx}" y1="${ay-4}" x2="${cx}" y2="${top}" stroke="#495057" stroke-width="2"/><rect x="${cx-15}" y="${top}" width="30" height="40" rx="4" fill="#e0b54a" stroke="#8a6d1f" stroke-width="2"/>`;
+  s+=water(cx-48,125,96,65,{amp:1.5})+beaker(cx-50,90,100,100,{marks:false})+txt(cx,212,lab,{s:17});
+  return s;
+}
+function qSensorSVG(){ return `<svg viewBox="0 0 480 220" style="max-width:480px;width:100%;display:block;margin:0 auto" role="img" aria-label="추가 물에 잠긴 정도가 다른 세 경우">${miniSensor(80,0,'(가)')}${miniSensor(240,.5,'(나)')}${miniSensor(400,1,'(다)')}</svg>`; }
+function qBalloonSVG(){ return `<svg viewBox="0 0 300 180" style="max-width:300px;width:100%;display:block;margin:0 auto" role="img" aria-label="공기 중에 떠 있는 헬륨 풍선"><rect width="300" height="180" rx="14" fill="#e7f5ff"/>${balloonSVG(150,70,34,'#ff6b9a',70)}${txt(240,40,'헬륨 풍선',{s:14,c:'#1864ab'})}</svg>`; }
+function qBalanceSVG(){ return `<svg viewBox="0 0 400 210" style="max-width:420px;width:100%;display:block;margin:0 auto" role="img" aria-label="양팔저울에 매단 무게가 같고 부피가 다른 두 물체">
+  <rect x="194" y="30" width="12" height="170" fill="#868e96"/><polygon points="200,24 190,40 210,40" fill="#343a40"/><line x1="70" y1="34" x2="330" y2="34" stroke="#8d6e3a" stroke-width="8" stroke-linecap="round"/>
+  <line x1="70" y1="34" x2="70" y2="102" stroke="#495057" stroke-width="2"/><rect x="52" y="102" width="36" height="34" rx="4" fill="#ffa94d" stroke="#d9480f" stroke-width="2"/>${txt(70,126,'A',{s:16})}
+  <line x1="330" y1="34" x2="330" y2="70" stroke="#495057" stroke-width="2"/><rect x="306" y="70" width="48" height="66" rx="4" fill="#b197fc" stroke="#5f3dc4" stroke-width="2"/>${txt(330,110,'B',{s:16})}
+  ${txt(70,160,'무게 5 N',{s:13})}${txt(330,160,'무게 5 N',{s:13})}${txt(70,180,'부피 작음',{s:13,c:'#d9480f'})}${txt(330,180,'부피 큼',{s:13,c:'#5f3dc4'})}</svg>`; }
+const QUIZ=[
+  {type:'개념 이해',q:'부력에 대한 설명으로 옳은 것은?',opts:['액체나 기체가 물체를 중력과 반대 방향인 위쪽으로 밀어 올리는 힘이다.','물속에서만 작용하고 공기 중에서는 작용하지 않는다.','물체의 질량이 클수록 항상 크다.','중력과 같은 방향으로 작용한다.'],exp:'부력은 <b>액체나 기체</b>가 물체를 <b>중력과 반대 방향인 위쪽</b>으로 밀어 올리는 힘이에요. 크기는 질량이 아니라 <b>잠긴 부피</b>에 따라 달라져요.'},
+  {type:'개념 이해 · 그림',q:'그림처럼 공기 중에 떠 있는 헬륨 풍선에 작용하는 부력의 방향은?',fig:'%%QB%%',opts:['위쪽 (중력과 반대 방향)','아래쪽 (중력과 같은 방향)','바람이 부는 방향','공기 중이므로 부력은 작용하지 않는다.'],exp:'공기(기체) 속에서도 부력이 작용하며, 방향은 언제나 <b>중력과 반대인 위쪽</b>이에요. (교과서 171쪽)'},
+  {type:'자료 해석 · 탐구',q:'힘 센서로 측정한 값이 (가) 추가 물에 잠기기 전 5.10 N, (다) 추가 물에 완전히 잠겼을 때 4.50 N이었다. (다)에서 추에 작용하는 부력의 크기는?',opts:['0.60 N','4.50 N','5.10 N','9.60 N'],exp:'부력 = (가)에 비해 <b>감소한 값</b> = 5.10 N − 4.50 N = <b>0.60 N</b>이에요. (탐구 ②)'},
+  {type:'개념 적용 · 탐구 정리',q:'추가 물에 잠길수록 힘 센서의 측정값이 감소하는 까닭으로 옳은 것은?',opts:['추의 무게(중력)는 일정한데, 위쪽으로 작용하는 부력이 커지기 때문','물속에서 추의 질량이 줄어들기 때문','물에 잠기면 추에 작용하는 중력이 사라지기 때문','물이 추를 아래쪽으로 당기기 때문'],exp:'힘 센서의 측정값은 <b>중력에서 부력을 뺀 값</b>이에요. 중력은 일정하고 잠길수록 부력이 커지므로 측정값이 줄어요.'},
+  {type:'자료 해석 · 그림',q:'그림은 같은 추를 물에 잠기게 한 정도를 다르게 한 모습이다. 추에 작용하는 부력의 크기를 옳게 비교한 것은?',fig:'%%QS%%',opts:['(다) > (나) > (가)','(가) > (나) > (다)','(가) = (나) = (다)','(나) > (다) > (가)'],exp:'물에 잠긴 부피가 클수록 부력이 커요. (가)는 잠기지 않았고 (다)는 완전히 잠겼으므로 <b>(다) &gt; (나) &gt; (가)</b>예요.'},
+  {type:'적용 · 그림 V-14',q:'용수철저울로 측정한 물체의 무게가 공기 중에서 15 N, 물에 완전히 잠겼을 때 9 N이었다. 이 물체에 작용하는 부력의 크기는?',opts:['6 N','9 N','15 N','24 N'],exp:'부력의 크기는 감소한 무게와 같아요. 15 N − 9 N = <b>6 N</b> (교과서 173쪽 그림 V-14)'},
+  {type:'통합 · 단원 평가',q:'무게가 같고 부피가 다른 A, B를 양팔저울에 매달아 수평을 맞춘 뒤, 두 물체를 물속에 완전히 잠기게 했다. 양팔저울은 어떻게 되는가?',fig:'%%QL%%',opts:['A 쪽으로 기운다.','B 쪽으로 기운다.','수평을 유지한다.','처음에는 A 쪽, 나중에는 B 쪽으로 기운다.'],exp:'무게는 같지만 <b>부피가 큰 B에 작용하는 부력이 더 커서</b> B 쪽이 위로 올라가고 저울은 <b>A 쪽으로</b> 기울어요. (탐구 ③)'},
+  {type:'적용 · 스스로 확인하기',q:'빈 페트병을 물속에 세워서 완전히 잠기게 했을 때와 눕혀서 완전히 잠기게 했을 때의 부력을 비교한 것으로 옳은 것은?',opts:['두 경우의 부력은 같다.','세웠을 때가 더 크다.','눕혔을 때가 더 크다.','세웠을 때는 부력이 작용하지 않는다.'],exp:'두 경우 모두 병 전체가 잠겨 <b>잠긴 부피가 같으므로 부력도 같아요</b>. (교과서 173쪽 스스로 확인하기 2, 탐구 ①)'},
+  {type:'가상실험 결과 · 그림 V-15',q:'물 위에 떠 있는 배에 짐을 더 실었을 때에 대한 설명으로 옳은 것은?',opts:['배가 물에 더 잠겨 잠긴 부피가 커지므로 부력도 커진다.','배가 무거워졌으므로 부력은 작아진다.','부력의 크기는 짐과 관계없이 일정하다.','짐을 실으면 부력의 방향이 아래쪽으로 바뀐다.'],exp:'짐을 실어 무게가 커지면 배의 아랫부분이 물에 더 잠겨요. <b>잠긴 부피가 커지므로 부력도 커져요</b>. (탐구 ④)'},
+  {type:'적용 · 스티커 연계',q:'공기(기체)의 부력을 이용한 예로 옳은 것은?',opts:['열기구','구명조끼','튜브','부표'],exp:'열기구·헬륨 풍선·비행선은 <b>공기(기체)의 부력</b>을, 구명조끼·튜브·부표·배는 <b>물(액체)의 부력</b>을 이용해요. (스티커 판 3)'}
+];
+QUIZ[1].fig=qBalloonSVG(); QUIZ[4].fig=qSensorSVG(); QUIZ[6].fig=qBalanceSVG();
+let qz=null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(list,retry){ qz={list:shuffle(list||QUIZ.map((_,i)=>i)),i:0,score:0,wrong:[],t0:Date.now(),answered:false,streak:0,retry:!!retry,done:false}; if(cur!==5) goTo(5); renderQuestion(); }
+function renderQuestion(){
+  const qi=qz.list[qz.i], q=QUIZ[qi]; qz.answered=false; qz.order=shuffle(q.opts.map((_,i)=>i));
+  $('qNum').textContent=(qz.i+1)+' / '+qz.list.length; $('qBar').style.width=(qz.i/qz.list.length*100)+'%';
+  const card=$('qCard'); card.classList.remove('q-card'); void card.offsetWidth; card.classList.add('q-card');
+  card.innerHTML=`<span class="q-type">${q.type}</span>${qz.retry?' <span class="q-type" style="background:#fff0e2;color:#b35300">다시 풀기</span>':''}<div class="q-text">Q${qz.i+1}. ${q.q}</div>${q.fig?`<div class="q-fig">${q.fig}</div>`:''}
+    <div id="opts">${qz.order.map((oi,k)=>`<button class="opt" data-oi="${oi}"><span class="n">${'①②③④'[k]}</span><span>${q.opts[oi]}</span></button>`).join('')}</div><div id="fb"></div>`;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  $('qNext').classList.add('hidden');
+}
+function answer(btn){
+  if(qz.answered) return; qz.answered=true;
+  const qi=qz.list[qz.i], q=QUIZ[qi], ok=+btn.dataset.oi===0;
+  $('qCard').querySelectorAll('.opt').forEach(b=>{ if(+b.dataset.oi===0) b.classList.add('correct'); });
+  if(ok){ qz.score++; qz.streak++; sfx(qz.streak>=3?'combo':'correct'); burstAt(btn,{count:qz.streak>=3?60:34,speed:qz.streak>=3?11:8});
+    const r=btn.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,qz.streak>=3?`🔥 ${qz.streak}연속!`:'정답! +1',qz.streak>=3?'#ff6a00':'#12a874');
+    const cb=$('combo'); cb.textContent=qz.streak>=2?`🔥 ${qz.streak}연속`:''; cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump');
+  } else { qz.streak=0; btn.classList.add('wrong'); sfx('wrong'); qz.wrong.push(qi); $('combo').textContent=''; if(navigator.vibrate) try{navigator.vibrate(80);}catch(e){} }
+  $('fb').innerHTML=`<div class="feedback ${ok?'ok':'no'}"><b class="big">${ok?'⭕ 정답이에요!':'❌ 아쉬워요! 정답은 초록색 보기예요.'}</b><br>${q.exp}</div>`;
+  $('qBar').style.width=((qz.i+1)/qz.list.length*100)+'%';
+  const nb=$('qNext'); nb.textContent=qz.i===qz.list.length-1?'결과 보기 🏁':'다음 문제 →'; nb.classList.remove('hidden');
+  setTimeout(()=>{ const r=$('fb').getBoundingClientRect(); if(r.bottom>innerHeight) window.scrollBy({top:r.bottom-innerHeight+90,behavior:'smooth'}); },60);
+}
+function nextQ(){ sfx('tap'); if(qz.i<qz.list.length-1){ qz.i++; renderQuestion(); window.scrollTo(0,0); } else showResult(); }
+function showResult(){
+  qz.done=true; const total=qz.list.length, sc=qz.score, rate=sc/total, sec=Math.round((Date.now()-qz.t0)/1000);
+  goTo(6);
+  const stars=rate>=.9?3:rate>=.7?2:rate>=.4?1:0;
+  $('trophy').textContent=rate>=.9?'🏆':rate>=.7?'🥈':'💪';
+  $('trophy').style.animation='none'; void $('trophy').offsetWidth; $('trophy').style.animation='';
+  [...$('stars').children].forEach((s,i)=>{ s.classList.remove('on'); if(i<stars) setTimeout(()=>{ s.classList.add('on'); sfx('pop'); burstAt(s,{count:14,speed:6,shapes:['s'],colors:['#ffd43b','#ffb238']}); },500+i*320); });
+  $('scoreBig').parentElement.nextElementSibling; $('scoreBig').nextElementSibling.textContent=' / '+total;
+  let n=0; const el=$('scoreBig'); el.textContent='0'; const tm=setInterval(()=>{ if(n>=sc){ clearInterval(tm); return; } n++; el.textContent=n; sfx('tick'); },110);
+  $('resultMsg').textContent=qz.retry?`틀렸던 ${total}문제 중 ${sc}문제를 맞혔어요!`:rate===1?'완벽해요! 부력 박사 인정! 🎉':rate>=.8?'아주 잘했어요! 부력의 방향과 크기를 잘 이해했어요.':rate>=.5?'좋아요! 틀린 문제를 다시 풀어 보면 완벽해질 거예요.':'괜찮아요! 개념과 가상실험을 다시 보고 도전해 봐요.';
+  $('resultTime').textContent=`⏱ 걸린 시간 ${Math.floor(sec/60)}분 ${sec%60}초`;
+  $('wrongBox').innerHTML=qz.wrong.length?'<h3>📌 틀린 문제</h3>'+qz.wrong.map(qi=>`<p style="color:var(--color-text)">• ${QUIZ[qi].q}<br><span class="muted">정답: ${QUIZ[qi].opts[0]}</span></p>`).join(''):'<h3>🎯 틀린 문제가 없어요!</h3><p>모든 문제를 맞혔어요.</p>';
+  $('retryWrong').classList.toggle('hidden',!qz.wrong.length);
+  setTimeout(()=>{ if(rate>=.8){ sfx('fanfare'); fireworks(); } else { sfx('correct'); confetti(innerWidth/2,innerHeight*.3,{count:50,speed:9}); } },350);
+}
+
+/* ============ 시작 ============ */
+function init(){
+  const bb=$('bgBubbles'); for(let i=0;i<16;i++){ const s=document.createElement('span'); const z=10+Math.random()*34; s.style.width=s.style.height=z+'px'; s.style.left=Math.random()*100+'%'; s.style.animationDuration=(12+Math.random()*16)+'s'; s.style.animationDelay=(-Math.random()*20)+'s'; s.style.opacity=.35+Math.random()*.4; bb.appendChild(s); }
+  FX.cv=$('fx'); FX.ctx=FX.cv.getContext('2d'); fxResize(); addEventListener('resize',fxResize);
+  const sb=$('soundBtn'); const upd=()=>{ sb.textContent=SND.on?'🔊':'🔇'; }; upd();
+  sb.addEventListener('click',()=>{ SND.on=!SND.on; lsSet('sound',SND.on); upd(); if(SND.on) sfx('correct'); toast(SND.on?'🔊 효과음 켜짐':'🔇 효과음 꺼짐'); });
+  document.addEventListener('pointerdown',e=>{ const b=e.target.closest('.btn'); if(!b||b.disabled) return; const r=b.getBoundingClientRect(), z=Math.max(r.width,r.height); const s=document.createElement('span'); s.className='ripple'; s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px'; b.appendChild(s); setTimeout(()=>s.remove(),650); });
+  document.addEventListener('pointerdown',e=>{ if(e.target.closest('.chip,.tab,.step-dot,.icon-btn,.board-tab,.btn,.myth,.life-card,.hold-btn')) confetti(e.clientX,e.clientY,{count:7,speed:3.5,size:5,g:.1,decay:.045,shapes:['c','s'],colors:['#4dabf7','#a5d8ff','#ffd43b','#f08c00','#69db7c']}); });
+  document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ goTo(+g.dataset.go); return; } const t=e.target.closest('[data-tabgo]'); if(t){ setTab(t.dataset.tabgo); } });
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+  document.querySelectorAll('[data-save]').forEach(t=>{ const k=t.dataset.save; t.value=lsGet('note-'+k,''); let tm=null;
+    t.addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(()=>{ lsSet('note-'+k,t.value); const s=$('saved-'+k); if(s){ s.textContent='저장됨 ✓'; setTimeout(()=>s.textContent='',1500); } },400); }); });
+  document.querySelectorAll('[data-save-check]').forEach(c=>{ const k='chk-'+c.dataset.saveCheck; c.checked=!!lsGet(k,false); c.addEventListener('change',()=>{ lsSet(k,c.checked); if(c.checked){ sfx('pop'); burstAt(c,{count:12,speed:5,size:6}); if([...document.querySelectorAll('[data-save-check]')].every(x=>x.checked)){ sfx('combo'); toast('✅ 학습목표를 모두 달성했어요!'); } } }); });
+  // 도입
+  $('heroBox').innerHTML=heroSVG();
+  $('startBtn').addEventListener('click',()=>{ goTo(1); });
+  const pg=lsGet('progress',0); if(pg>0){ $('resumeBtn').classList.remove('hidden'); $('resumeBtn').addEventListener('click',()=>goTo(pg)); }
+  $('thinkAnsBtn').addEventListener('click',()=>{ const a=$('thinkAns'); const h=a.classList.toggle('hidden'); sfx('tap'); $('thinkAnsBtn').textContent=h?'예시 답안 보기':'예시 답안 숨기기'; });
+  $('swimBox').innerHTML=swimSVG(); let vest=false, swimming=false;
+  const swReset=()=>{ const g=$('swimmer'); g.style.transition='none'; g.style.transform='translateY(-40px)'; $('swimArrow').classList.remove('on'); $('vest').style.display=vest?'':'none'; };
+  $('swimVest').querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(swimming) return; vest=c.dataset.vest==='1'; $('swimVest').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); swReset(); sfx(vest?'stick':'tap'); }));
+  $('swimBtn').addEventListener('click',()=>{ if(swimming) return; swimming=true; swReset(); const g=$('swimmer'), L=vest?74:40;
+    $('swimArrow').innerHTML=arw(262,150,262,150-L,C_BUOY,7)+txt(272,150-L/2,vest?'부력 (커짐!)':'부력',{a:'start',s:15,c:C_BUOY});
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ g.style.transition=REDUCED?'transform .3s':''; g.style.transform=`translateY(${vest?26:46}px)`; $('swimArrow').classList.add('on'); }));
+    setTimeout(()=>{ sfx('splash'); },REDUCED?50:420); setTimeout(()=>{ sfx('bubble'); },REDUCED?100:900);
+    setTimeout(()=>{ swimming=false; toast(vest?'🦺 구명조끼를 입으니 몸이 더 높이 떠요!':'🙂 물속에서 몸을 밀어 올리는 힘이 있어요!'); burstAt($('swimBox'),{count:14,speed:5,colors:['#4dabf7','#a5d8ff','#fff']}); },REDUCED?400:1700); });
+  // 모듈
+  buildConcepts(); buildExperiments(); buildLife(); stkLoad();
+  $('stkCheck').addEventListener('click',checkStickers);
+  $('stkReset').addEventListener('click',()=>{ const st=STK.boards[STK.cur]; Object.assign(st,{placed:{},ok:{},tries:0,done:false,hint:{}}); picked=null; stkSave(); sfx('peel'); renderBoardFrame(); });
+  $('stkNext').addEventListener('click',()=>{ if(STK.cur<BOARDS.length-1){ STK.cur++; picked=null; stkSave(); sfx('unlock'); renderBoardFrame(); window.scrollTo(0,0); } });
+  $('toQuiz').addEventListener('click',()=>{ startQuiz(); });
+  $('qNext').addEventListener('click',nextQ);
+  $('retryWrong').addEventListener('click',()=>startQuiz(qz.wrong.slice(),true));
+  $('retryAll').addEventListener('click',()=>startQuiz());
+  enterHooks[2]=()=>{ setTab(curTab); };
+  enterHooks[3]=()=>{ renderBoardFrame(); };
+  enterHooks[5]=()=>{ if(!qz||qz.done) startQuiz(); };
+  curTab=lsGet('tab','plan'); if(!$('tab-'+curTab)) curTab='plan';
+  goTo(0);
+}
+init();
+
+</script>
+</body>
+</html>
