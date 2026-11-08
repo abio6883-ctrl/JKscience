@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마찰 전기와 정전기 유도 가상실험실</title>
+<style>
+:root{
+  --color-primary:#3361e8;
+  --color-primary-dark:#1f43b8;
+  --color-secondary:#0fb59b;
+  --color-accent:#ff8a3d;
+  --color-bg:#f1f0ff;
+  --color-surface:#ffffff;
+  --color-text:#1b1d4a;
+  --color-text-light:#5a5f80;
+  --color-success:#12a874;
+  --color-error:#e5484d;
+  --art:#e03131;
+  --ven:#4263eb;
+  --kid:#c2255c;
+  --urine:#f5b700;
+  --filt:#7048e8;
+  --reab:#12b886;
+  --sec:#f76707;
+  --line:#e2e3f3;
+  --radius:20px;
+  --shadow:0 10px 30px rgba(60,40,140,.10);
+  --shadow-s:0 4px 12px rgba(60,40,140,.10);
+  --font:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;font-family:var(--font);color:var(--color-text);}
+body{overflow-x:hidden;background:radial-gradient(1200px 600px at 10% -10%,#dfe8ff 0,transparent 60%),radial-gradient(900px 500px at 110% 10%,#d9fbf3 0,transparent 55%),var(--color-bg);min-height:100vh;}
+button{font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#bgBubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+#bgBubbles span{position:absolute;bottom:-80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(120,170,255,.25) 60%,rgba(120,170,255,.05));animation:rise linear infinite;}
+@keyframes rise{to{transform:translateY(-120vh) translateX(30px);}}
+#fx{position:fixed;inset:0;width:100vw !important;height:100vh;pointer-events:none;z-index:9000;background:transparent !important;border-radius:0 !important;}
+#app{position:relative;z-index:1;max-width:980px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:12px 16px 70px;}
+/* 상단 바 */
+.topbar{position:sticky;top:0;z-index:50;margin:0 -16px 14px;padding:10px 16px 8px;background:rgba(238,243,255,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.topbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brand{font-weight:800;font-size:15px;color:var(--color-primary-dark);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brand i{font-style:normal;margin-right:4px;}
+.icon-btn{border:none;background:#fff;border-radius:14px;min-width:48px;height:48px;font-size:21px;box-shadow:var(--shadow-s);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.icon-btn:active{transform:scale(.92);}
+.step-indicator{display:flex;gap:6px;}
+.step-dot{flex:1;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:12px;color:var(--color-text-light);min-width:0;background:none;border:none;padding:0;min-height:40px;}
+.step-dot i{display:block;width:100%;height:8px;border-radius:5px;background:#d7e0f5;position:relative;overflow:hidden;}
+.step-dot i::after{content:'';position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--color-secondary),#3ad1b8);border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.step-dot.done i::after{width:100%;}
+.step-dot.active i::after{width:100%;background:linear-gradient(90deg,var(--color-primary),#6a8cff);}
+.step-dot.active{color:var(--color-primary);font-weight:800;}
+.step-dot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* 화면 전환 */
+.screen{display:none;flex:1;flex-direction:column;}
+.screen.active{display:flex;animation:screenIn .5s cubic-bezier(.2,.8,.2,1);}
+.screen.active.back{animation:screenInBack .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes screenIn{from{opacity:0;transform:translateX(40px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes screenInBack{from{opacity:0;transform:translateX(-40px) scale(.985);}to{opacity:1;transform:none;}}
+.screen.active .rise-in{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 80ms);}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+h1{font-size:clamp(28px,5.4vw,42px);margin:6px 0 8px;line-height:1.25;letter-spacing:-.02em;}
+h2{font-size:clamp(21px,3.6vw,27px);margin:0 0 10px;letter-spacing:-.01em;}
+h3{font-size:18px;margin:0 0 8px;}
+p{line-height:1.7;color:var(--color-text-light);margin:6px 0;}
+b,strong{color:var(--color-text);}
+.grad-text{background:linear-gradient(100deg,#2448d8,#3a8bff 45%,#13b8a0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.card{background:var(--color-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.7);}
+.btn{position:relative;overflow:hidden;border:none;border-radius:16px;padding:14px 24px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,#3d6cff,#2448d8);min-height:52px;box-shadow:0 6px 0 #1a37a3,0 10px 20px rgba(36,72,216,.25);transition:transform .12s,box-shadow .12s;}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1a37a3,0 4px 10px rgba(36,72,216,.2);}
+.btn.secondary{background:#fff;color:var(--color-primary);box-shadow:0 5px 0 #c6d3f5,0 8px 16px rgba(36,72,216,.08);}
+.btn.secondary:active{box-shadow:0 1px 0 #c6d3f5;}
+.btn.mint{background:linear-gradient(135deg,#21c9a9,#0d9e86);box-shadow:0 6px 0 #0a7a67,0 10px 20px rgba(13,158,134,.25);}
+.btn.small{padding:10px 16px;font-size:15px;min-height:48px;border-radius:14px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none;}
+.btn.secondary .ripple{background:rgba(51,97,232,.2);}
+@keyframes ripple{to{transform:scale(4);opacity:0;}}
+.pulse{animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 6px 0 #1a37a3,0 0 0 0 rgba(61,108,255,.45);}50%{box-shadow:0 6px 0 #1a37a3,0 0 0 14px rgba(61,108,255,0);}}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:20px;}
+.btn-row.center{justify-content:center;}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 10px;}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#e3eaff;color:var(--color-primary-dark);font-size:13px;font-weight:800;}
+.badge.teal{background:#d8f6ef;color:#0a7f6c;}
+.badge.ext{background:#fff0e2;color:#b35300;font-size:12px;padding:3px 9px;vertical-align:middle;}
+.muted{font-size:13px;color:var(--color-text-light);}
+.row{display:flex;gap:14px;flex-wrap:wrap;}
+.row>*{flex:1 1 300px;min-width:0;}
+.hidden{display:none !important;}
+.gas-o2{color:var(--o2);font-weight:800;}
+.gas-co2{color:var(--co2);font-weight:800;}
+/* 도입 */
+#screen-intro{text-align:center;}
+.unit-tag{display:inline-block;font-size:14px;font-weight:800;color:#0a7f6c;background:#d8f6ef;padding:6px 14px;border-radius:999px;}
+.hero{width:min(260px,62vw);margin:4px auto 0;}
+.hero svg{width:100%;height:auto;display:block;overflow:visible;}
+.hero .lungs{transform-origin:130px 70px;animation:breathe 4s ease-in-out infinite;}
+.hero .dia{animation:diaMove 4s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:scale(.94);}50%{transform:scale(1.06);}}
+@keyframes diaMove{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
+.hero .puff{animation:puff 4s ease-in-out infinite;transform-origin:130px 10px;}
+@keyframes puff{0%,40%{opacity:0;transform:translateY(-14px) scale(.6);}50%{opacity:1;}90%,100%{opacity:0;transform:translateY(40px) scale(1);}}
+.goal-list{text-align:left;max-width:600px;margin:14px auto;padding:0;list-style:none;}
+.goal-list li{background:var(--color-surface);border-radius:14px;padding:13px 14px 13px 50px;margin-bottom:9px;box-shadow:var(--shadow-s);position:relative;line-height:1.55;}
+.goal-list li::before{content:attr(data-n);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:640px;margin:12px auto;}
+.flow div{background:var(--color-surface);border-radius:14px;padding:8px 2px;font-size:12px;box-shadow:var(--shadow-s);font-weight:700;color:var(--color-text-light);}
+.flow div b{display:block;font-size:22px;margin-bottom:2px;}
+.think{max-width:640px;margin:12px auto;text-align:left;}
+.breath-guide{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:8px 0 12px;}
+.breath-ball{width:96px;height:96px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffffff,#8fc6ff 45%,#3361e8);box-shadow:0 10px 30px rgba(51,97,232,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;transform:scale(.7);transition:transform 4s ease-in-out;}
+/* 개념 */
+.core-idea{position:relative;overflow:hidden;background:linear-gradient(130deg,#2448d8,#3a8bff 55%,#13b8a0);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:0 14px 30px rgba(36,72,216,.28);}
+.core-idea::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{50%{transform:translate(-12px,14px) scale(1.08);}}
+.core-idea .lbl{font-size:13px;font-weight:800;opacity:.92;letter-spacing:.06em;}
+.core-idea p{color:#fff;font-size:18px;margin:6px 0 0;line-height:1.65;position:relative;z-index:1;}
+.core-idea b{color:#fff;background:rgba(255,255,255,.18);padding:0 4px;border-radius:6px;}
+.concept-card>.head{display:flex;align-items:center;gap:12px;cursor:pointer;min-height:52px;}
+.concept-card>.head .num{flex:none;width:38px;height:38px;border-radius:12px;background:#e3eaff;color:var(--color-primary);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.concept-card>.head strong{flex:1;font-size:17px;}
+.concept-card>.head .chev{transition:transform .3s;color:var(--color-text-light);font-size:18px;}
+.concept-card.open>.head .chev{transform:rotate(180deg);}
+.concept-card.seen>.head .num{background:var(--color-secondary);color:#fff;}
+.concept-card .concept-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1);}
+.concept-card.open .concept-body{grid-template-rows:1fr;}
+.concept-card .concept-body>div{overflow:hidden;}
+.concept-card .concept-body>div>*:first-child{margin-top:12px;}
+.analogy{background:#fff7ee;border-left:5px solid var(--color-accent);border-radius:12px;padding:11px 13px;margin:8px 0;font-size:15px;line-height:1.65;}
+.info-panel{background:#f1f5ff;border-radius:14px;padding:12px 14px;min-height:66px;font-size:15px;line-height:1.65;transition:background .3s;}
+.info-panel.flash{animation:flashBg .6s;}
+@keyframes flashBg{0%{background:#dce6ff;}100%{background:#f1f5ff;}}
+.info-panel b{color:var(--color-primary-dark);}
+.diagram-wrap{max-width:560px;margin:0 auto;position:relative;}
+.diagram-wrap svg{width:100%;height:auto;display:block;}
+svg .part{cursor:pointer;transition:filter .2s;}
+svg .part:hover{filter:brightness(1.06);}
+svg .part.sel{filter:drop-shadow(0 0 6px rgba(51,97,232,.9));}
+.tbl-wrap{overflow-x:auto;}
+table.tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:15px;min-width:420px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;text-align:center;vertical-align:middle;line-height:1.45;}
+table.tbl tr>*:last-child{border-right:none;}
+table.tbl tr:last-child>*{border-bottom:none;}
+table.tbl th{background:#eef3ff;}
+table.tbl td.rev{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#effcf8;font-weight:700;color:#0a6d5d;}
+table.tbl td.q{color:#a6b1cc;font-weight:800;}
+@keyframes popIn{0%{transform:scale(.4);opacity:0;}100%{transform:none;opacity:1;}}
+.myth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;}
+.myth{background:var(--color-surface);border-radius:16px;box-shadow:var(--shadow-s);padding:14px;cursor:pointer;min-height:110px;position:relative;}
+.myth .no{color:#b4232a;font-weight:800;margin-bottom:6px;line-height:1.5;}
+.myth .yes{color:#0a6d5d;line-height:1.6;font-size:15px;display:none;}
+.myth .tapme{font-size:13px;color:var(--color-text-light);}
+.myth.open .yes{display:block;animation:riseIn .45s both;}
+.myth.open .tapme{display:none;}
+.myth.open .no{text-decoration:line-through;text-decoration-color:rgba(180,35,42,.5);}
+.area-demo{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.area-demo canvas{flex:1 1 260px;max-width:340px;}
+.area-demo .area-ctrl{flex:1 1 220px;}
+.meter{height:16px;border-radius:9px;background:#e6ecf8;overflow:hidden;margin:4px 0 10px;}
+.meter>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#21c9a9,#3361e8);transition:width .4s cubic-bezier(.2,.8,.2,1);}
+/* 탐구 */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:10px;scrollbar-width:thin;}
+.tab{flex:none;border:none;border-radius:14px;padding:10px 15px;font-size:15px;font-weight:800;background:#fff;color:var(--color-text-light);min-height:48px;box-shadow:var(--shadow-s);transition:all .2s;}
+.tab.active{background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;transform:translateY(-1px);}
+.tabpane{display:none;}
+.tabpane.active{display:block;animation:riseIn .45s both;}
+.plan-step{display:flex;gap:12px;margin-bottom:12px;}
+.plan-step .k{flex:none;width:86px;font-weight:800;color:var(--color-primary);font-size:15px;padding-top:2px;}
+.plan-step .v{flex:1;line-height:1.65;color:var(--color-text);font-size:15px;min-width:0;}
+.plan-step ol{margin:0;padding-left:20px;}
+textarea,.inp{width:100%;border-radius:14px;border:1.5px solid #d3dcf0;padding:11px;font-family:var(--font);font-size:15px;resize:vertical;background:#fff;color:var(--color-text);transition:border .2s,box-shadow .2s;}
+textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 4px rgba(51,97,232,.15);}
+textarea{min-height:68px;}
+.saved{font-size:12px;color:var(--color-success);height:16px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.ctrl label{font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
+.ctrl label em{font-style:normal;color:var(--color-primary);}
+input[type=range]{width:100%;height:44px;accent-color:var(--color-primary);}
+.toggle{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{border:2px solid #d3dcf0;background:#fff;border-radius:999px;padding:9px 15px;font-size:15px;font-weight:800;min-height:46px;color:var(--color-text);transition:all .2s;}
+.chip.on{border-color:var(--color-primary);background:#e8eeff;color:var(--color-primary-dark);}
+.chip.warn.on{border-color:var(--color-error);background:#ffeced;color:#a3161b;}
+canvas{display:block;width:100%;border-radius:16px;background:#fff;touch-action:manipulation;}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:10px 0;}
+.readout div{background:#f1f5ff;border-radius:14px;padding:9px 11px;}
+.readout small{display:block;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.readout b{font-size:21px;font-variant-numeric:tabular-nums;}
+.state-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-weight:800;font-size:15px;background:#eef1f8;color:var(--color-text-light);transition:all .3s;}
+.state-pill.in{background:#e0f1ff;color:#0f62b8;}
+.state-pill.out{background:#f1e9ff;color:#5b2fc4;}
+.model-wrap{max-width:420px;margin:0 auto;position:relative;touch-action:none;}
+.model-wrap svg{width:100%;height:auto;display:block;}
+.hold-btn{width:100%;border:none;border-radius:22px;min-height:84px;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(135deg,#45b3ff,#3361e8);box-shadow:0 8px 0 #2245b5,0 14px 28px rgba(51,97,232,.3);user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .12s,box-shadow .12s,background .3s;}
+.hold-btn.holding{transform:translateY(6px);box-shadow:0 2px 0 #2245b5,0 6px 16px rgba(51,97,232,.3);background:linear-gradient(135deg,#2ec4a6,#0f8f7b);}
+.gauge{position:relative;height:22px;border-radius:12px;background:linear-gradient(90deg,#7a4ff0 0%,#e9e3ff 38%,#eef2f8 50%,#e0f1ff 62%,#45b3ff 100%);margin:6px 0 2px;}
+.gauge i{position:absolute;top:-5px;width:6px;height:32px;border-radius:3px;background:#16204a;left:50%;transform:translateX(-50%);transition:left .12s;}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.lock-note{font-size:13px;color:var(--color-text-light);}
+.rec-table td,.rec-table th{font-size:14px;padding:7px;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--color-text-light);font-weight:700;margin:6px 0;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;}
+.legend i.tri{border-radius:2px;transform:rotate(45deg);width:11px;height:11px;}
+/* 스티커 */
+.board-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;}
+.board-tab{flex:none;border:none;background:#fff;border-radius:14px;padding:9px 13px;min-height:48px;font-weight:800;font-size:14px;color:var(--color-text-light);box-shadow:var(--shadow-s);}
+.board-tab.active{background:linear-gradient(135deg,#ffb238,#ff7a2f);color:#fff;}
+.board-tab.locked{opacity:.55;}
+.board-tab.done::after{content:' ✔';}
+.sticker-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;}
+.sticker-status .pill{background:#fff;border-radius:999px;padding:7px 13px;font-weight:800;font-size:14px;box-shadow:var(--shadow-s);}
+.sticker-board{position:relative;}
+.sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:76px;background:repeating-linear-gradient(45deg,#fffaf0,#fffaf0 12px,#fff4de 12px,#fff4de 24px);border:2px dashed #f2c98a;}
+.sticker-tray .tray-lbl{width:100%;font-size:13px;font-weight:800;color:#b36b00;}
+.sticker{position:relative;border:none;border-radius:13px;padding:11px 15px;font-size:16px;font-weight:800;min-height:48px;color:#3b2a00;background:linear-gradient(160deg,#fff,#fff3c4);box-shadow:0 3px 0 rgba(0,0,0,.12),0 6px 12px rgba(150,100,0,.12);transform:rotate(var(--tilt,0deg));transition:transform .18s,box-shadow .18s;}
+.sticker::before{content:'';position:absolute;inset:3px;border:1.5px dashed rgba(180,130,0,.35);border-radius:10px;pointer-events:none;}
+.sticker.c1{background:linear-gradient(160deg,#fff,#d6ecff);color:#0d3f78;}
+.sticker.c2{background:linear-gradient(160deg,#fff,#ffdbe2);color:#7c1430;}
+.sticker.c3{background:linear-gradient(160deg,#fff,#dcf8ee);color:#0a5747;}
+.sticker.c4{background:linear-gradient(160deg,#fff,#ece3ff);color:#3c1f8f;}
+.sticker.picked{transform:rotate(0) scale(1.12) translateY(-4px);box-shadow:0 12px 22px rgba(0,0,0,.22);outline:3px solid var(--color-primary);outline-offset:2px;z-index:3;}
+.sticker.wiggle{animation:wiggle .9s ease-in-out infinite;}
+@keyframes wiggle{0%,100%{transform:rotate(-2deg) scale(1.12) translateY(-4px);}50%{transform:rotate(2deg) scale(1.12) translateY(-4px);}}
+.slot{min-height:50px;min-width:86px;border:2.5px dashed #b6c3e2;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:4px;position:relative;background:rgba(255,255,255,.92);transition:border-color .2s,background .2s,transform .2s;}
+.slot .sticker{padding:8px 10px;font-size:15px;min-height:40px;transform:none;}
+.slot.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+@keyframes slotGlow{50%{box-shadow:0 0 0 5px rgba(51,97,232,.18);}}
+.slot.ok{border-style:solid;border-color:var(--color-success);background:#ecfbf5;}
+.slot.ok::after{content:'✔';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-success);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;animation:popIn .4s cubic-bezier(.3,1.6,.5,1);z-index:2;}
+.slot.no{border-style:solid;border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.slot.no::after{content:'✖';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-error);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+.slot .hint{font-size:12px;color:var(--color-text-light);line-height:1.3;text-align:center;}
+.slot.abs{position:absolute;transform:translate(-50%,-50%);}
+.slot.abs.no{animation:shakeAbs .45s;}
+@keyframes shakeAbs{0%,100%{transform:translate(-50%,-50%);}25%{transform:translate(calc(-50% - 7px),-50%);}75%{transform:translate(calc(-50% + 7px),-50%);}}
+.svg-board{position:relative;max-width:540px;margin:0 auto;}
+.svg-board svg{width:100%;height:auto;display:block;}
+.stk-msg{min-height:26px;font-size:15px;line-height:1.6;margin-top:8px;}
+.stk-msg .h{display:block;color:#a35a00;}
+.complete-banner{position:relative;text-align:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,#fff7e6,#ffe8f0);margin-top:12px;overflow:hidden;}
+.complete-banner p{color:var(--color-text);font-weight:700;}
+.stamp{position:absolute;right:14px;top:10px;font-size:22px;font-weight:900;color:#e5484d;border:4px solid #e5484d;border-radius:12px;padding:3px 10px;transform:rotate(-14deg);opacity:.9;animation:stamp .6s cubic-bezier(.2,1.8,.4,1);background:rgba(255,255,255,.6);}
+@keyframes stamp{0%{transform:rotate(-14deg) scale(3);opacity:0;}100%{transform:rotate(-14deg) scale(1);opacity:.9;}}
+.gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;}
+.gx-panel{background:#f7f9ff;border-radius:16px;padding:12px;}
+.gx-panel h4{margin:0 0 8px;font-size:15px;}
+.gx-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.gx-box{border-radius:16px;padding:14px 6px;text-align:center;font-weight:800;font-size:15px;color:#fff;min-height:118px;display:flex;align-items:center;justify-content:center;}
+.gx-box.alv{background:radial-gradient(circle at 35% 35%,#ffd0da,#ff8fa6);color:#6b1028;}
+.gx-box.cap{background:linear-gradient(180deg,#ff6b6b,#c92a4a);}
+.gx-box.cell{background:radial-gradient(circle at 40% 40%,#fff0c2,#f5c451);color:#5c3d00;}
+.gx-arrows{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.gx-arrows .arw{font-size:13px;font-weight:900;color:var(--color-text-light);line-height:1;}
+.gx-principle{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-weight:800;flex-wrap:wrap;}
+/* 실생활 */
+.life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.life-card{background:var(--color-surface);border-radius:18px;box-shadow:var(--shadow);padding:16px;cursor:pointer;transition:transform .2s;position:relative;overflow:hidden;}
+.life-card:active{transform:scale(.98);}
+.life-card .ic{font-size:40px;line-height:1;display:inline-block;transition:transform .4s cubic-bezier(.3,1.6,.5,1);}
+.life-card.open .ic{transform:scale(1.15) rotate(-8deg);}
+.life-card h3{margin:8px 0 6px;}
+.life-card .why{display:none;}
+.life-card.open .why{display:block;animation:riseIn .45s both;}
+.life-card .more{font-size:13px;font-weight:800;color:var(--color-primary);}
+.life-card.open .more{display:none;}
+.link-tag{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:#0a7f6c;background:#d8f6ef;border-radius:999px;padding:4px 10px;}
+/* 퀴즈 */
+.quiz-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.quiz-progress{flex:1;height:12px;border-radius:7px;background:#dde5f6;overflow:hidden;}
+.quiz-progress i{display:block;height:100%;background:linear-gradient(90deg,#21c9a9,#3361e8);border-radius:7px;transition:width .5s cubic-bezier(.2,.8,.2,1);width:0;}
+.combo{font-weight:900;color:#ff6a00;min-width:70px;text-align:right;font-size:15px;}
+.combo.bump{animation:bump .5s cubic-bezier(.3,1.8,.5,1);}
+@keyframes bump{0%{transform:scale(1.8);}100%{transform:scale(1);}}
+.q-card{animation:qIn .45s cubic-bezier(.2,.8,.2,1);}
+@keyframes qIn{from{opacity:0;transform:translateX(30px) rotate(1deg);}to{opacity:1;transform:none;}}
+.q-type{display:inline-block;font-size:12px;font-weight:800;background:#e3eaff;color:var(--color-primary-dark);padding:4px 10px;border-radius:999px;margin-bottom:6px;}
+.q-text{font-size:18px;font-weight:800;line-height:1.6;margin:4px 0 12px;}
+.q-fig{margin:6px 0 12px;}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid #d3dcf0;background:#fff;border-radius:16px;padding:13px 14px;font-size:16px;margin-bottom:10px;min-height:54px;line-height:1.5;color:var(--color-text);transition:transform .12s,border-color .2s,background .2s;}
+.opt:active{transform:scale(.98);}
+.opt .n{flex:none;width:28px;height:28px;border-radius:9px;background:#eef2fb;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.opt.correct{border-color:var(--color-success);background:#e9fbf4;animation:correctPop .5s cubic-bezier(.3,1.6,.5,1);}
+.opt.correct .n{background:var(--color-success);color:#fff;}
+.opt.wrong{border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.opt.wrong .n{background:var(--color-error);color:#fff;}
+@keyframes correctPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+.feedback{border-radius:16px;padding:13px 15px;margin-top:6px;line-height:1.65;font-size:15px;animation:riseIn .4s both;}
+.feedback.ok{background:#e9fbf4;}
+.feedback.no{background:#fff3e8;}
+.feedback b.big{font-size:17px;}
+/* 결과 */
+.result-hero{text-align:center;}
+.trophy{font-size:84px;line-height:1;display:inline-block;animation:trophy 1s cubic-bezier(.3,1.6,.5,1) both;}
+@keyframes trophy{0%{transform:scale(0) rotate(-30deg);}100%{transform:none;}}
+.score-big{font-size:64px;font-weight:900;line-height:1.1;}
+.stars{font-size:38px;letter-spacing:6px;}
+.stars span{display:inline-block;opacity:.18;filter:grayscale(1);}
+.stars span.on{opacity:1;filter:none;animation:starIn .5s cubic-bezier(.3,1.8,.5,1) both;}
+@keyframes starIn{0%{transform:scale(0) rotate(-90deg);}100%{transform:none;}}
+.check-list label{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.55;cursor:pointer;min-height:48px;}
+.check-list input{width:24px;height:24px;flex:none;accent-color:var(--color-success);margin-top:1px;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120px);background:#16204a;color:#fff;padding:12px 20px;border-radius:999px;font-weight:800;z-index:9500;transition:transform .4s cubic-bezier(.3,1.5,.5,1);box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:92vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.float-txt{position:fixed;z-index:9600;pointer-events:none;font-weight:900;font-size:22px;animation:floatUp 1.1s ease-out forwards;text-shadow:0 2px 0 #fff,0 0 8px #fff;}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6);}20%{opacity:1;transform:translate(-50%,-14px) scale(1.15);}100%{opacity:0;transform:translate(-50%,-70px) scale(1);}}
+footer{text-align:center;font-size:12px;color:#8a94b2;padding:24px 0 6px;letter-spacing:.03em;}
+@media (max-width:560px){
+  #app{padding:8px 12px 60px;}
+  .topbar{margin:0 -12px 12px;padding:8px 12px 6px;}
+  .step-dot{font-size:11px;}
+  .card{padding:15px;}
+  .plan-step{flex-direction:column;gap:4px;}
+  .plan-step .k{width:auto;}
+  .flow div{font-size:11px;}
+  .slot{min-width:76px;min-height:44px;}
+  .slot .sticker{font-size:13px;padding:6px 7px;min-height:34px;}
+  .sticker{font-size:15px;padding:10px 12px;}
+  .q-text{font-size:17px;}
+  .gx-box{min-height:104px;font-size:14px;}
+}
+
+/* ====== 전기 단원 전용 ====== */
+:root{--pos:#e03131;--neg:#2f6fdb;--volt:#f2a900;--metal:#a9b4c2;--color-bg:#f3f1ff;}
+body{background:radial-gradient(1100px 600px at 5% -10%,#e4ddff 0,transparent 60%),radial-gradient(900px 500px at 110% 5%,#fff1c9 0,transparent 55%),var(--color-bg);}
+.topbar{background:rgba(243,241,255,.86);}
+#bgBubbles span{border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(242,169,0,.28) 60%,rgba(242,169,0,.04));}
+.grad-text{background:linear-gradient(100deg,#3b2fc9,#6a4cff 45%,#e89a00);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.core-idea{background:linear-gradient(130deg,#2a2c8f,#5a43e6 52%,#e39b00);box-shadow:0 14px 30px rgba(70,50,200,.28);}
+.unit-tag{color:#3d27a8;background:#e6e0ff;}
+.hero{width:min(360px,84vw);}
+.hero .fur{animation:furRub .7s ease-in-out infinite alternate;}
+@keyframes furRub{from{transform:translateX(-46px);}to{transform:translateX(46px);}}
+.hero .ehop{animation:ehop 2.8s ease-in-out infinite;}
+@keyframes ehop{0%,20%{opacity:0;transform:translateY(-34px);}35%{opacity:1;}60%,100%{opacity:1;transform:none;}}
+.hero .bit{animation:bitJump 2.8s ease-in-out infinite;}
+@keyframes bitJump{0%,45%{transform:none;}70%,88%{transform:translateY(-52px) rotate(25deg);}100%{transform:none;}}
+.hero .spark{animation:spark 1.4s steps(2) infinite;}
+@keyframes spark{0%{opacity:0;}50%{opacity:1;}}
+.pm{font-weight:900;}
+.pos{color:var(--pos);font-weight:900;} .neg{color:var(--neg);font-weight:900;}
+/* 생각 열기 */
+.hair-box{max-width:360px;margin:6px auto;}
+.hair-box svg{width:100%;height:auto;display:block;}
+.strand{transition:transform .6s cubic-bezier(.3,1.5,.5,1);transform-box:view-box;}
+/* 그림 */
+.fig{max-width:620px;margin:0 auto;}
+.fig svg{width:100%;height:auto;display:block;}
+.spin{animation:spin 9s linear infinite;transform-origin:120px 120px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.hop{animation:hop .7s cubic-bezier(.2,1.2,.4,1) both;}
+@keyframes hop{from{transform:translate(var(--dx),var(--dy)) scale(1.4);opacity:.3;}to{transform:none;opacity:1;}}
+.rubbing{animation:rubGo .5s ease-in-out;}
+@keyframes rubGo{0%,100%{transform:none;}25%{transform:translate(40px,-6px);}50%{transform:translate(10px,0);}75%{transform:translate(44px,6px);}}
+.part{cursor:pointer;}
+.part.sel{filter:drop-shadow(0 0 6px rgba(242,169,0,.95));}
+.rig{max-width:760px;margin:0 auto;position:relative;}
+.rig svg{width:100%;height:auto;display:block;background:linear-gradient(#f7f6ff,#fff);border-radius:16px;}
+.rig canvas{background:linear-gradient(#f7f6ff,#fff);}
+.status-line{font-weight:800;font-size:15px;margin:8px 0;min-height:26px;}
+.qa{background:#fbf8ff;border-radius:14px;padding:12px;margin-top:10px;}
+.qa h4{margin:0 0 6px;font-size:15px;}
+.rec-tbl td,.rec-tbl th{font-size:14px;padding:8px 6px;}
+.rec-tbl td.new{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#fff7e0;}
+.rec-tbl td.empty{color:#b5bad0;}
+.pred{background:#f7f5ff;border-radius:14px;padding:12px;margin:10px 0;}
+.pred .pq{font-weight:800;font-size:15px;margin:8px 0 6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.pred .mark{font-size:18px;}
+.mission{background:linear-gradient(135deg,#fff8e1,#f3eeff);border-radius:14px;padding:12px;margin-top:10px;}
+.legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;font-weight:800;color:var(--color-text-light);margin:6px 0;}
+.legend2 span{display:inline-flex;align-items:center;gap:5px;}
+.force-meter{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:800;}
+.force-meter .meter{flex:1;margin:0;height:20px;border-radius:12px;}
+.force-meter .meter>i{background:linear-gradient(90deg,#ffd43b,#f2a900 50%,#e8590c);border-radius:12px;}
+/* 스티커 판 */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start;}
+.sc{background:#f8f7fd;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.sc svg{width:100%;height:auto;display:block;background:#fff;border-radius:12px;}
+.sc-slots{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;font-size:14px;font-weight:800;color:var(--color-text-light);}
+.sc-slots .slot{min-width:0;}
+.res-tbl td{font-size:15px;}
+.res-tbl td .slot{margin:0 auto;max-width:200px;}
+.slot-num{font-size:15px;font-weight:900;color:#9aa6c4;}
+.board-tab .lk{margin-right:3px;}
+.slot .sticker{white-space:nowrap;}
+.complete-banner{padding-top:40px;}
+.stamp{font-size:18px;top:8px;}
+.trap-note{font-size:13px;color:#a35a00;font-weight:700;}
+.ion-key{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-weight:900;font-size:15px;line-height:1;}
+.ion-key.p{background:#ffe1e1;color:var(--pos);border:2px solid var(--pos);}
+.ion-key.n{background:#dfe9ff;color:var(--neg);border:2px solid var(--neg);}
+@media (max-width:560px){
+  .rec-tbl td,.rec-tbl th{font-size:12px;padding:6px 3px;}
+  .sc-slots{font-size:12px;}
+}
+</style>
+</head>
+<body>
+<div id="bgBubbles" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand"><i>⚡</i>마찰 전기와 정전기 유도 가상실험실</div>
+      <button class="icon-btn" id="soundBtn" aria-label="효과음 켜기/끄기" title="효과음">🔊</button>
+    </div>
+    <nav class="step-indicator" id="stepIndicator" aria-label="학습 단계"></nav>
+  </div>
+
+  <!-- 1. 도입 -->
+  <section class="screen" id="screen-intro">
+    <div class="rise-in" style="--i:0"><span class="unit-tag">중2 · Ⅶ. 전기와 자기 · 1. 전기</span></div>
+    <div class="hero rise-in" style="--i:1" id="heroBox"></div>
+    <h1 class="rise-in" style="--i:2"><span class="grad-text">마찰 전기와 정전기 유도</span></h1>
+    <p class="rise-in" style="--i:3">문지르기만 했는데 왜 플라스틱 막대가 종잇조각을 끌어당길까? 닿지도 않았는데 금속은 왜 전기를 띨까? 원자 속 <b>전자</b>를 직접 움직여 보며 비밀을 풀어 보자.</p>
+    <div class="badges rise-in" style="--i:4">
+      <span class="badge">중학교 과학 2</span>
+      <span class="badge teal">성취기준 [9과14-01]</span>
+    </div>
+    <p class="muted rise-in" style="--i:4">[9과14-01] 마찰 전기, 정전기 유도 현상을 관찰하고, 이를 전기력과 원자 모형을 이용하여 설명할 수 있다.</p>
+    <ul class="goal-list rise-in" style="--i:5">
+      <li data-n="1">마찰 전기가 생기는 까닭을 원자 모형과 전자의 이동으로 설명할 수 있다.</li>
+      <li data-n="2">대전체 사이에 작용하는 전기력(인력과 척력)을 실험으로 확인하고 설명할 수 있다.</li>
+      <li data-n="3">정전기 유도 현상을 관찰하고, 검전기의 금속박이 움직이는 까닭을 자유 전자의 이동으로 설명할 수 있다.</li>
+    </ul>
+    <div class="flow rise-in" style="--i:6">
+      <div><b>🚪</b>도입</div><div><b>💡</b>개념</div><div><b>🧪</b>탐구</div><div><b>🏷️</b>스티커</div><div><b>🏠</b>실생활</div><div><b>✅</b>확인</div>
+    </div>
+    <div class="card think rise-in" style="--i:7">
+      <h3>💭 생각 열기 — "풍선을 머리카락에 문지르면 왜 머리카락이 풍선을 따라 올라갈까?"</h3>
+      <p style="margin-top:0">풍선을 <b>여러 번 문지른 뒤</b> 들어 올려 보세요.</p>
+      <div class="btn-row" style="padding-top:0;margin-top:0">
+        <button class="btn small mint" id="hairRub">🎈 머리에 문지르기 <span id="hairN">0</span>회</button>
+        <button class="btn small" id="hairLift">⬆ 풍선 들어 올리기</button>
+        <button class="btn small secondary" id="hairReset">↺ 처음으로</button>
+      </div>
+      <div class="hair-box" id="hairBox"></div>
+      <p><b>머리카락이 풍선 쪽으로 끌려 올라가는 까닭은 무엇일까요?</b> 생각을 적어 보세요.</p>
+      <textarea id="note-think" data-save="think" placeholder="예) 풍선과 머리카락을 문지르면 … 이 이동해서 …"></textarea>
+      <div class="saved" id="saved-think"></div>
+      <button class="btn small secondary" id="thinkAnsBtn">예시 답안 보기</button>
+      <p class="hidden" id="thinkAns" style="color:var(--color-text)">풍선과 머리카락을 문지르면 <b>머리카락에서 풍선으로 전자가 이동</b>한다. 전자를 얻은 풍선은 <span class="neg">(−)전하</span>, 전자를 잃은 머리카락은 <span class="pos">(+)전하</span>를 띠게 되고, <b>다른 종류의 전하 사이에는 서로 끌어당기는 힘(인력)</b>이 작용하므로 머리카락이 풍선 쪽으로 끌려 올라간다.</p>
+    </div>
+    <div class="btn-row center rise-in" style="--i:8">
+      <button class="btn secondary hidden" id="resumeBtn">이어서 하기</button>
+      <button class="btn pulse" id="startBtn">시작하기 →</button>
+    </div>
+  </section>
+
+  <!-- 2. 개념 -->
+  <section class="screen" id="screen-concept">
+    <h2>💡 핵심 아이디어와 개념</h2>
+    <div class="core-idea rise-in" style="--i:0">
+      <div class="lbl">KEY IDEA · 핵심 아이디어</div>
+      <p>서로 다른 두 물체를 마찰하면 <b>전자가 한 물체에서 다른 물체로 이동</b>하여, 전자를 잃은 물체는 (+)전하, 전자를 얻은 물체는 (−)전하로 <b>대전</b>된다. 대전체를 금속에 가까이 하면 금속 속 <b>자유 전자가 전기력을 받아 이동</b>하여, 가까운 쪽은 대전체와 다른 종류, 먼 쪽은 같은 종류의 전하를 띤다(<b>정전기 유도</b>).</p>
+    </div>
+    <div id="conceptCards"></div>
+    <h3 style="margin-top:8px">🔍 오개념 바로잡기 <span class="muted">— 카드를 눌러 확인해요</span></h3>
+    <div class="myth-grid" id="mythGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="0">← 이전</button>
+      <button class="btn" data-go="2" style="margin-left:auto">탐구하러 가기 →</button>
+    </div>
+  </section>
+
+  <!-- 3. 탐구 -->
+  <section class="screen" id="screen-experiment">
+    <h2>🧪 탐구하기</h2>
+    <div class="tabs" id="expTabs" role="tablist">
+      <button class="tab active" data-tab="plan">📝 탐구 계획서</button>
+      <button class="tab" data-tab="rub">① 마찰 전기 만들기</button>
+      <button class="tab" data-tab="force">② 전기력 관찰</button>
+      <button class="tab" data-tab="induce">③ 정전기 유도</button>
+      <button class="tab" data-tab="esc">④ 검전기</button>
+    </div>
+
+    <div class="tabpane active" id="tab-plan">
+      <div class="card">
+        <h3>📝 탐구 계획서 — 물체는 어떻게 전기를 띨까?</h3>
+        <div class="plan-step"><div class="k">문제 인식</div><div class="v">① 두 물체를 마찰하면 왜 전기를 띠게 될까? ② 대전되지 않은 금속에 대전체를 가까이 하면 금속에는 어떤 변화가 생길까?</div></div>
+        <div class="plan-step"><div class="k">가설</div><div class="v"><textarea data-save="hypo" id="note-hypo" placeholder="예) 두 물체를 마찰하면 ○○이(가) 이동하여 … / 대전체를 가까이 하면 금속 속 ○○이(가) …"></textarea><div class="saved" id="saved-hypo"></div></div></div>
+        <div class="plan-step"><div class="k">변인</div><div class="v"><b>조작 변인</b>: 마찰하는 두 물체의 종류, 가까이 하는 대전체의 종류((+)/(−))와 거리<br><b>통제 변인</b>: 같은 실험에서 문지르는 횟수, 실험하는 물체<br><b>종속 변인</b>: 대전되는 전하의 종류, 빨대의 움직임, 금속 양 끝의 전하, 금속박의 움직임</div></div>
+        <div class="plan-step"><div class="k">준비물</div><div class="v">털가죽, 명주 헝겊, 플라스틱 막대(빨대), 유리 막대, 고무풍선, 실과 스탠드, 금속 막대, 알루미늄 캔, 검전기</div></div>
+        <div class="plan-step"><div class="k">실험 과정</div><div class="v"><ol>
+          <li><b>① 마찰 전기 만들기</b>: 두 물체를 골라 문지르고, 원자 모형에서 전자가 어느 쪽으로 이동하는지 관찰한다.</li>
+          <li><b>② 전기력 관찰</b>: 털가죽으로 문지른 빨대를 실에 매달고, 여러 대전체를 가까이 하며 빨대의 움직임을 관찰한다.</li>
+          <li><b>③ 정전기 유도</b>: 대전체를 금속 막대·알루미늄 캔에 가까이 하며 자유 전자의 이동과 캔의 움직임을 관찰한다.</li>
+          <li><b>④ 검전기</b>: 대전체를 검전기의 금속판에 가까이 하거나 멀리 하며 금속박의 움직임을 관찰한다.</li></ol></div></div>
+        <div class="plan-step"><div class="k">예상 결과</div><div class="v"><textarea data-save="expect" id="note-expect" placeholder="예) 털가죽으로 문지른 플라스틱 막대는 (  )전하를 띨 것이다. 검전기에 대전체를 가까이 하면 금속박이 (  )."></textarea><div class="saved" id="saved-expect"></div></div></div>
+        <div class="btn-row" style="padding-top:6px"><button class="btn" data-tabgo="rub">① 실험 시작 →</button></div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-rub">
+      <div class="card">
+        <h3>① 마찰 전기 만들기 — 원자 모형으로 보는 전자의 이동</h3>
+        <p>두 물체를 고르고 <b>문지르기</b>를 눌러요. 문지를 때마다 원자 모형에서 <b>전자(<span class="neg">−</span>)</b>가 어느 쪽으로 이동하는지 살펴보세요.</p>
+        <div class="ctrl"><label>마찰하는 두 물체</label><div class="toggle" id="rPair"></div></div>
+        <div class="rig" id="rRig"></div>
+        <div class="legend2"><span><span class="ion-key p">+</span> 원자핵의 (+)전하 (움직이지 않음)</span><span><span class="ion-key n">−</span> 전자 (이동할 수 있음)</span></div>
+        <div class="btn-row" style="padding-top:4px;margin-top:0"><button class="btn mint" id="rRub">🖐 문지르기</button><button class="btn secondary" id="rReset">↺ 처음 상태로</button></div>
+        <div class="readout"><div><small>문지른 횟수</small><b id="rN">0회</b></div><div><small id="rAl">물체 A</small><b id="rA">중성</b></div><div><small id="rBl">물체 B</small><b id="rB">중성</b></div><div><small>두 물체 전하의 합</small><b id="rSum">0</b></div></div>
+        <div class="status-line" id="rMsg">문지르기를 눌러 보세요.</div>
+        <p class="muted">전자 수는 이해를 돕기 위한 <b>모형(가상 값)</b>이에요. 실제 물체에는 셀 수 없이 많은 원자가 있어요. 물체마다 전자를 잃기 쉬운 정도가 달라 어떤 물체와 마찰하느냐에 따라 대전되는 전하의 종류가 달라져요. <span class="badge ext">확장 · 대전되는 순서</span></p>
+        <div class="pred" id="rPred"></div>
+        <h4 style="margin:12px 0 6px">📋 실험 기록표 <span class="muted">(3회 이상 문지르면 자동 기록)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="rTable"></table></div>
+        <div class="btn-row" style="padding-top:8px"><button class="btn small secondary" id="rClear">기록 지우기</button></div>
+        <div class="qa"><h4>❓ 탐구 질문에 답해 보기</h4>
+          <p style="color:var(--color-text);margin-top:0">1. 털가죽과 플라스틱 막대를 마찰했을 때 전자는 어느 쪽에서 어느 쪽으로 이동했나요? 2. 마찰한 뒤 두 물체의 전하의 양을 비교해 보세요.</p>
+          <textarea data-save="qa-rub" id="note-qa-rub" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-rub"></div>
+          <button class="btn small secondary" data-ans="ans-rub">예시 답안 보기</button>
+          <p class="hidden" id="ans-rub" style="color:var(--color-text)">1. 전자는 <b>털가죽에서 플라스틱 막대로</b> 이동했다. 그래서 털가죽은 (+)전하, 플라스틱 막대는 (−)전하로 대전되었다. 2. 이동한 전자의 수만큼 한쪽은 (+), 다른 쪽은 (−)를 띠므로 두 물체가 띤 <b>전하의 양은 같고 종류는 반대</b>이다. 원자핵은 이동하지 않고, 전하가 새로 생기거나 없어지지 않는다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-force">
+      <div class="card">
+        <h3>② 전기력 관찰 — 실에 매단 빨대에 대전체 가까이 하기</h3>
+        <p>털가죽으로 문지른 플라스틱 빨대(<span class="neg">(−)전하</span>)를 실에 매달았어요. 다가갈 물체를 고르고 거리를 바꾸며 빨대의 움직임을 관찰하세요.</p>
+        <div class="ctrl"><label>가까이 가져갈 물체</label><div class="toggle" id="fObj"></div></div>
+        <div class="ctrl"><label>빨대와의 거리 <em id="fDl">보통</em></label><input type="range" id="fD" min="1" max="5" step="1" value="3"></div>
+        <div class="rig" id="fRig"></div>
+        <div class="force-meter"><span>전기력의 세기</span><div class="meter"><i id="fBar" style="width:0"></i></div><span id="fKind" style="min-width:86px;text-align:right">—</span></div>
+        <div class="status-line" id="fMsg">물체를 골라 보세요.</div>
+        <p class="muted">거리에 따른 세기는 가상 값이에요. 거리가 가까울수록 전기력이 세져요. <span class="badge ext">확장</span></p>
+        <h4 style="margin:12px 0 6px">📋 실험 기록표 <span class="muted">(물체를 고르면 자동 기록)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="fTable"></table></div>
+        <div class="mission"><h4 style="margin:0 0 6px">🕵️ 미션 — 미지의 대전체 A, B는 어떤 전하를 띨까?</h4>
+          <p style="margin:0 0 6px">A와 B를 빨대에 가까이 해 보고 전하의 종류를 골라요.</p>
+          <div class="pq" style="font-weight:800">A: <span class="toggle" id="mA"><button class="chip" data-v="p">(+)전하</button><button class="chip" data-v="n">(−)전하</button></span></div>
+          <div class="pq" style="font-weight:800;margin-top:6px">B: <span class="toggle" id="mB"><button class="chip" data-v="p">(+)전하</button><button class="chip" data-v="n">(−)전하</button></span></div>
+          <div class="btn-row" style="padding-top:8px"><button class="btn small" id="mCheck">정답 확인</button></div>
+          <div class="status-line" id="mMsg"></div>
+        </div>
+        <div class="qa"><h4>❓ 탐구 질문에 답해 보기</h4>
+          <p style="color:var(--color-text);margin-top:0">같은 털가죽으로 문지른 빨대 두 개를 가까이 하면 어떻게 될까요? 빨대를 문지른 털가죽을 가까이 하면요? 그 까닭은?</p>
+          <textarea data-save="qa-force" id="note-qa-force" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-force"></div>
+          <button class="btn small secondary" data-ans="ans-force">예시 답안 보기</button>
+          <p class="hidden" id="ans-force" style="color:var(--color-text)">같은 털가죽으로 문지른 두 빨대는 모두 (−)전하를 띠므로 <b>서로 밀어낸다(척력)</b>. 빨대를 문지른 털가죽은 (+)전하를 띠므로 빨대와 <b>서로 끌어당긴다(인력)</b>. 같은 종류의 전하 사이에는 척력, 다른 종류의 전하 사이에는 인력이 작용하기 때문이다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-induce">
+      <div class="card">
+        <h3>③ 정전기 유도 — 금속 속 자유 전자 따라가기</h3>
+        <p>대전체를 금속에 <b>닿지 않게</b> 가까이 해 보세요. 금속 속 <b>자유 전자(<span class="neg">−</span>)</b>가 어떻게 움직이나요?</p>
+        <div class="row">
+          <div class="ctrl"><label>금속</label><div class="toggle" id="iMode"><button class="chip on" data-v="rod">▬ 금속 막대</button><button class="chip" data-v="can">🥫 알루미늄 캔</button></div></div>
+          <div class="ctrl"><label>대전체</label><div class="toggle" id="iSign"><button class="chip" data-v="-1">(−) 털가죽으로 문지른 플라스틱 막대</button><button class="chip" data-v="1">(+) 명주로 문지른 유리 막대</button><button class="chip on" data-v="0">치우기</button></div></div>
+        </div>
+        <div class="ctrl" id="iDistBox"><label>대전체와의 거리 <em id="iDl">보통</em></label><input type="range" id="iD" min="1" max="5" step="1" value="3"></div>
+        <div class="rig"><canvas id="iCv" height="300"></canvas></div>
+        <div class="btn-row hidden" id="iCanBtns" style="padding-top:4px;margin-top:0"><button class="btn mint" id="iRelease">▶ 캔 놓기</button><button class="btn secondary" id="iCanReset">↺ 캔 제자리</button></div>
+        <div class="toggle" style="margin-top:6px"><button class="chip" id="iFollow">🔍 자유 전자 1개 따라가기</button></div>
+        <div class="status-line" id="iMsg">대전체를 골라 보세요.</div>
+        <div class="pred" id="iPred"></div>
+        <h4 style="margin:12px 0 6px">📋 실험 기록표 <span class="muted">(가장 가까이 하거나 캔이 굴러가면 자동 기록)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="iTable"></table></div>
+        <div class="qa"><h4>❓ 탐구 질문에 답해 보기</h4>
+          <p style="color:var(--color-text);margin-top:0">(−)대전체를 가까이 하든 (+)대전체를 가까이 하든 알루미늄 캔이 대전체 쪽으로 끌려오는 까닭은 무엇일까요?</p>
+          <textarea data-save="qa-induce" id="note-qa-induce" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-induce"></div>
+          <button class="btn small secondary" data-ans="ans-induce">예시 답안 보기</button>
+          <p class="hidden" id="ans-induce" style="color:var(--color-text)">정전기 유도에 의해 캔에서 <b>대전체와 가까운 쪽은 대전체와 다른 종류의 전하</b>, 먼 쪽은 같은 종류의 전하를 띤다. 다른 종류의 전하가 대전체에 더 가까이 있으므로 <b>인력이 척력보다 크게</b> 작용하여, 대전체의 전하 종류에 관계없이 캔이 대전체 쪽으로 끌려온다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-esc">
+      <div class="card">
+        <h3>④ 검전기 — 금속박은 왜 벌어질까?</h3>
+        <p>대전체를 검전기의 <b>금속판</b>에 가까이 하거나 멀리 해 보세요. 금속판과 금속박에 생기는 전하를 살펴봐요.</p>
+        <div class="ctrl"><label>대전체</label><div class="toggle" id="eSign"><button class="chip" data-v="-1">(−) 플라스틱 막대</button><button class="chip" data-v="1">(+) 유리 막대</button><button class="chip" data-v="x">❓ 미지의 대전체 X</button><button class="chip on" data-v="0">치우기</button></div></div>
+        <div class="ctrl"><label>금속판과의 거리 <em id="eDl">멀리</em></label><input type="range" id="eD" min="1" max="5" step="1" value="5"></div>
+        <div class="row" style="align-items:center">
+          <div class="rig" style="max-width:400px"><div id="eRig"></div></div>
+          <div>
+            <div class="readout" style="grid-template-columns:1fr 1fr"><div><small>금속판</small><b id="ePlate">중성</b></div><div><small>금속박</small><b id="eFoil">중성</b></div><div><small>금속박</small><b id="eShape">오므라짐</b></div><div><small>검전기 전체</small><b id="eTotal">중성</b></div></div>
+            <div class="toggle" style="margin-top:6px"><button class="btn small secondary" id="eTouch">👆 금속판에 접촉시키기 <span class="badge ext">확장</span></button><button class="btn small secondary" id="eClear">↺ 검전기 처음 상태로</button></div>
+          </div>
+        </div>
+        <div class="status-line" id="eMsg">대전체를 골라 금속판에 가까이 해 보세요.</div>
+        <div class="pred" id="ePred"></div>
+        <h4 style="margin:12px 0 6px">📋 실험 기록표 <span class="muted">(가장 가까이 하면 자동 기록)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="eTable"></table></div>
+        <div class="mission"><h4 style="margin:0 0 6px">🕵️ 확장 미션 — 대전된 검전기로 미지의 대전체 X 알아내기 <span class="badge ext">확장</span></h4>
+          <p style="margin:0 0 6px">① (−) 플라스틱 막대를 금속판에 <b>접촉</b>시켜 검전기를 (−)로 대전시킨 뒤 막대를 치워요. ② X를 가까이 해서 금속박이 더 벌어지는지, 오므라드는지 관찰해요.</p>
+          <div class="pq" style="font-weight:800">X는? <span class="toggle" id="mX"><button class="chip" data-v="p">(+)전하</button><button class="chip" data-v="n">(−)전하</button></span></div>
+          <div class="btn-row" style="padding-top:8px"><button class="btn small" id="mXCheck">정답 확인</button></div>
+          <div class="status-line" id="mXMsg"></div>
+        </div>
+        <div class="qa"><h4>❓ 탐구 질문에 답해 보기</h4>
+          <p style="color:var(--color-text);margin-top:0">(−)대전체를 검전기의 금속판에 가까이 하면 금속박이 벌어지는 까닭을 자유 전자의 이동으로 설명해 보세요. 대전체를 다시 멀리 하면 어떻게 될까요?</p>
+          <textarea data-save="qa-esc" id="note-qa-esc" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-esc"></div>
+          <button class="btn small secondary" data-ans="ans-esc">예시 답안 보기</button>
+          <p class="hidden" id="ans-esc" style="color:var(--color-text)">(−)대전체를 가까이 하면 금속판의 <b>자유 전자가 척력을 받아 금속박 쪽으로 이동</b>한다. 그래서 금속판은 (+)전하, 두 금속박은 모두 (−)전하를 띠고, 같은 종류의 전하를 띤 두 금속박이 <b>서로 밀어내어 벌어진다</b>. 대전체를 멀리 하면 자유 전자가 다시 고르게 퍼져 금속박이 <b>오므라든다</b>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn secondary" data-go="1">← 이전</button>
+      <button class="btn" data-go="3" style="margin-left:auto">스티커로 정리하기 →</button>
+    </div>
+  </section>
+
+  <!-- 4. 스티커 -->
+  <section class="screen" id="screen-sticker">
+    <h2>🏷️ 스티커 붙이기: 정전기 개념 정리판</h2>
+    <p>스티커를 골라 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 <b>확인하기</b>! 어디에도 붙지 않는 <b>함정 스티커</b>도 숨어 있어요.</p>
+    <div class="board-tabs" id="boardTabs"></div>
+    <div class="sticker-status"><span class="pill">🏷️ 붙인 스티커 <span id="stkCount">0 / 0</span></span><span class="pill">🔁 시도 <span id="stkTry">0</span>회</span></div>
+    <div class="card"><h3 id="boardTitle"></h3><p class="muted" id="boardDesc"></p><div class="sticker-board" id="stkBoard"></div><div class="stk-msg" id="stkMsg"></div><div id="stkDone"></div></div>
+    <div class="card sticker-tray" id="stkTray"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="2">← 이전</button>
+      <button class="btn secondary" id="stkReset">↺ 이 판 처음부터</button>
+      <button class="btn" id="stkCheck">확인하기 ✔</button>
+      <button class="btn mint hidden" id="stkNext">다음 판 →</button>
+      <button class="btn mint hidden" id="stkToLife" data-go="4">실생활로 →</button>
+    </div>
+  </section>
+
+  <!-- 5. 실생활 -->
+  <section class="screen" id="screen-life">
+    <h2>🏠 생활 속 정전기</h2>
+    <p>카드를 눌러 <b>왜 그럴까?</b>를 확인하세요.</p>
+    <div class="life-grid" id="lifeGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="3">← 이전</button>
+      <button class="btn" id="toQuiz" style="margin-left:auto">개념 확인 10문제 →</button>
+    </div>
+  </section>
+
+  <!-- 6. 퀴즈 -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-top"><b id="qNum">1 / 10</b><div class="quiz-progress"><i id="qBar"></i></div><span class="combo" id="combo"></span></div>
+    <div class="card q-card" id="qCard"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="4">← 실생활</button>
+      <button class="btn hidden" id="qNext" style="margin-left:auto">다음 문제 →</button>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result">
+    <div class="card result-hero">
+      <div class="trophy" id="trophy">🏆</div>
+      <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <div class="score-big"><span class="grad-text" id="scoreBig">0</span><span style="font-size:28px;color:var(--color-text-light)"> / 10</span></div>
+      <p id="resultMsg" style="font-size:17px;color:var(--color-text);font-weight:700"></p>
+      <p class="muted" id="resultTime"></p>
+    </div>
+    <div class="card" id="wrongBox"></div>
+    <div class="card check-list">
+      <h3>✅ 학습목표 자가 점검 — 이제 나는</h3>
+      <label><input type="checkbox" data-save-check="c1"> 물체가 원자핵의 (+)전하와 전자의 (−)전하로 이루어져 있고, 대전되지 않은 물체는 두 전하의 양이 같음을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c2"> 두 물체를 마찰하면 전자가 이동하여 전자를 잃은 물체는 (+), 얻은 물체는 (−)로 대전됨을 원자 모형으로 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c3"> 같은 종류의 전하 사이에는 척력, 다른 종류의 전하 사이에는 인력이 작용함을 실험 결과로 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c4"> 정전기 유도에서 대전체와 가까운 쪽은 다른 종류, 먼 쪽은 같은 종류의 전하를 띰을 자유 전자의 이동으로 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c5"> 검전기의 금속박이 벌어지고 오므라드는 까닭을 설명할 수 있다.</label>
+    </div>
+    <p class="muted" style="text-align:center">📸 이 화면을 캡처해서 선생님께 제출하세요.</p>
+    <div class="btn-row center">
+      <button class="btn secondary hidden" id="retryWrong">틀린 문제 다시 풀기</button>
+      <button class="btn secondary" id="retryAll">처음부터 다시 풀기</button>
+      <button class="btn" data-go="0">처음 화면으로</button>
+    </div>
+  </section>
+
+  <footer>Made by Lee Jae Kwang</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+'use strict';
+/* ============ 저장 ============ */
+const LSP='vlab-static-';
+function lsGet(k,d){try{const v=localStorage.getItem(LSP+k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(LSP+k,JSON.stringify(v));}catch(e){}}
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+
+/* ============ 효과음 (Web Audio로 직접 합성, 외부 파일 없음) ============ */
+const SND={ctx:null,on:lsGet('sound',true),master:null,buf:null};
+function audio(){
+  if(!SND.on) return null;
+  try{
+    if(!SND.ctx){const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+      SND.ctx=new C(); SND.master=SND.ctx.createGain(); SND.master.gain.value=.55; SND.master.connect(SND.ctx.destination);}
+    if(SND.ctx.state==='suspended') SND.ctx.resume();
+    return SND.ctx;
+  }catch(e){return null;}
+}
+function tone(f,dur,o={}){
+  const c=audio(); if(!c) return;
+  const t=c.currentTime+(o.when||0), vol=o.vol||.25;
+  const os=c.createOscillator(), g=c.createGain();
+  os.type=o.type||'sine'; os.frequency.setValueAtTime(f,t);
+  if(o.to) os.frequency.exponentialRampToValueAtTime(o.to,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+(o.attack||.006)); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  os.connect(g); g.connect(SND.master); os.start(t); os.stop(t+dur+.05);
+}
+function noise(dur,o={}){
+  const c=audio(); if(!c) return;
+  if(!SND.buf){SND.buf=c.createBuffer(1,Math.floor(c.sampleRate*1.5),c.sampleRate); const d=SND.buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;}
+  const t=c.currentTime+(o.when||0);
+  const s=c.createBufferSource(); s.buffer=SND.buf; s.loop=true;
+  const fl=c.createBiquadFilter(); fl.type=o.type||'bandpass'; fl.Q.value=o.q||1;
+  fl.frequency.setValueAtTime(o.f1||800,t); fl.frequency.exponentialRampToValueAtTime(o.f2||2000,t+dur);
+  const g=c.createGain(), a=o.attack!=null?o.attack:dur*.4;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.vol||.15,t+a); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(fl); fl.connect(g); g.connect(SND.master); s.start(t); s.stop(t+dur+.05);
+}
+function sfx(n){
+  try{switch(n){
+    case 'tap': tone(660,.07,{type:'triangle',vol:.14}); break;
+    case 'tick': tone(1250,.035,{type:'square',vol:.04}); break;
+    case 'pick': tone(520,.1,{vol:.22,to:900}); break;
+    case 'stick': tone(320,.09,{type:'square',vol:.07,to:150}); noise(.09,{vol:.16,f1:2200,f2:600,attack:.004}); break;
+    case 'peel': noise(.18,{vol:.12,f1:900,f2:3500,attack:.01}); break;
+    case 'correct': tone(784,.12,{type:'triangle',vol:.28}); tone(1047,.24,{type:'triangle',vol:.28,when:.1}); break;
+    case 'wrong': tone(230,.28,{type:'sawtooth',vol:.1,to:130}); break;
+    case 'combo': [523,659,784,1047].forEach((f,i)=>tone(f,.15,{type:'triangle',vol:.24,when:i*.07})); noise(.5,{vol:.08,f1:4000,f2:9000,type:'highpass',when:.2,attack:.01}); break;
+    case 'fanfare': [[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.2],[784,.58,.14],[1047,.7,.6]].forEach(a=>tone(a[0],a[2],{type:'triangle',vol:.27,when:a[1]})); noise(1,{vol:.1,f1:3000,f2:9000,type:'highpass',when:.36,attack:.02}); break;
+    case 'pop': tone(380+Math.random()*320,.07,{vol:.22,to:1300}); break;
+    case 'whoosh': noise(.32,{vol:.09,f1:400,f2:2600,q:.7}); break;
+    case 'inhale': noise(1.3,{vol:.09,f1:450,f2:1500,q:.5}); break;
+    case 'exhale': noise(1.5,{vol:.09,f1:1400,f2:380,q:.5}); break;
+    case 'stamp': tone(110,.2,{type:'square',vol:.13,to:55}); noise(.16,{vol:.22,f1:900,f2:200,attack:.003}); break;
+    case 'burst': noise(.55,{vol:.16,f1:4000,f2:9500,type:'highpass',attack:.004}); tone(900,.14,{vol:.12,to:1900}); break;
+    case 'unlock': tone(660,.1,{type:'triangle',vol:.22}); tone(990,.28,{type:'triangle',vol:.22,when:.09}); break;
+    case 'drip': tone(1400,.09,{vol:.2,to:420}); tone(700,.05,{vol:.08,when:.08}); break;
+    case 'flush': noise(1.3,{vol:.2,f1:300,f2:1800,type:'lowpass',q:.6,attack:.15}); noise(.9,{vol:.08,f1:2500,f2:600,when:.4}); break;
+    case 'flow': noise(.7,{vol:.1,f1:250,f2:700,type:'lowpass',q:.8}); break;
+    case 'filter': noise(.6,{vol:.1,f1:3000,f2:1200,q:2}); [0,.12,.24].forEach(w=>tone(900+w*600,.06,{vol:.08,when:w})); break;
+    case 'absorb': [523,659,784].forEach((f,i)=>tone(f,.14,{type:'sine',vol:.16,when:i*.08,to:f*1.25})); break;
+    case 'secrete': [784,622,494].forEach((f,i)=>tone(f,.14,{type:'triangle',vol:.14,when:i*.08,to:f*.8})); break;
+    case 'zoom': tone(300,.45,{vol:.14,to:1500}); noise(.4,{vol:.06,f1:600,f2:5000}); break;
+    case 'sparkle': [1319,1568,2093].forEach((f,i)=>tone(f,.12,{type:'sine',vol:.12,when:i*.06})); break;
+    case 'heat': for(let i=0;i<8;i++) tone(250+Math.random()*350,.08,{vol:.12,to:700+Math.random()*500,when:i*.13}); break;
+    case 'pen': tone(1800,.02,{type:'triangle',vol:.03}); break;
+    case 'bubble': tone(300,.12,{vol:.18,to:700}); break;
+    case 'scrape': noise(.45,{vol:.16,f1:700,f2:1600,q:3,attack:.02}); noise(.3,{vol:.08,f1:2400,f2:1200,q:4,when:.12}); break;
+    case 'slide': noise(.8,{vol:.1,f1:1800,f2:500,type:'bandpass',q:.8,attack:.03}); break;
+    case 'thud': tone(95,.18,{type:'square',vol:.12,to:50}); noise(.12,{vol:.18,f1:500,f2:150,attack:.003}); break;
+    case 'slip': tone(900,.5,{type:'triangle',vol:.16,to:180}); noise(.4,{vol:.1,f1:3000,f2:800,when:.05}); break;
+    case 'step': tone(160,.07,{type:'square',vol:.07,to:90}); noise(.06,{vol:.12,f1:900,f2:400,attack:.003}); break;
+    case 'rub': noise(.32,{vol:.15,f1:1500,f2:3800,q:1.4,attack:.03}); noise(.2,{vol:.07,f1:3000,f2:1200,q:2,when:.14}); break;
+    case 'zap': noise(.14,{vol:.24,f1:7000,f2:2600,type:'highpass',attack:.002}); tone(2200,.07,{type:'square',vol:.05,to:500}); break;
+    case 'crackle': for(let i=0;i<6;i++) noise(.035,{vol:.2,f1:6000,f2:3500,type:'highpass',attack:.002,when:i*.06+Math.random()*.04}); break;
+    case 'hum': tone(120,.45,{type:'sawtooth',vol:.035,to:200}); break;
+    case 'repel': tone(480,.28,{type:'triangle',vol:.18,to:980}); break;
+    case 'attract': tone(980,.28,{type:'triangle',vol:.18,to:420}); break;
+    case 'roll': noise(1.1,{vol:.13,f1:180,f2:520,type:'lowpass',q:1.2,attack:.12}); break;
+    case 'foil': [1568,2093,2637].forEach((f,i)=>tone(f,.12,{vol:.08,when:i*.05})); break;
+    case 'electron': tone(1300,.06,{type:'sine',vol:.09,to:2000}); break;
+    case 'creak': tone(140,.5,{type:'sawtooth',vol:.05,to:260}); break;
+  }}catch(e){}
+}
+
+/* ============ 애니메이션 루프 & 폭죽(컨페티) ============ */
+const TASKS=[]; let loopOn=false, lastT=0;
+function addTask(fn){TASKS.push(fn);}
+function kick(){ if(!loopOn){loopOn=true; lastT=performance.now(); requestAnimationFrame(loop);} }
+function loop(t){
+  const dt=clamp((t-lastT)/1000,0.001,0.05); lastT=t; let any=false;
+  for(const f of TASKS){ try{ if(f(dt,t)) any=true; }catch(e){ console.error(e); } }
+  const fxAny=fxStep();
+  if(any||fxAny) requestAnimationFrame(loop); else loopOn=false;
+}
+const FX={cv:null,ctx:null,parts:[],dpr:1,dirty:false};
+const FXCOL=['#ff4d6d','#ffb238','#3361e8','#21c9a9','#7a4ff0','#45b3ff','#ffd43b','#ff8a3d'];
+function fxResize(){ if(!FX.cv) return; FX.dpr=Math.min(2,window.devicePixelRatio||1); FX.cv.width=Math.round(innerWidth*FX.dpr); FX.cv.height=Math.round(innerHeight*FX.dpr); }
+function confetti(x,y,o={}){
+  let n=o.count||40; if(REDUCED) n=Math.ceil(n/4);
+  const sp=o.speed||9, cols=o.colors||FXCOL, shapes=o.shapes||['r','c','s','b'];
+  for(let i=0;i<n;i++){
+    const a=(o.angle!=null?o.angle:-Math.PI/2)+(Math.random()-.5)*(o.spread!=null?o.spread:Math.PI*2);
+    const v=sp*(.4+Math.random()*.8);
+    FX.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:o.g!=null?o.g:.28,rot:Math.random()*6,vr:(Math.random()-.5)*.45,
+      s:(o.size||8)*(.6+Math.random()*.8),shape:shapes[i%shapes.length],col:cols[i%cols.length],life:1,dec:o.decay||(.009+Math.random()*.008),drag:o.drag||.985});
+  }
+  kick();
+}
+function burstAt(el,o={}){ if(!el) return; const r=el.getBoundingClientRect(); confetti(r.left+r.width/2,r.top+r.height/2,o); }
+function fireworks(){
+  sfx('burst'); const W=innerWidth,H=innerHeight;
+  for(let k=0;k<5;k++) setTimeout(()=>{ confetti(W*(.15+Math.random()*.7),H*(.18+Math.random()*.35),{count:60,speed:11,g:.17}); sfx('pop'); },k*260);
+  setTimeout(()=>{ const n=REDUCED?15:90; for(let i=0;i<n;i++) FX.parts.push({x:Math.random()*W,y:-20-Math.random()*240,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,g:.05,rot:Math.random()*6,vr:(Math.random()-.5)*.3,s:6+Math.random()*7,shape:['r','b','s'][i%3],col:FXCOL[i%FXCOL.length],life:1,dec:.004,drag:.995}); kick(); },300);
+}
+function starPath(c,r){ c.beginPath(); for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2, rr=i%2?r*.45:r; c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} c.closePath(); c.fill(); }
+function fxStep(){
+  const P=FX.parts, c=FX.ctx; if(!c) return false;
+  if(!P.length){ if(FX.dirty){ c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,FX.cv.width,FX.cv.height); FX.dirty=false; } return false; }
+  FX.dirty=true; c.setTransform(FX.dpr,0,0,FX.dpr,0,0); c.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i]; p.vx*=p.drag; p.vy=p.vy*p.drag+p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=p.dec;
+    if(p.life<=0||p.y>innerHeight+40){P.splice(i,1);continue;}
+    c.save(); c.globalAlpha=Math.min(1,p.life*1.6); c.translate(p.x,p.y); c.rotate(p.rot); c.fillStyle=p.col; const s=p.s;
+    if(p.shape==='c'){c.beginPath();c.arc(0,0,s/2,0,7);c.fill();}
+    else if(p.shape==='s') starPath(c,s*.7);
+    else if(p.shape==='b') c.fillRect(-s/2,-s/5,s,(s/2.5)*Math.abs(Math.cos(p.rot*2))+1);
+    else c.fillRect(-s/2,-s/2,s,s*.62);
+    c.restore();
+  }
+  return true;
+}
+function floatText(x,y,txt,color){
+  const d=document.createElement('div'); d.className='float-txt'; d.textContent=txt; d.style.left=x+'px'; d.style.top=y+'px'; d.style.color=color||'#12a874';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1200);
+}
+function floatAt(el,txt,color){ if(!el) return; const r=el.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,txt,color); }
+let toastTimer=null;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2300); }
+
+/* ============ 캔버스 도우미 ============ */
+function prepCanvas(cv){
+  const w=cv.clientWidth; if(!w) return null;
+  const H=+cv.getAttribute('height'); const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=H+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv._w=w; cv._dpr=dpr; cv._H=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); return {ctx,W:w,H:cv._H};
+}
+function visible(el){ return !!(el && el.offsetParent!==null); }
+
+/* ============ 화면 이동 ============ */
+const SCREENS=['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const STEP_NAMES=['도입','개념','탐구','스티커','실생활','개념 확인'];
+let cur=-1; const enterHooks={};
+function renderSteps(){
+  const box=$('stepIndicator');
+  if(!box.children.length){
+    STEP_NAMES.forEach((n,k)=>{ const b=document.createElement('button'); b.className='step-dot'; b.innerHTML='<i></i><span>'+n+'</span>'; b.setAttribute('aria-label',(k+1)+'단계 '+n);
+      b.addEventListener('click',()=>{ sfx('tap'); goTo(k===5?(qz&&qz.done?6:5):k); }); box.appendChild(b); });
+  }
+  const pos=Math.min(cur,6);
+  [...box.children].forEach((b,k)=>{ b.classList.toggle('active',k===pos||(pos===6&&k===5)); b.classList.toggle('done',k<pos); });
+}
+function goTo(i){
+  if(i===cur) return;
+  const back=i<cur, prev=cur;
+  SCREENS.forEach((id,k)=>{ const el=$(id); el.classList.toggle('active',k===i); el.classList.toggle('back',k===i&&back); });
+  cur=i; renderSteps(); window.scrollTo(0,0);
+  if(prev>=0) sfx('whoosh');
+  if(i<=5) lsSet('progress',i);
+  if(enterHooks[i]) enterHooks[i]();
+  kick();
+}
+
+</script>
+
+<script>
+'use strict';
+/* ============ 공통 그림 도우미 ============ */
+const C_POS='#e03131', C_NEG='#2f6fdb', C_F='#7b2ff7';
+let SVGID=0;
+const r1=v=>Math.round(v*10)/10;
+function arw(x1,y1,x2,y2,c,w,dash){
+  w=w||6; const a=Math.atan2(y2-y1,x2-x1), L=Math.hypot(x2-x1,y2-y1); if(L<3) return '';
+  const h=Math.min(w*3,L*.7), hx=x2-Math.cos(a)*h, hy=y2-Math.sin(a)*h, px=Math.sin(a)*h*.6, py=-Math.cos(a)*h*.6;
+  return `<g><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#fff" stroke-width="${w+5}" stroke-linecap="round" opacity=".85"/><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"${dash?' stroke-dasharray="11 8"':''}/><polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(hx+px).toFixed(1)},${(hy+py).toFixed(1)} ${(hx-px).toFixed(1)},${(hy-py).toFixed(1)}" fill="${c}" stroke="#fff" stroke-width="1.5"/></g>`;
+}
+function txt(x,y,t,o){ o=o||{}; return `<text x="${x}" y="${y}" text-anchor="${o.a||'middle'}" font-size="${o.s||17}" font-weight="900" fill="${o.c||'#1b1d4a'}" stroke="#fff" stroke-width="${o.halo==null?4:o.halo}" paint-order="stroke">${t}</text>`; }
+/* 전하 기호: s>0 (+) 빨강 원, s<0 (−) 파랑 원 — 색과 기호를 함께 */
+function chg(x,y,s,r,attr){ r=r||9; const p=s>0; x=r1(x); y=r1(y);
+  return `<g${attr||''}><circle cx="${x}" cy="${y}" r="${r}" fill="${p?'#ffe1e1':'#dfe9ff'}" stroke="${p?C_POS:C_NEG}" stroke-width="${r>7?2:1.5}"/><text x="${x}" y="${r1(y+r*.47)}" text-anchor="middle" font-size="${r1(r*1.45)}" font-weight="900" fill="${p?C_POS:C_NEG}">${p?'+':'−'}</text></g>`; }
+const sgnName=s=>s>0?'(+)전하':s<0?'(−)전하':'중성';
+const sgnHTML=s=>s>0?'<span class="pos">(+)전하</span>':s<0?'<span class="neg">(−)전하</span>':'중성';
+const DLBL=['아주 가까이','가까이','보통','멀리','아주 멀리'];
+function rodSVG(x,y,w,h,kind,s,n,q){ // 대전체 막대: plastic(노랑) / glass(하늘) / fur / mystery
+  const st={plastic:['#fff1b8','#d1a800'],glass:['#d7f0ff','#7fb7dc'],fur:['#c8955c','#7a5228'],mystery:['#d5d9e3','#7c8496']}[kind]||['#eee','#999'];
+  let d=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h/2}" fill="${st[0]}" stroke="${st[1]}" stroke-width="2.5"/>`;
+  if(kind==='glass') d+=`<line x1="${x+14}" y1="${y+6}" x2="${x+w-14}" y2="${y+6}" stroke="#fff" stroke-width="3" opacity=".9"/>`;
+  if(kind==='fur') for(let i=x+8;i<x+w-6;i+=9) d+=`<path d="M${i} ${y+h} q3 -${h*.45} 0 -${h*.9}" stroke="#8a5a2b" stroke-width="1.6" fill="none" opacity=".6"/>`;
+  if(q){ d+=txt(x+w/2,y+h/2+7,'?',{s:22,c:'#3d4458'}); return d; }
+  if(s&&n){ for(let k=0;k<n;k++) d+=chg(x+w*(k+.5)/n,y+h/2,s,Math.min(9,h/2-3)); }
+  return d;
+}
+
+/* ============ 도입 그림 ============ */
+function heroSVG(){
+  let el=''; [0,1,2,3,4].forEach(i=>{ el+=`<g class="ehop" style="animation-delay:${i*.18}s">${chg(110+i*36,83,-1,8)}</g>`; });
+  let bits=''; [0,1,2,3,4,5].forEach(i=>{ const x=70+i*42; bits+=`<rect class="bit" style="animation-delay:${(i%3)*.12}s;transform-origin:${x+7}px 176px;transform-box:view-box" x="${x}" y="170" width="${12+(i%2)*5}" height="9" rx="2" fill="${['#ffd6e0','#d6ecff','#fff3b0','#dcf8ee'][i%4]}" stroke="#9aa3b8"/>`; });
+  return `<svg viewBox="0 0 360 200" role="img" aria-label="털가죽으로 문지른 플라스틱 막대가 종잇조각을 끌어당기는 모습">
+   <line x1="20" y1="184" x2="340" y2="184" stroke="#c9c4e8" stroke-width="3" stroke-linecap="round"/>
+   ${rodSVG(40,70,280,26,'plastic',0)}${el}
+   <g class="fur"><rect x="140" y="46" width="80" height="30" rx="12" fill="#c8955c" stroke="#7a5228" stroke-width="2.5"/>${[0,1,2,3,4,5,6,7].map(i=>`<path d="M${148+i*9} 76 q3 -10 0 -22" stroke="#8a5a2b" stroke-width="1.8" fill="none" opacity=".65"/>`).join('')}</g>
+   ${txt(180,36,'털가죽',{s:14})}${txt(70,116,'플라스틱 막대',{s:14,a:'start'})}
+   ${bits}<text class="spark" x="318" y="58" font-size="30">⚡</text><text class="spark" x="22" y="58" font-size="22" style="animation-delay:.7s">✨</text></svg>`;
+}
+
+/* ============ 생각 열기: 풍선과 머리카락 ============ */
+const HAIR={n:0,lift:false,t:0,tt:0,by:96,bty:96};
+function hairSVG(){
+  const cx=150, cy=196, R=62; let strands='';
+  const by=HAIR.by, bx=150;
+  for(let i=0;i<11;i++){
+    const a=(-170+i*16)*Math.PI/180; const bx0=cx+Math.cos(a)*R, by0=cy+Math.sin(a)*R;
+    const nx=Math.cos(a), ny=Math.sin(a); const rest=[nx*.45+ (nx<0?-.5:.5)*.6, ny*.2+.85];
+    let tx=bx-bx0, ty=(by+30)-by0; const tl=Math.hypot(tx,ty)||1; tx/=tl; ty/=tl;
+    let dx=rest[0]*(1-HAIR.t)+tx*HAIR.t, dy=rest[1]*(1-HAIR.t)+ty*HAIR.t; const dl=Math.hypot(dx,dy)||1; dx/=dl; dy/=dl;
+    const L=46+HAIR.t*Math.max(0,Math.min(40,tl-60));
+    const ex=bx0+dx*L, ey=by0+dy*L, mx=bx0+dx*L*.5+(-dy)*6*(1-HAIR.t), my=by0+dy*L*.5+dx*6*(1-HAIR.t);
+    strands+=`<path d="M${r1(bx0)} ${r1(by0)} Q ${r1(mx)} ${r1(my)} ${r1(ex)} ${r1(ey)}" stroke="#4a3426" stroke-width="5" stroke-linecap="round" fill="none"/>`;
+    if(HAIR.n>0&&i%2===0) strands+=chg(ex,ey,1,6);
+  }
+  let bq=''; const nb=Math.min(5,HAIR.n); for(let k=0;k<nb;k++) bq+=chg(bx-30+k*15,by+12,-1,6);
+  return `<svg viewBox="0 0 300 270" role="img" aria-label="풍선과 머리카락">
+   <ellipse cx="${cx}" cy="${cy}" rx="${R}" ry="${R}" fill="#ffd9b8" stroke="#d9a274" stroke-width="2.5"/>
+   <circle cx="130" cy="196" r="5" fill="#3b2a20"/><circle cx="170" cy="196" r="5" fill="#3b2a20"/><path d="M134 222 Q150 ${HAIR.t>.5?236:230} 166 222" stroke="#a35a3a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+   ${strands}
+   <g id="balloonG"><line x1="${bx}" y1="${by+38}" x2="${bx+6}" y2="${by+70}" stroke="#888" stroke-width="1.5"/><ellipse cx="${bx}" cy="${by}" rx="44" ry="38" fill="#ff7b93" stroke="#d43d5c" stroke-width="2.5"/><ellipse cx="${bx-16}" cy="${by-14}" rx="10" ry="6" fill="#fff" opacity=".6"/>${bq}</g>
+  </svg>`;
+}
+function hairDraw(){ $('hairBox').innerHTML=hairSVG(); $('hairN').textContent=HAIR.n; }
+function hairTask(dt){
+  if(cur!==0) return false; let mv=false;
+  if(Math.abs(HAIR.tt-HAIR.t)>.002){ HAIR.t+=(HAIR.tt-HAIR.t)*Math.min(1,dt*4); mv=true; }
+  if(Math.abs(HAIR.bty-HAIR.by)>.3){ HAIR.by+=(HAIR.bty-HAIR.by)*Math.min(1,dt*3.5); mv=true; }
+  if(mv) hairDraw(); return mv;
+}
+
+/* ============ 공용 모형 그림 ============ */
+// 원자 모형 (원자핵 +3, 전자 e개)
+function atomSVG(e,o){ o=o||{}; const u='at'+(++SVGID); let el='';
+  for(let i=0;i<e;i++){ const a=-Math.PI/2+i*2*Math.PI/e; el+=chg(120+Math.cos(a)*86,120+Math.sin(a)*86,-1,11); }
+  return `<svg viewBox="0 0 240 ${o.label?266:240}" role="img" aria-label="원자 모형"><defs><radialGradient id="${u}g"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#ffc9c9"/></radialGradient></defs>
+   <circle cx="120" cy="120" r="86" fill="none" stroke="#b8b4dc" stroke-width="2" stroke-dasharray="6 6"/>
+   <circle cx="120" cy="120" r="32" fill="url(#${u}g)" stroke="${C_POS}" stroke-width="2.5"/>
+   ${chg(108,111,1,9)}${chg(132,111,1,9)}${chg(120,132,1,9)}
+   <g class="${o.spin?'spin':''}">${el}</g>${o.label?txt(120,258,o.label,{s:18}):''}</svg>`;
+}
+// 마찰하는 두 물체 (원자 모형 8쌍씩)
+const MAT={fur:{n:'털가죽',ic:'🦊',s:0,fill:'#e3c39b',stroke:'#7a5228'},
+           glass:{n:'유리 막대',ic:'🧪',s:1,fill:'#dff3ff',stroke:'#7fb7dc'},
+           silk:{n:'명주 헝겊',ic:'🧣',s:2,fill:'#f8ecf8',stroke:'#c9a2c9'},
+           balloon:{n:'고무풍선',ic:'🎈',s:3,fill:'#ffd6dd',stroke:'#e06a80'},
+           plastic:{n:'플라스틱 막대',ic:'🥢',s:4,fill:'#fff3c4',stroke:'#d1a800'}};
+const PAIRS=[{id:'fp',a:'fur',b:'plastic'},{id:'sg',a:'silk',b:'glass'},{id:'fb',a:'fur',b:'balloon'},{id:'sp',a:'silk',b:'plastic'},{id:'pp',a:'plastic',b:'plastic',same:true}];
+function pairName(p,side){ const m=MAT[p[side]]; return p.same?m.n+(side==='a'?' ①':' ②'):m.n; }
+function pairInfo(p){ const sa=MAT[p.a].s, sb=MAT[p.b].s, gap=Math.abs(sa-sb);
+  return {donor:sa<sb?'a':sa>sb?'b':null, per:gap>=3?2:gap>=1?1:0}; }
+function slotPos(bx,by,w,h,i){ const c=i%4, r=Math.floor(i/4); return [bx+w*(.16+.227*c), by+h*(.32+.38*r)]; }
+function pairSVG(p,moved,o){ o=o||{}; const info=pairInfo(p); const W=230,H=150,Y=44, BX={a:24,b:306};
+  const remA=[3,7,2,6,1,5,0,4], remB=[0,4,1,5,2,6,3,7];
+  let out='';
+  ['a','b'].forEach(side=>{
+    const m=MAT[p[side]], bx=BX[side]; const isDon=info.donor===side, isAcc=info.donor&&!isDon;
+    let g=`<rect x="${bx}" y="${Y}" width="${W}" height="${H}" rx="18" fill="${m.fill}" stroke="${m.stroke}" stroke-width="3"/>`;
+    const order=side==='a'?remA:remB; const miss=isDon?new Set(order.slice(0,moved)):new Set();
+    for(let i=0;i<8;i++){ const [px,py]=slotPos(bx,Y,W,H,i); g+=chg(px,py,1,10); if(!miss.has(i)) g+=chg(px+14,py+21,-1,8); }
+    if(isAcc){ for(let k=0;k<moved;k++){ const i=order[k]; const [px,py]=slotPos(bx,Y,W,H,i); const ex=px+14, ey=py-21;
+        let at=''; if(o.hop&&k>=moved-o.hop){ const dSide=info.donor, dOrder=dSide==='a'?remA:remB; const [sx,sy]=slotPos(BX[dSide],Y,W,H,dOrder[k]); at=` class="hop" style="--dx:${r1(sx+14-ex)}px;--dy:${r1(sy+21-ey)}px;animation-delay:${(k-(moved-o.hop))*.12}s"`; }
+        g+=chg(ex,ey,-1,8,at); } }
+    const net=isDon?moved:isAcc?-moved:0;
+    g+=txt(bx+W/2,30,`${m.ic} ${pairName(p,side)}`,{s:17});
+    g+=txt(bx+W/2,Y+H+28,net?`${net>0?'(+)':'(−)'}전하 ${Math.abs(net)}`:'중성',{s:18,c:net>0?C_POS:net<0?C_NEG:'#5a5f80'});
+    out+=`<g${side==='a'&&o.rub?' class="rubbing"':''}>${g}</g>`;
+  });
+  if(moved>0&&info.donor){ const l2r=info.donor==='a'; out+=arw(l2r?250:310,24,l2r?310:250,24,C_NEG,4,true)+txt(280,14,'전자',{s:13,c:C_NEG}); }
+  return `<svg viewBox="0 0 560 230" role="img" aria-label="마찰하는 두 물체의 원자 모형">${out}</svg>`;
+}
+// 정전기 유도 금속 막대 (정적 그림)
+function inducSVG(o){ o=o||{}; const s=o.s||0, f=s?(o.f==null?1:o.f):0, u='in'+(++SVGID);
+  let d=`<defs><linearGradient id="${u}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f6"/><stop offset=".5" stop-color="#b9c2cf"/><stop offset="1" stop-color="#8e99a8"/></linearGradient></defs>`;
+  d+=`<rect x="290" y="146" width="12" height="44" fill="#c9b79a"/><rect x="250" y="188" width="92" height="12" rx="4" fill="#b59f7c"/><text x="296" y="216" text-anchor="middle" font-size="12" font-weight="800" fill="#8a7a60">절연 받침</text>`;
+  d+=`<rect x="210" y="80" width="300" height="66" rx="12" fill="url(#${u}m)" stroke="#6f7a89" stroke-width="2.5"/>`;
+  const L=222, R=498;
+  for(let c=0;c<7;c++) for(let r=0;r<2;r++){ d+=chg(230+40*c,98+26*r,1,7,' opacity=".55"'); }
+  if(!o.blank){ for(let c=0;c<7;c++) for(let r=0;r<2;r++){ const hx=250+40*c; let x=hx; if(s<0) x=R-(R-hx)*(1-.62*f); if(s>0) x=L+(hx-L)*(1-.62*f); d+=chg(x,107+26*r,-1,6.5); } }
+  if(s){ const gap=o.gap||24; const x2=210-gap; d+=`<g>${rodSVG(x2-190,95,190,36,s<0?'plastic':'glass',s,4)}</g>`+txt(x2-95,82,s<0?'(−)대전체':'(+)대전체',{s:15,c:s<0?C_NEG:C_POS});
+    if(!o.blank&&f>.15){ d+=chg(236,62,-s,13)+chg(484,62,s,13); } }
+  if(o.letters){ d+=txt(232,172,'A',{s:22,c:'#3d27a8'})+txt(488,172,'B',{s:22,c:'#3d27a8'}); if(o.blank) d+=txt(360,118,'금속 막대',{s:17,c:'#3d4458'}); }
+  return `<svg viewBox="0 0 540 225" role="img" aria-label="정전기 유도 금속 막대">${d}</svg>`;
+}
+// 검전기
+const ESC_GAP=[10,32,54,76,98];
+const fEsc=g=>1/(1+.1*Math.max(0,g-10));
+function escState(s,gap,Q){ const f=(s&&gap!=null)?fEsc(gap):0; const plateQ=Q/2-s*2*f, foilQ=Q/2+s*2*f; return {f,plateQ,foilQ,ang:Math.min(50,13*Math.abs(foilQ))}; }
+function escSVG(o){ o=o||{}; const s=o.s||0, Q=o.Q||0, u='es'+(++SVGID); const st=escState(s,o.gap,Q); const ang=o.ang!=null?o.ang:st.ang;
+  let d=`<defs><linearGradient id="${u}m" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e99a8"/><stop offset=".5" stop-color="#eef1f6"/><stop offset="1" stop-color="#8e99a8"/></linearGradient></defs>`;
+  const P=(k)=>o.parts?` class="part${o.sel===k?' sel':''}" data-part="${k}"`:'';
+  d+=`<g${P('bottle')}><path d="M100 202 Q100 188 114 188 L286 188 Q300 188 300 202 L300 404 Q300 418 286 418 L114 418 Q100 418 100 404 Z" fill="rgba(205,232,255,.45)" stroke="#8fb8d8" stroke-width="3"/><line x1="116" y1="214" x2="116" y2="396" stroke="#fff" stroke-width="5" opacity=".8" stroke-linecap="round"/></g>`;
+  d+=`<rect x="166" y="176" width="68" height="24" rx="5" fill="#5c5f73"/>`;
+  d+=`<g${P('rod')}><rect x="194" y="134" width="12" height="186" fill="url(#${u}m)" stroke="#6f7a89" stroke-width="1.5"/></g>`;
+  d+=`<g${P('plate')}><rect x="116" y="118" width="168" height="18" rx="7" fill="url(#${u}m)" stroke="#6f7a89" stroke-width="2"/></g>`;
+  const foil=(side)=>{ const sg=side==='L'?1:-1; const a=sg*ang; const x=side==='L'?188:200;
+    if(o.blank) return `<g${P('foil')}><rect x="${x}" y="318" width="12" height="78" rx="3" fill="#f6dd8a" stroke="#c79a1e" stroke-width="2" stroke-dasharray="5 4"/></g>`;
+    return `<g${P('foil')} transform="rotate(${r1(a)} 200 318)"><rect x="${x}" y="318" width="12" height="78" rx="3" fill="#f2c94c" stroke="#c79a1e" stroke-width="2"/></g>`; };
+  d+=foil('L')+foil('R');
+  if(!o.blank){
+    const nP=Math.min(6,Math.round(Math.abs(st.plateQ)*1.5)), sP=Math.sign(st.plateQ);
+    for(let k=0;k<nP;k++) d+=chg(200+(k-(nP-1)/2)*24,127,sP,8);
+    const nF=Math.min(3,Math.ceil(Math.round(Math.abs(st.foilQ)*1.5)/2)), sF=Math.sign(st.foilQ);
+    for(const side of [1,-1]){ const a=(side*ang)*Math.PI/180; for(let k=0;k<nF;k++){ const L=22+k*24, ox=side>0?-6:6; const x=200+ox*Math.cos(a)-L*Math.sin(a), y=318+L*Math.cos(a)+ox*Math.sin(a); d+=chg(x,y,sF,7.5); } }
+  }
+  if(s){ const ry=118-(o.gap==null?60:o.gap)-26; d+=rodSVG(110,ry,180,26,o.mystery?'mystery':s<0?'plastic':'glass',s,5,o.mystery); }
+  if(o.labels){ d+=txt(292,132,'금속판',{s:15,a:'start'})+txt(214,232,'금속 막대',{s:14,a:'start'})+txt(232,386,'금속박',{s:15,a:'start'})+txt(250,410,'유리병',{s:13,a:'start',c:'#5a7a99'}); }
+  if(o.letters){ d+=txt(96,133,'(가)',{s:18,c:'#3d27a8'})+txt(150,372,'(나)',{s:18,c:'#3d27a8'}); }
+  const top=Math.min(0,118-(o.gap==null?60:o.gap)-30);
+  return `<svg viewBox="0 ${top} 400 ${430-top}" role="img" aria-label="검전기">${d}</svg>`;
+}
+
+/* ============ 개념 ============ */
+const CONCEPTS=[
+ {t:'물체를 이루는 원자 — (+)와 (−)의 균형',html:`
+  <p>모든 물체는 원자로 이루어져 있어요. 원자의 중심에는 <span class="pos">(+)전하</span>를 띠는 <b>원자핵</b>이 있고, 그 주위를 <span class="neg">(−)전하</span>를 띠는 <b>전자</b>가 움직여요. 원자핵의 (+)전하량과 전자들의 (−)전하량이 같아 원자는 <b>전기적으로 중성</b>이에요.</p>
+  <div class="row" style="align-items:center"><div class="fig" id="atomFig" style="max-width:260px"></div>
+  <div><div class="toggle"><button class="chip" id="atMinus">전자 1개 빼기 ➖</button><button class="chip" id="atPlus">전자 1개 더하기 ➕</button><button class="chip" id="atReset">↺ 원래대로</button></div>
+  <div class="info-panel" id="atInfo" style="margin-top:10px"></div></div></div>
+  <div class="analogy">⚖️ <b>비유</b>: 양팔 저울의 한쪽에 (+), 다른 쪽에 (−)를 같은 개수만큼 올리면 저울은 기울지 않아요(중성). 원자핵은 무겁고 단단히 붙잡혀 있어 <b>움직이지 않고</b>, 가벼운 <b>전자만</b> 다른 곳으로 옮겨 갈 수 있어요.</div>`},
+ {t:'마찰 전기 — 문지르면 전자가 이동해요',html:`
+  <p>서로 다른 두 물체를 문지르면 한 물체의 <b>전자가 다른 물체로 이동</b>해요. 전자를 잃은 물체는 (+)전하가 더 많아져 <span class="pos">(+)전하</span>를, 전자를 얻은 물체는 <span class="neg">(−)전하</span>를 띠어요.</p>
+  <div class="fig" id="pairFigC"></div>
+  <div class="btn-row" style="padding-top:2px;margin-top:0"><button class="btn small mint" id="cRub">🖐 털가죽으로 문지르기</button><button class="btn small secondary" id="cRubReset">↺ 처음으로</button></div>
+  <div class="info-panel" id="cRubInfo">문지르기를 눌러 전자가 어디로 가는지 보세요.</div>
+  <div class="tbl-wrap" style="margin-top:10px"><table class="tbl"><tr><th>용어</th><th>뜻</th></tr>
+   <tr><td><b>대전</b></td><td style="text-align:left">물체가 전기를 띠는 현상</td></tr>
+   <tr><td><b>대전체</b></td><td style="text-align:left">전기를 띤 물체</td></tr>
+   <tr><td><b>마찰 전기</b></td><td style="text-align:left">서로 다른 두 물체를 마찰할 때 생기는 전기 (한곳에 머물러 있어 <b>정전기</b>라고도 해요)</td></tr></table></div>`},
+ {t:'전기력 — 밀어내는 힘과 끌어당기는 힘',html:`
+  <p>전기를 띤 물체 사이에 작용하는 힘을 <b>전기력</b>이라고 해요. <b>같은 종류</b>의 전하끼리는 서로 <b>밀어내고(척력)</b>, <b>다른 종류</b>의 전하끼리는 서로 <b>끌어당겨요(인력)</b>. 두 공의 전하를 골라 보세요.</p>
+  <div class="toggle" id="efBtns"><button class="chip" data-v="pp">(+)와 (+)</button><button class="chip" data-v="nn">(−)와 (−)</button><button class="chip" data-v="pn">(+)와 (−)</button><button class="chip on" data-v="00">대전 안 됨</button></div>
+  <div class="fig" id="efFig" style="max-width:440px;margin-top:8px"></div>
+  <div class="info-panel" id="efInfo">버튼을 눌러 보세요.</div>`},
+ {t:'정전기 유도 — 금속 속 자유 전자가 움직여요',html:`
+  <p>금속에는 원자에 묶이지 않고 자유롭게 움직이는 <b>자유 전자</b>가 많아요. 대전체를 금속에 <b>닿지 않게 가까이</b> 하면 자유 전자가 전기력을 받아 이동해, <b>가까운 쪽은 대전체와 다른 종류</b>, <b>먼 쪽은 같은 종류</b>의 전하를 띠어요. 이것을 <b>정전기 유도</b>라고 해요.</p>
+  <div class="toggle" id="inBtns"><button class="chip on" data-v="0">대전체 없음</button><button class="chip" data-v="-1">(−)대전체 가까이</button><button class="chip" data-v="1">(+)대전체 가까이</button></div>
+  <div class="fig" id="inFig" style="margin-top:8px"></div>
+  <div class="info-panel" id="inInfo">버튼을 눌러 자유 전자의 움직임을 보세요.</div>
+  <div class="analogy">🏫 <b>비유</b>: 복도에 서 있는 학생들(자유 전자) 쪽으로 싫어하는 친구((−)대전체)가 다가오면 학생들이 반대쪽 끝으로 몰려가요. 교실 문(원자핵의 (+))은 그 자리에 그대로 있지요. 학생 수는 그대로이니 <b>금속 전체는 여전히 중성</b>이에요!</div>`},
+ {t:'검전기 — 정전기 유도로 대전 여부를 알아내요',html:`
+  <p><b>검전기</b>는 물체가 대전되었는지 알아보는 기구예요. 그림의 각 부분을 눌러 보고, 대전체를 가까이 해 보세요.</p>
+  <div class="row" style="align-items:center"><div class="fig" id="escFigC" style="max-width:300px"></div>
+  <div><div class="toggle"><button class="chip" id="escNear">(−)대전체 가까이 하기</button></div><div class="info-panel" id="escInfo" style="margin-top:10px">그림의 <b>금속판, 금속 막대, 금속박, 유리병</b>을 눌러 보세요.</div></div></div>`}
+];
+const PART_INFO={plate:'<b>금속판</b>: 대전체를 가까이 하는 곳이에요. 대전체와 <b>다른 종류</b>의 전하가 유도돼요.',
+  rod:'<b>금속 막대</b>: 금속판과 금속박을 이어 주어 자유 전자가 이동하는 길이 돼요.',
+  foil:'<b>금속박</b>: 얇고 가벼운 두 장의 금속 조각이에요. 두 장이 <b>같은 종류의 전하</b>를 띠면 서로 밀어내어 <b>벌어져요</b>.',
+  bottle:'<b>유리병</b>: 금속박을 바람으로부터 보호하고, 병과 마개는 전기가 잘 통하지 않아 전하가 빠져나가지 않게 해요.'};
+const MYTHS=[
+ ['마찰하면 (+)전하를 띤 원자핵이 다른 물체로 옮겨 간다.','원자핵은 무겁고 단단히 묶여 있어 <b>이동하지 않아요</b>. 마찰할 때 이동하는 것은 <b>전자</b>뿐이에요. (+)로 대전된 물체는 (+)를 얻은 것이 아니라 <b>전자를 잃은</b> 거예요.'],
+ ['마찰하면 전기가 새로 만들어진다.','전하는 새로 생기거나 없어지지 않고 <b>이동할 뿐</b>이에요. 그래서 마찰한 두 물체가 띠는 전하의 양은 <b>같고</b>, 종류는 <b>반대</b>예요.'],
+ ['대전되지 않은(중성) 물체에는 전하가 없다.','중성인 물체에도 (+)전하와 (−)전하가 있어요. 다만 두 전하의 양이 <b>같아서</b> 전기를 띠지 않는 것처럼 보여요.'],
+ ['털가죽은 언제나 (+)전하, 명주는 언제나 (−)전하를 띤다.','어떤 물체와 마찰하느냐에 따라 달라요. 명주 헝겊은 유리 막대와 문지르면 (−)전하를, 플라스틱 막대와 문지르면 (+)전하를 띠어요. (탐구 ①)'],
+ ['정전기 유도가 일어나면 대전체의 전하가 금속으로 넘어간다.','대전체가 금속에 <b>닿지 않았으므로</b> 전하가 넘어가지 않아요. 금속 안의 <b>자유 전자가 한쪽으로 몰릴 뿐</b>이라 금속 전체는 여전히 <b>중성</b>이에요.'],
+ ['(+)대전체를 가까이 하면 금속 안의 (+)전하가 먼 쪽으로 이동한다.','이동하는 것은 언제나 <b>자유 전자</b>예요. (+)대전체가 자유 전자를 <b>끌어당겨</b> 가까운 쪽에 전자가 많아지고, 먼 쪽은 전자가 부족해져 (+)전하를 띠어요.'],
+ ['검전기의 두 금속박이 벌어지는 것은 서로 다른 전하를 띠기 때문이다.','두 금속박이 <b>같은 종류</b>의 전하를 띠어 서로 <b>밀어내기(척력)</b> 때문이에요. 다른 종류였다면 서로 붙었겠지요?'],
+ ['대전체에 끌려오는 알루미늄 캔은 대전체와 반대 전하로 대전된 것이다.','캔은 대전되지 않았어요(중성). 정전기 유도로 가까운 쪽에 다른 종류의 전하가 모여 <b>인력이 척력보다 크기</b> 때문에 끌려와요. 그래서 (+), (−) 어느 대전체에도 끌려와요.']
+];
+const ATOM={e:3};
+function renderAtom(){ const e=ATOM.e; $('atomFig').innerHTML=atomSVG(e,{spin:true});
+  const st=e===3?'<b>중성</b> — (+)3과 (−)3이 같아요.':e<3?`<b class="pos">(+)전하</b>를 띠어요 — 전자를 ${3-e}개 <b>잃어서</b> (+)가 ${3-e}만큼 많아요.`:`<b class="neg">(−)전하</b>를 띠어요 — 전자를 ${e-3}개 <b>얻어서</b> (−)가 ${e-3}만큼 많아요.`;
+  $('atInfo').innerHTML=`원자핵 <span class="pos">(+)3</span> · 전자 <span class="neg">(−)${e}</span><br>${st}`; $('atInfo').classList.remove('flash'); void $('atInfo').offsetWidth; $('atInfo').classList.add('flash'); }
+const CRUB={m:0};
+const EF={v:'00'};
+function efSVG(){ return `<svg viewBox="0 0 440 230" role="img" aria-label="전기력 실험"><rect x="60" y="14" width="320" height="10" rx="5" fill="#9aa3b8"/>
+  <g id="efL" style="transform-box:view-box;transform-origin:170px 24px;transition:transform .9s cubic-bezier(.3,1.6,.5,1)"><line x1="170" y1="24" x2="170" y2="170" stroke="#777" stroke-width="2"/><circle cx="170" cy="186" r="22" fill="#f1f3f9" stroke="#8e99a8" stroke-width="2.5"/><g id="efLc"></g></g>
+  <g id="efR" style="transform-box:view-box;transform-origin:270px 24px;transition:transform .9s cubic-bezier(.3,1.6,.5,1)"><line x1="270" y1="24" x2="270" y2="170" stroke="#777" stroke-width="2"/><circle cx="270" cy="186" r="22" fill="#f1f3f9" stroke="#8e99a8" stroke-width="2.5"/><g id="efRc"></g></g>
+  <g id="efA"></g></svg>`; }
+function showEF(v){ EF.v=v; const sL=v==='pp'?1:v==='nn'?-1:v==='pn'?1:0, sR=v==='pp'?1:v==='nn'?-1:v==='pn'?-1:0;
+  $('efLc').innerHTML=sL?chg(170,186,sL,14):''; $('efRc').innerHTML=sR?chg(270,186,sR,14):'';
+  const rep=sL*sR>0, att=sL*sR<0; const a=rep?16:att?-9:0;
+  $('efL').style.transform=`rotate(${a}deg)`; $('efR').style.transform=`rotate(${-a}deg)`;
+  setTimeout(()=>{ const xL=170-146*Math.sin(a*Math.PI/180), xR=270+146*Math.sin(a*Math.PI/180);
+    $('efA').innerHTML=rep?arw(xL-26,186,xL-74,186,C_F,5)+arw(xR+26,186,xR+74,186,C_F,5)+txt(220,120,'척력 (밀어냄)',{s:18,c:C_F}):att?arw(xL+24,150,xL+56,150,C_F,5)+arw(xR-24,150,xR-56,150,C_F,5)+txt(220,120,'인력 (끌어당김)',{s:18,c:C_F}):''; },REDUCED?50:700);
+  $('efA').innerHTML='';
+  $('efInfo').innerHTML=rep?`<b>같은 종류</b>의 전하 ${sL>0?'(+)와 (+)':'(−)와 (−)'} → 서로 <b>밀어내요(척력)</b>.`:att?'<b>다른 종류</b>의 전하 (+)와 (−) → 서로 <b>끌어당겨요(인력)</b>.':'대전되지 않은 두 공 사이에는 전기력이 작용하지 않아요.';
+  sfx(rep?'repel':att?'attract':'tap'); }
+const INC={s:0};
+function inducLive(){ $('inFig').innerHTML=inducSVG({s:INC.s,f:1,gap:30,letters:true});
+  $('inInfo').innerHTML=INC.s===0?'자유 전자가 금속 전체에 <b>고르게</b> 퍼져 있어 어느 쪽도 전기를 띠지 않아요(중성).':INC.s<0?'(−)대전체가 자유 전자를 <b>밀어내어(척력)</b> 전자가 먼 쪽 B로 이동해요. → 가까운 쪽 A: <span class="pos">(+)전하</span>, 먼 쪽 B: <span class="neg">(−)전하</span>':'(+)대전체가 자유 전자를 <b>끌어당겨(인력)</b> 전자가 가까운 쪽 A로 이동해요. → 가까운 쪽 A: <span class="neg">(−)전하</span>, 먼 쪽 B: <span class="pos">(+)전하</span>';
+ }
+const ESCC={near:false,sel:null};
+function renderEscC(){ $('escFigC').innerHTML=escSVG({s:ESCC.near?-1:0,gap:14,parts:true,sel:ESCC.sel,labels:true});
+  $('escFigC').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>{ ESCC.sel=p.dataset.part; renderEscC(); $('escInfo').innerHTML=PART_INFO[ESCC.sel]; $('escInfo').classList.remove('flash'); void $('escInfo').offsetWidth; $('escInfo').classList.add('flash'); sfx('sparkle'); })); }
+function buildConcepts(){
+  const box=$('conceptCards'); const seen=lsGet('seen',{});
+  box.innerHTML=CONCEPTS.map((c,i)=>`<div class="card concept-card rise-in${seen[i]?' seen':''}" style="--i:${i+1}" data-i="${i}">
+    <div class="head" role="button" tabindex="0"><span class="num">${i+1}</span><strong>${c.t}</strong><span class="chev">▾</span></div>
+    <div class="concept-body"><div>${c.html}</div></div></div>`).join('');
+  box.querySelectorAll('.concept-card>.head').forEach(h=>h.addEventListener('click',()=>{
+    const card=h.parentElement, i=+card.dataset.i, open=!card.classList.contains('open');
+    card.classList.toggle('open',open); sfx(open?'pop':'tap');
+    if(open){ card.classList.add('seen'); const s=lsGet('seen',{}); s[i]=1; lsSet('seen',s); }
+  }));
+  $('mythGrid').innerHTML=MYTHS.map((m,i)=>`<div class="myth rise-in" style="--i:${i+5}"><div class="no">❌ ${m[0]}</div><div class="tapme">👆 눌러서 바로잡기</div><div class="yes">✅ ${m[1]}</div></div>`).join('');
+  $('mythGrid').querySelectorAll('.myth').forEach(m=>m.addEventListener('click',()=>{ if(!m.classList.contains('open')){ m.classList.add('open'); sfx('correct'); burstAt(m,{count:14,speed:6,size:6}); } }));
+  renderAtom();
+  $('atMinus').addEventListener('click',()=>{ if(ATOM.e<=1){ toast('전자를 더 뺄 수 없어요'); return; } ATOM.e--; sfx('electron'); renderAtom(); floatAt($('atomFig'),'전자 −1','#2f6fdb'); });
+  $('atPlus').addEventListener('click',()=>{ if(ATOM.e>=5){ toast('이 모형에서는 5개까지만 더할 수 있어요'); return; } ATOM.e++; sfx('electron'); renderAtom(); floatAt($('atomFig'),'전자 +1','#2f6fdb'); });
+  $('atReset').addEventListener('click',()=>{ ATOM.e=3; sfx('tap'); renderAtom(); });
+  const P0=PAIRS[0];
+  $('pairFigC').innerHTML=pairSVG(P0,0);
+  $('cRub').addEventListener('click',()=>{ if(CRUB.m>=4){ toast('이 모형에서는 4개까지만 이동해요'); return; } CRUB.m+=2; sfx('rub'); setTimeout(()=>sfx('electron'),200); $('pairFigC').innerHTML=pairSVG(P0,CRUB.m,{hop:2,rub:true});
+    $('cRubInfo').innerHTML=`털가죽의 전자 ${CRUB.m}개가 플라스틱 막대로 이동했어요. → 털가죽: <span class="pos">(+)전하 ${CRUB.m}</span>, 플라스틱 막대: <span class="neg">(−)전하 ${CRUB.m}</span><br>두 물체가 띤 전하의 <b>양은 같고 종류는 반대</b>예요.`; });
+  $('cRubReset').addEventListener('click',()=>{ CRUB.m=0; sfx('tap'); $('pairFigC').innerHTML=pairSVG(P0,0); $('cRubInfo').textContent='문지르기를 눌러 전자가 어디로 가는지 보세요.'; });
+  $('efFig').innerHTML=efSVG();
+  $('efBtns').querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ $('efBtns').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); showEF(c.dataset.v); }));
+  inducLive();
+  $('inBtns').querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ $('inBtns').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); INC.s=+c.dataset.v; sfx(INC.s?'hum':'tap'); inducLive(); }));
+  renderEscC();
+  $('escNear').addEventListener('click',()=>{ ESCC.near=!ESCC.near; $('escNear').textContent=ESCC.near?'대전체 치우기':'(−)대전체 가까이 하기'; $('escNear').classList.toggle('on',ESCC.near); renderEscC(); sfx(ESCC.near?'foil':'tap');
+    $('escInfo').innerHTML=ESCC.near?'(−)대전체가 금속판의 자유 전자를 밀어내 전자가 <b>금속박</b>으로 이동해요. 금속판은 <span class="pos">(+)</span>, 두 금속박은 모두 <span class="neg">(−)</span> → 같은 전하끼리 밀어내 <b>벌어져요</b>!':'대전체를 치우면 자유 전자가 다시 고르게 퍼져 금속박이 <b>오므라들어요</b>.'; });
+}
+
+/* ============ 탐구 탭 ============ */
+let curTab='plan';
+function setTab(t){
+  curTab=t; sfx('tap');
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('#screen-experiment .tabpane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  const tb=$('expTabs').getBoundingClientRect().top+window.scrollY; if(window.scrollY>tb-90) window.scrollTo(0,Math.max(0,tb-90));
+  lsSet('tab',t);
+  if(t==='rub') rRender();
+  if(t==='force') fUpdateObj();
+  if(t==='esc') eRender();
+  kick();
+}
+function chipGroup(id,items,curV,fn){
+  const el=$(id); el.innerHTML=items.map(it=>`<button class="chip${String(it[0])===String(curV)?' on':''}" data-v="${it[0]}">${it[1]}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(fn(c.dataset.v)===false) return; el.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); }));
+}
+function bindChips(id,fn){ $(id).querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(fn(c.dataset.v,c)===false) return; $(id).querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); })); }
+function makePred(boxId,key,items){
+  const st=lsGet(key,{}); const box=$(boxId);
+  box.innerHTML=`<h4 style="margin:0 0 4px">🔮 실험 전에 예측해 보기</h4>`+items.map((it,i)=>`<div class="pq">${i+1}. ${it.q} <span class="mark" id="${boxId}-m${i}"></span></div><div class="toggle" data-pi="${i}">${it.opts.map(o=>`<button class="chip${st[i]===o?' on':''}" data-v="${o}">${o}</button>`).join('')}</div>`).join('')+`<div class="btn-row" style="padding-top:8px"><button class="btn small" id="${boxId}-chk">예측 확인하기</button></div>`;
+  box.querySelectorAll('[data-pi]').forEach(g=>g.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ const i=+g.dataset.pi; st[i]=c.dataset.v; lsSet(key,st); g.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); $(boxId+'-m'+i).textContent=''; sfx('tap'); })));
+  $(boxId+'-chk').addEventListener('click',()=>{ let ok=0,miss=0;
+    if(items.some((it,i)=>!st[i])){ toast('모든 문항을 예측해 주세요'); sfx('tap'); return; }
+    items.forEach((it,i)=>{ const m=$(boxId+'-m'+i); if(!it.done()){ miss++; m.textContent='⏳ 실험 전'; m.style.color='#8a94b2'; return; } const g=st[i]===it.ans; if(g) ok++; m.textContent=g?'✔ 맞았어요':'✖ 실제: '+it.ans; m.style.color=g?'#12a874':'#e5484d'; });
+    if(miss){ toast('⏳ 아직 하지 않은 실험이 있어요. 실험한 뒤 다시 확인해요'); sfx('tap'); return; }
+    if(ok===items.length){ sfx('fanfare'); fireworks(); toast('🎯 예측 '+ok+'개 모두 적중!'); } else { sfx('correct'); toast(`예측 ${ok}/${items.length} 적중! 결과로 다시 생각해 봐요`); burstAt($(boxId+'-chk'),{count:16,speed:6}); } });
+}
+
+/* ---- ① 마찰 전기 만들기 ---- */
+const R1={pair:'fp',m:0,n:0,recs:lsGet('recR',{})};
+const curPair=()=>PAIRS.find(p=>p.id===R1.pair);
+function rRender(o){ const p=curPair(), info=pairInfo(p); $('rRig').innerHTML=pairSVG(p,R1.m,o);
+  const netA=info.donor==='a'?R1.m:info.donor==='b'?-R1.m:0;
+  $('rAl').textContent=pairName(p,'a'); $('rBl').textContent=pairName(p,'b');
+  $('rA').innerHTML=sgnHTML(netA)+(netA?' '+Math.abs(netA):''); $('rB').innerHTML=sgnHTML(-netA)+(netA?' '+Math.abs(netA):'');
+  $('rN').textContent=R1.n+'회'; $('rSum').textContent='0 (변함없음)'; }
+function rRub(){ const p=curPair(), info=pairInfo(p); R1.n++; sfx('rub');
+  let add=0; if(info.per&&R1.m<6){ add=Math.min(info.per,6-R1.m); R1.m+=add; }
+  rRender({rub:true,hop:add}); if(add){ setTimeout(()=>sfx('electron'),230); }
+  if(!info.donor) $('rMsg').innerHTML='🤔 같은 물질끼리 문지르면 전자를 잃기 쉬운 정도가 같아 전자가 거의 이동하지 않아요 → <b>대전되지 않아요</b>.';
+  else { const dn=pairName(p,info.donor), an=pairName(p,info.donor==='a'?'b':'a');
+    $('rMsg').innerHTML=`⚡ <b>${dn}</b>의 전자가 <b>${an}</b>(으)로 이동했어요. → ${dn}: <span class="pos">(+)전하</span>, ${an}: <span class="neg">(−)전하</span>${R1.m>=6?' <span class="muted">(모형에서는 6개까지만 이동해요)</span>':''}`; }
+  if(R1.n===3){ R1.recs[p.id]={pos:info.donor?pairName(p,info.donor):'대전 안 됨',neg:info.donor?pairName(p,info.donor==='a'?'b':'a'):'대전 안 됨',m:R1.m,fresh:1}; lsSet('recR',R1.recs); renderRTable(p.id); sfx('stamp'); toast('📋 기록표에 기록했어요'); }
+  else if(R1.n>3&&R1.recs[p.id]){ R1.recs[p.id].m=R1.m; lsSet('recR',R1.recs); renderRTable(); }
+  if(R1.n===1&&add) burstAt($('rRig'),{count:16,speed:6,colors:['#2f6fdb','#7fb0ff','#ffd43b']});
+}
+function rReset(){ R1.m=0; R1.n=0; rRender(); $('rMsg').textContent='문지르기를 눌러 보세요.'; }
+function renderRTable(fresh){
+  $('rTable').innerHTML='<tr><th>마찰한 두 물체</th><th>(+)전하로 대전</th><th>(−)전하로 대전</th><th>이동한 전자(모형)</th></tr>'+PAIRS.map(p=>{ const r=R1.recs[p.id], c=fresh===p.id?' class="new"':'';
+    return `<tr><td>${MAT[p.a].ic} ${pairName(p,'a')} + ${MAT[p.b].ic} ${pairName(p,'b')}</td>${r?`<td${c}>${r.pos}</td><td${c}>${r.neg}</td><td${c}>${r.m}개</td>`:'<td class="empty">?</td><td class="empty">?</td><td class="empty">?</td>'}</tr>`; }).join(''); }
+
+/* ---- ② 전기력 관찰 ---- */
+const FOBJ={straw:{n:'(−) 털가죽으로 문지른 다른 빨대',sh:'다른 빨대 (−)',q:-1,kind:'plastic'},fur:{n:'(+) 빨대를 문지른 털가죽',sh:'털가죽 (+)',q:1,kind:'fur'},glass:{n:'(+) 명주로 문지른 유리 막대',sh:'유리 막대 (+)',q:1,kind:'glass'},
+  A:{n:'❓ 미지의 대전체 A',sh:'미지의 대전체 A',q:1,kind:'mystery',myst:1},B:{n:'❓ 미지의 대전체 B',sh:'미지의 대전체 B',q:-1,kind:'mystery',myst:1},none:{n:'치우기',q:0}};
+const F2={obj:'none',d:3,th:0,v:0,recs:lsGet('recF',{})};
+const FGAP=[18,45,80,120,170]; const fF=g=>1/(1+.025*(g-18));
+const LT=210;
+function fBuild(){ $('fRig').innerHTML=`<svg viewBox="0 0 600 330" role="img" aria-label="실에 매단 빨대와 대전체"><rect x="96" y="14" width="330" height="12" rx="6" fill="#8e99a8"/><rect x="96" y="14" width="12" height="300" fill="#8e99a8"/><rect x="56" y="306" width="100" height="14" rx="5" fill="#6f7a89"/>
+   <g id="fPend"><line x1="220" y1="26" x2="220" y2="228" stroke="#666" stroke-width="2"/>${rodSVG(165,227,110,18,'plastic',-1,3)}</g>
+   ${txt(220,272,'매단 빨대 (−)',{s:15,c:C_NEG})}<g id="fObjG"></g><g id="fArr"></g></svg>`; }
+function fTarget(){ const o=FOBJ[F2.obj]; if(!o.q) return {t:0,f:0,att:false,q:0}; const gap=FGAP[F2.d-1], f=fF(gap), att=o.q>0;
+  const t=att?Math.min(24*f,Math.asin((gap-4)/LT)*180/Math.PI):-24*f; return {t,f,att,q:o.q,gap}; }
+function fUpdateObj(){ const o=FOBJ[F2.obj], g=$('fObjG'); if(!g) return; const T=fTarget();
+  g.innerHTML=o.q?rodSVG(275+FGAP[F2.d-1],222,300,28,o.kind,o.q,4,o.myst)+txt(Math.min(470,275+FGAP[F2.d-1]+110),210,o.sh,{s:15,a:'start'}):'';
+  $('fBar').style.width=(o.q?Math.round(T.f*100):0)+'%'; $('fKind').textContent=o.q?(T.att?'인력 🧲':'척력 ↔'):'—';
+  $('fMsg').innerHTML=!o.q?'물체를 골라 빨대에 가까이 해 보세요.':o.myst?`${o.sh}를 가까이 했더니 빨대가 <b>${T.att?'끌려왔어요':'밀려났어요'}</b>. 매단 빨대는 (−)전하 — A의 전하는 무엇일까요?`.replace('A의',o.sh.slice(-1)+'의'):T.att?`(−) 빨대와 ${o.sh}: <b>다른 종류</b>의 전하 → <b>인력</b>으로 빨대가 끌려와요.`:`(−) 빨대와 ${o.sh}: <b>같은 종류</b>의 전하 → <b>척력</b>으로 빨대가 밀려나요.`;
+  kick(); }
+function fTask(dt){
+  if(cur!==2||curTab!=='force'||!$('fPend')) return false;
+  const T=fTarget(); const acc=(T.t-F2.th)*32-F2.v*6.5; F2.v+=acc*dt; F2.th+=F2.v*dt;
+  $('fPend').setAttribute('transform',`rotate(${(-F2.th).toFixed(2)} 220 26)`);
+  const bx=220+LT*Math.sin(F2.th*Math.PI/180), by=26+LT*Math.cos(F2.th*Math.PI/180);
+  let a=''; if(T.q){ const L=22+46*T.f, ox=275+T.gap; if(T.att){ a=arw(bx+30,by-24,bx+30+L,by-24,C_F,5)+arw(ox+20,196,ox+20-Math.min(L,T.gap+10),196,C_F,5); } else { a=arw(bx-30,by-24,bx-30-L,by-24,C_F,5)+arw(ox+16,196,ox+16+L,196,C_F,5); } }
+  $('fArr').innerHTML=a;
+  return Math.abs(F2.v)>.02||Math.abs(T.t-F2.th)>.03;
+}
+function renderFTable(fresh){ const keys=['straw','fur','glass','A','B'];
+  $('fTable').innerHTML='<tr><th>가까이 한 물체</th><th>물체의 전하</th><th>전기력</th><th>매단 빨대 (−)</th></tr>'+keys.map(k=>{ const o=FOBJ[k], r=F2.recs[k], c=fresh===k?' class="new"':'';
+    return `<tr><td>${o.n.replace(/^\(.\) |^❓ /,'')}</td><td>${o.myst?'?':sgnHTML(o.q)}</td>${r?`<td${c}>${r.k}</td><td${c}>${r.mv}</td>`:'<td class="empty">?</td><td class="empty">?</td>'}</tr>`; }).join(''); }
+
+/* ---- ③ 정전기 유도 ---- */
+const I3={mode:'rod',s:0,d:3,follow:false,els:[],ions:[],cels:[],cions:[],cx:470,v:0,run:false,ang:0,recs:lsGet('recI',{}),trail:[],settle:0};
+const IGAP=[20,55,95,140,190]; const fI=g=>1/(1+.03*Math.max(0,g-20));
+const ROD={L:330,R:720,T:130,B:200}, CANR=55, CANY=205, CANHOME=470;
+function iInit(){ I3.els=[]; I3.ions=[];
+  for(let r=0;r<2;r++) for(let c=0;c<14;c++){ I3.ions.push({x:344+26*c,y:148+30*r}); I3.els.push({hx:344+26*c,x:344+26*c,y:162+28*r,ph:(c*7+r*3)%6.28}); }
+  I3.cels=[]; I3.cions=[];
+  [-30,-10,10,30].forEach(x=>[-30,-10,10,30].forEach(y=>{ I3.cels.push({hx:x,x:x,y:y,ph:(x+y+90)%6.28}); }));
+  I3.cels.forEach(e=>I3.cions.push({x:e.hx,y:e.y})); }
+function iRodRight(){ return I3.mode==='rod'?ROD.L-IGAP[I3.d-1]:(CANHOME-CANR)-IGAP[I3.d-1]; }
+function iF(){ if(!I3.s) return 0; const rx=iRodRight(); const gap=I3.mode==='rod'?ROD.L-rx:(I3.cx-CANR)-rx; return fI(gap); }
+function prepRatio(cv,LW,LH){ const w=cv.clientWidth; if(!w) return null; const h=w*LH/LW, dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=h+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv._w=w; cv._dpr=dpr; }
+  const ctx=cv.getContext('2d'); const k=w/LW*dpr; ctx.setTransform(k,0,0,k,0,0); return ctx; }
+function cChg(c,x,y,s,r,al){ c.save(); c.globalAlpha=al==null?1:al; c.beginPath(); c.arc(x,y,r,0,7); c.fillStyle=s>0?'#ffe1e1':'#dfe9ff'; c.fill(); c.lineWidth=r>8?2.4:1.8; c.strokeStyle=s>0?C_POS:C_NEG; c.stroke();
+  c.fillStyle=s>0?C_POS:C_NEG; c.font=`900 ${Math.round(r*1.5)}px sans-serif`; c.textAlign='center'; c.textBaseline='middle'; c.fillText(s>0?'+':'−',x,y+r*.08); c.restore(); }
+function cTxt(c,t,x,y,sz,col,al){ c.save(); c.font=`900 ${sz}px 'Noto Sans KR',sans-serif`; c.textAlign=al||'center'; c.textBaseline='middle'; c.lineWidth=5; c.strokeStyle='#fff'; c.strokeText(t,x,y); c.fillStyle=col||'#1b1d4a'; c.fillText(t,x,y); c.restore(); }
+function iTask(dt,t){
+  if(cur!==2||curTab!=='induce') return false; const cv=$('iCv'); const c=prepRatio(cv,760,300); if(!c) return false;
+  const f=iF(), s=I3.s, ts=t/1000;
+  // 캔 굴리기
+  if(I3.mode==='can'&&I3.run){ const rx=iRodRight(); if(s){ I3.v+=430*f*dt; } I3.v*=Math.pow(.6,dt); I3.cx-=I3.v*dt; I3.ang-=I3.v*dt/CANR;
+    if((I3.cx-CANR)-rx<=8){ I3.cx=rx+8+CANR; I3.run=false; I3.v=0; sfx('thud'); toast('🥫 캔이 대전체 쪽으로 굴러왔어요!'); burstAt(cv,{count:18,speed:6}); iRecordCan(); }
+    if(I3.v<2&&!s){ I3.run=false; } }
+  // 전자 위치
+  const move=(e,L,R)=>{ let tx=e.hx; if(s<0) tx=R-(R-e.hx)*(1-.5*f); if(s>0) tx=L+(e.hx-L)*(1-.5*f); e.x+=(tx-e.x)*Math.min(1,dt*2.6); return Math.abs(tx-e.x); };
+  let err=0; if(I3.mode==='rod') I3.els.forEach(e=>{ err=Math.max(err,move(e,344,682)); }); else I3.cels.forEach(e=>{ err=Math.max(err,move(e,-40,40)); const lim=Math.sqrt(Math.max(0,44*44-e.y*e.y)); e.x=clamp(e.x,-lim+2,lim-2); });
+  // 그리기
+  c.clearRect(0,0,760,300); c.fillStyle='#ebe7fb'; c.fillRect(0,262,760,38); c.fillStyle='#d6d0f2'; c.fillRect(0,260,760,4);
+  if(s){ const rx=iRodRight(), y0=I3.mode==='rod'?146:186, h=38; const grd=c.createLinearGradient(0,y0,0,y0+h);
+    if(s<0){ grd.addColorStop(0,'#fff8d6'); grd.addColorStop(1,'#f2d76b'); } else { grd.addColorStop(0,'#eefaff'); grd.addColorStop(1,'#a9d6f2'); }
+    c.fillStyle=grd; c.strokeStyle=s<0?'#d1a800':'#7fb7dc'; c.lineWidth=3; c.beginPath(); c.roundRect?c.roundRect(rx-300,y0,300,h,19):c.rect(rx-300,y0,300,h); c.fill(); c.stroke();
+    for(let k=0;k<5;k++) cChg(c,rx-28-k*44,y0+h/2,s,11);
+    cTxt(c,s<0?'(−)대전체':'(+)대전체',Math.max(70,rx-120),y0-18,17,s<0?C_NEG:C_POS); }
+  const fol=I3.follow;
+  if(I3.mode==='rod'){
+    c.fillStyle='#c9b79a'; c.fillRect(520,200,14,60); c.fillStyle='#b59f7c'; c.fillRect(480,252,94,10);
+    const g=c.createLinearGradient(0,ROD.T,0,ROD.B); g.addColorStop(0,'#f2f4f8'); g.addColorStop(.5,'#bcc5d1'); g.addColorStop(1,'#8e99a8');
+    c.fillStyle=g; c.strokeStyle='#6f7a89'; c.lineWidth=3; c.beginPath(); c.roundRect?c.roundRect(ROD.L,ROD.T,ROD.R-ROD.L,ROD.B-ROD.T,14):c.rect(ROD.L,ROD.T,ROD.R-ROD.L,ROD.B-ROD.T); c.fill(); c.stroke();
+    I3.ions.forEach(p=>cChg(c,p.x,p.y,1,7,.5));
+    if(fol){ const e=I3.els[6]; I3.trail.push([e.x+Math.sin(ts*3+e.ph)*2.5,e.y+Math.cos(ts*2.3+e.ph)*2.5]); if(I3.trail.length>140) I3.trail.shift(); c.save(); c.setLineDash([4,5]); c.strokeStyle='#f2a900'; c.lineWidth=2.5; c.beginPath(); I3.trail.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])); c.stroke(); c.restore(); }
+    I3.els.forEach((e,i)=>{ const x=e.x+Math.sin(ts*3+e.ph)*2.5, y=e.y+Math.cos(ts*2.3+e.ph)*2.5; if(fol&&i===6){ c.save(); c.beginPath(); c.arc(x,y,13,0,7); c.fillStyle='rgba(255,212,59,.55)'; c.fill(); c.restore(); cChg(c,x,y,-1,8.5); } else cChg(c,x,y,-1,7,fol?.35:1); });
+    // 양 끝 전하
+    const th1=513, th2=513;
+    const nl=I3.ions.filter(p=>p.x<th1).length-I3.els.filter(e=>e.x<th1).length, nr=I3.ions.filter(p=>p.x>th2).length-I3.els.filter(e=>e.x>th2).length;
+    [[nl,400,'가까운 쪽'],[nr,630,'먼 쪽']].forEach(([n,x,l])=>{ cTxt(c,l,x,236,15,'#5a5f80'); if(n){ cChg(c,x-14,104,n,15); cTxt(c,'×'+Math.abs(n),x+18,104,18,n>0?C_POS:C_NEG,'left'); } else cTxt(c,'중성',x,104,16,'#8a94b2'); });
+  } else {
+    c.save(); c.translate(I3.cx,CANY); const g=c.createRadialGradient(-18,-18,6,0,0,CANR); g.addColorStop(0,'#ffffff'); g.addColorStop(.6,'#c7ced9'); g.addColorStop(1,'#8e99a8');
+    c.beginPath(); c.arc(0,0,CANR,0,7); c.fillStyle=g; c.fill(); c.lineWidth=3; c.strokeStyle='#6f7a89'; c.stroke();
+    c.save(); c.rotate(I3.ang); c.strokeStyle='#e5484d'; c.lineWidth=5; c.beginPath(); c.arc(0,0,CANR-6,-.4,.4); c.stroke(); c.restore();
+    I3.cions.forEach(p=>cChg(c,p.x,p.y,1,6,.45));
+    I3.cels.forEach((e,i)=>{ const x=e.x+Math.sin(ts*3+e.ph)*2, y=e.y+Math.cos(ts*2.3+e.ph)*2; if(fol&&i===5){ c.beginPath(); c.arc(x,y,11,0,7); c.fillStyle='rgba(255,212,59,.55)'; c.fill(); cChg(c,x,y,-1,7.5); } else cChg(c,x,y,-1,6,fol?.35:1); });
+    c.restore();
+    const nl=I3.cions.filter(p=>p.x<0).length-I3.cels.filter(e=>e.x<0).length, nr=I3.cions.filter(p=>p.x>0).length-I3.cels.filter(e=>e.x>0).length;
+    [[nl,I3.cx-34],[nr,I3.cx+34]].forEach(([n,x])=>{ if(n){ cChg(c,x-10,118,n,13); cTxt(c,'×'+Math.abs(n),x+12,118,16,n>0?C_POS:C_NEG,'left'); } });
+    cTxt(c,'알루미늄 캔 (옆에서 본 모습)',I3.cx,282,15,'#5a5f80');
+  }
+  // 기록
+  if(I3.mode==='rod'&&s&&I3.d===1&&err<1.5&&!I3.recs['r'+s]){ I3.recs['r'+s]={near:sgnName(-s),far:sgnName(s)}; lsSet('recI',I3.recs); renderITable('r'+s); sfx('stamp'); toast('📋 기록표에 기록했어요'); }
+  return true;
+}
+function iRecordCan(){ const k='c'+I3.s; if(!I3.recs[k]){ I3.recs[k]='대전체 쪽으로 끌려옴'; lsSet('recI',I3.recs); renderITable(k); setTimeout(()=>{ sfx('stamp'); },400); } }
+function iMsg(){ const s=I3.s; let m;
+  if(!s) m=I3.mode==='rod'?'대전체가 없으면 자유 전자가 금속 전체에 고르게 퍼져 있어요(중성).':'대전체가 없으면 캔은 중성이고 움직이지 않아요.';
+  else if(I3.mode==='rod') m=s<0?'(−)대전체가 자유 전자를 <b>밀어내요</b> → 전자가 먼 쪽으로 이동! 가까운 쪽은 <span class="pos">(+)</span>, 먼 쪽은 <span class="neg">(−)</span>':'(+)대전체가 자유 전자를 <b>끌어당겨요</b> → 전자가 가까운 쪽으로 이동! 가까운 쪽은 <span class="neg">(−)</span>, 먼 쪽은 <span class="pos">(+)</span>';
+  else m=`캔의 가까운 쪽에 ${s<0?'<span class="pos">(+)</span>':'<span class="neg">(−)</span>'}전하가 유도돼요. <b>캔 놓기</b>를 눌러 보세요!`;
+  if(s&&I3.mode==='rod') m+=` <span class="muted">(거리: ${DLBL[I3.d-1]} — 가까울수록 전자가 더 많이 이동해요)</span>`;
+  $('iMsg').innerHTML=m; }
+function iResetCan(){ I3.cx=CANHOME; I3.v=0; I3.run=false; I3.ang=0; }
+function renderITable(fresh){ const cell=(k,v)=>v?`<td${fresh===k?' class="new"':''}>${v}</td>`:'<td class="empty">?</td>';
+  $('iTable').innerHTML='<tr><th>대전체</th><th>금속 막대<br>가까운 쪽</th><th>금속 막대<br>먼 쪽</th><th>알루미늄 캔</th></tr>'+[-1,1].map(s=>{ const r=I3.recs['r'+s];
+    return `<tr><td>${sgnHTML(s)} 대전체</td>${cell('r'+s,r&&r.near)}${cell('r'+s,r&&r.far)}${cell('c'+s,I3.recs['c'+s])}</tr>`; }).join(''); }
+
+/* ---- ④ 검전기 ---- */
+const E4={s:0,myst:false,d:5,Q:0,ang:0,recs:lsGet('recE',{}),last:''};
+function eState(){ return escState(E4.s,E4.s?ESC_GAP[E4.d-1]:null,E4.Q); }
+const qName=q=>Math.abs(q)<.15?'중성':q>0?'(+)전하':'(−)전하';
+const qHTML=q=>Math.abs(q)<.15?'중성':q>0?'<span class="pos">(+)전하</span>':'<span class="neg">(−)전하</span>';
+function eRender(){ const st=eState(); $('eRig').innerHTML=escSVG({s:E4.s,gap:ESC_GAP[E4.d-1],Q:E4.Q,ang:E4.ang,mystery:E4.myst,labels:true});
+  $('ePlate').innerHTML=qHTML(st.plateQ); $('eFoil').innerHTML=qHTML(st.foilQ); $('eShape').textContent=st.ang>4?(st.ang>34?'많이 벌어짐':'벌어짐'):'오므라짐'; $('eTotal').innerHTML=qHTML(E4.Q); $('eDl').textContent=DLBL[E4.d-1]; }
+function eMsg(prevAng){ const s=E4.s, st=eState(); let m='';
+  if(!s&&!E4.Q) m='대전체가 없어요. 자유 전자가 고르게 퍼져 있어 금속박이 <b>오므라져</b> 있어요.';
+  else if(!s&&E4.Q) m=`검전기 전체가 ${qHTML(E4.Q)}로 대전되어 있어서 대전체를 치워도 금속박이 <b>벌어져 있어요</b>. <span class="badge ext">확장</span>`;
+  else if(E4.myst&&!E4.Q) m='X를 가까이 해도 금속박이 벌어져요. 대전되지 않은 검전기로는 (+)인지 (−)인지 <b>구별할 수 없어요</b>(둘 다 벌어지니까요). 미션처럼 검전기를 먼저 대전시켜 봐요!';
+  else if(E4.Q){ const base=13*Math.abs(E4.Q/2); m=E4.myst?`X를 가까이 했더니 금속박이 <b>${st.ang>base+1?'더 벌어졌어요':st.ang<base-1?'오므라들었어요':'그대로예요'}</b>. 검전기는 ${qHTML(E4.Q)} — X의 전하는?`:(s*E4.Q>0?'검전기와 <b>같은 종류</b>의 대전체 → 자유 전자가 금속박 쪽으로 더 밀리거나 끌려와 금속박이 <b>더 벌어져요</b>.':'검전기와 <b>다른 종류</b>의 대전체 → 금속박의 전하가 줄어 금속박이 <b>오므라들어요</b>.'); }
+  else m=s<0?'(−)대전체가 금속판의 자유 전자를 <b>밀어내요</b> → 전자가 금속박으로 이동! 금속판 <span class="pos">(+)</span>, 두 금속박 <span class="neg">(−)</span> → 같은 전하끼리 밀어내 <b>벌어져요</b>.':'(+)대전체가 금속박의 자유 전자를 <b>끌어당겨요</b> → 전자가 금속판으로 이동! 금속판 <span class="neg">(−)</span>, 두 금속박 <span class="pos">(+)</span> → 같은 전하끼리 밀어내 <b>벌어져요</b>.';
+  if(s&&!E4.Q&&!E4.myst) m+=` <span class="muted">(거리: ${DLBL[E4.d-1]})</span>`;
+  $('eMsg').innerHTML=m;
+  if(st.ang>prevAng+3) sfx('foil');
+  // 기록
+  if(s&&!E4.myst&&!E4.Q&&E4.d===1&&!E4.recs[s]){ E4.recs[s]={plate:qName(st.plateQ),foil:qName(st.foilQ),shape:'벌어진다'}; lsSet('recE',E4.recs); renderETable(String(s)); setTimeout(()=>sfx('stamp'),300); toast('📋 기록표에 기록했어요 — 이제 멀리 해 보세요'); }
+  if(s&&!E4.myst&&!E4.Q&&E4.d===5&&E4.recs[s]&&!E4.recs[s].far){ E4.recs[s].far='오므라든다'; lsSet('recE',E4.recs); renderETable(String(s)); toast('📋 "멀리 하면" 칸을 기록했어요'); }
+}
+function eTask(dt){ if(cur!==2||curTab!=='esc') return false; const st=eState(); const d=st.ang-E4.ang; if(Math.abs(d)<.05) return false; E4.ang+=d*Math.min(1,dt*6); eRender(); return true; }
+function renderETable(fresh){ const cell=(k,v)=>v?`<td${fresh===k?' class="new"':''}>${v}</td>`:'<td class="empty">?</td>';
+  $('eTable').innerHTML='<tr><th>가까이 한 대전체</th><th>금속판</th><th>금속박</th><th>금속박의 모양</th><th>멀리 하면</th></tr>'+[-1,1].map(s=>{ const r=E4.recs[s]||{};
+    return `<tr><td>${sgnHTML(s)} 대전체</td>${cell(String(s),r.plate)}${cell(String(s),r.foil)}${cell(String(s),r.shape)}${cell(String(s),r.far)}</tr>`; }).join(''); }
+
+function buildExperiments(){
+  // ①
+  chipGroup('rPair',PAIRS.map(p=>[p.id,`${MAT[p.a].ic} ${pairName(p,'a')} + ${MAT[p.b].ic} ${pairName(p,'b')}`]),R1.pair,v=>{ R1.pair=v; sfx('tap'); rReset(); });
+  $('rRub').addEventListener('click',rRub); $('rReset').addEventListener('click',()=>{ sfx('tap'); rReset(); });
+  $('rClear').addEventListener('click',()=>{ R1.recs={}; lsSet('recR',{}); renderRTable(); sfx('peel'); toast('기록을 지웠어요'); });
+  makePred('rPred','predR',[{q:'털가죽 + 플라스틱 막대 — (−)전하를 띠는 것은?',opts:['털가죽','플라스틱 막대','둘 다 대전 안 됨'],ans:'플라스틱 막대',done:()=>!!R1.recs.fp},
+    {q:'명주 헝겊 + 유리 막대 — (−)전하를 띠는 것은?',opts:['명주 헝겊','유리 막대','둘 다 대전 안 됨'],ans:'명주 헝겊',done:()=>!!R1.recs.sg},
+    {q:'플라스틱 막대 + 플라스틱 막대 — (−)전하를 띠는 것은?',opts:['한쪽 막대','둘 다 대전 안 됨'],ans:'둘 다 대전 안 됨',done:()=>!!R1.recs.pp}]);
+  rRender(); renderRTable();
+  // ②
+  fBuild();
+  chipGroup('fObj',Object.keys(FOBJ).map(k=>[k,FOBJ[k].n]),F2.obj,v=>{ F2.obj=v; const o=FOBJ[v]; fUpdateObj(); if(o.q){ const att=o.q>0; sfx(att?'attract':'repel'); if(!F2.recs[v]){ F2.recs[v]={k:att?'인력':'척력',mv:att?'끌려온다':'밀려난다'}; lsSet('recF',F2.recs); renderFTable(v); } } else sfx('tap'); });
+  $('fD').addEventListener('input',()=>{ F2.d=+$('fD').value; $('fDl').textContent=DLBL[F2.d-1]; sfx('tick'); fUpdateObj(); });
+  renderFTable();
+  const MS={A:null,B:null}; bindChips('mA',v=>{ MS.A=v; sfx('tap'); }); bindChips('mB',v=>{ MS.B=v; sfx('tap'); });
+  $('mCheck').addEventListener('click',()=>{ if(!MS.A||!MS.B){ toast('A와 B를 모두 골라 주세요'); return; } if(!F2.recs.A||!F2.recs.B){ toast('A와 B를 빨대에 직접 가까이 해 보고 정해요'); sfx('tap'); return; }
+    const ok=MS.A==='p'&&MS.B==='n'; $('mMsg').innerHTML=ok?'🎉 정답! A는 (−) 빨대를 끌어당기니 <span class="pos">(+)전하</span>, B는 밀어내니 <span class="neg">(−)전하</span>예요.':'✖ 다시 생각해 봐요. 매단 빨대는 (−)전하예요. 끌려오면 다른 종류, 밀려나면 같은 종류!';
+    if(ok){ sfx('fanfare'); fireworks(); } else sfx('wrong'); });
+  // ③
+  iInit();
+  bindChips('iMode',v=>{ I3.mode=v; I3.trail=[]; iResetCan(); $('iCanBtns').classList.toggle('hidden',v!=='can'); sfx('tap'); iMsg(); kick(); });
+  bindChips('iSign',v=>{ I3.s=+v; I3.trail=[]; iResetCan(); sfx(I3.s?'hum':'tap'); iMsg(); kick(); });
+  $('iD').addEventListener('input',()=>{ I3.d=+$('iD').value; $('iDl').textContent=DLBL[I3.d-1]; iResetCan(); sfx('tick'); iMsg(); kick(); });
+  $('iRelease').addEventListener('click',()=>{ if(I3.run) return; if(I3.cx!==CANHOME) iResetCan(); if(!I3.s){ toast('대전체가 없으면 캔은 움직이지 않아요'); sfx('tap'); return; } I3.run=true; I3.v=0; sfx('roll'); kick(); });
+  $('iCanReset').addEventListener('click',()=>{ iResetCan(); sfx('tap'); kick(); });
+  $('iFollow').addEventListener('click',()=>{ I3.follow=!I3.follow; I3.trail=[]; $('iFollow').classList.toggle('on',I3.follow); sfx('sparkle'); kick(); });
+  makePred('iPred','predI',[{q:'(−)대전체를 금속 막대에 가까이 하면, 대전체와 가까운 쪽 끝은?',opts:['(+)전하','(−)전하','중성'],ans:'(+)전하',done:()=>!!I3.recs['r-1']},
+    {q:'(+)대전체를 알루미늄 캔에 가까이 하고 캔을 놓으면?',opts:['대전체 쪽으로 끌려온다','대전체에서 밀려난다','움직이지 않는다'],ans:'대전체 쪽으로 끌려온다',done:()=>!!I3.recs.c1}]);
+  renderITable(); iMsg();
+  // ④
+  bindChips('eSign',v=>{ const prev=eState().ang; E4.myst=v==='x'; E4.s=v==='x'?1:+v; sfx(E4.s?'hum':'tap'); eRender(); eMsg(prev); kick(); });
+  $('eD').addEventListener('input',()=>{ const prev=eState().ang; E4.d=+$('eD').value; sfx('tick'); eRender(); eMsg(prev); kick(); });
+  $('eTouch').addEventListener('click',()=>{ if(!E4.s){ toast('대전체를 먼저 골라요'); return; } if(E4.d!==1){ toast('거리를 "아주 가까이"로 해야 금속판에 닿아요'); sfx('tap'); return; }
+    const prev=eState().ang; E4.Q=clamp(E4.Q+E4.s*4,-4,4); sfx('zap'); setTimeout(()=>sfx('crackle'),80); burstAt($('eRig'),{count:22,speed:7,colors:['#ffd43b','#f2a900','#fff']});
+    toast(E4.s<0?'⚡ 대전체의 전자 일부가 검전기로 이동! 검전기가 (−)로 대전':'⚡ 검전기의 전자 일부가 대전체로 이동! 검전기가 (+)로 대전'); eRender(); eMsg(prev); kick(); });
+  $('eClear').addEventListener('click',()=>{ E4.Q=0; sfx('tap'); eRender(); eMsg(99); kick(); });
+  makePred('ePred','predE',[{q:'(−)대전체를 금속판에 가까이 하면 금속판은?',opts:['(+)전하','(−)전하','중성'],ans:'(+)전하',done:()=>!!E4.recs['-1']},
+    {q:'이때 금속박은?',opts:['(+)전하','(−)전하','중성'],ans:'(−)전하',done:()=>!!E4.recs['-1']},
+    {q:'이때 두 금속박은?',opts:['벌어진다','오므라든다','변화 없다'],ans:'벌어진다',done:()=>!!E4.recs['-1']}]);
+  let MX=null; bindChips('mX',v=>{ MX=v; sfx('tap'); });
+  $('mXCheck').addEventListener('click',()=>{ if(!MX){ toast('X의 전하를 골라 주세요'); return; } const ok=MX==='p';
+    $('mXMsg').innerHTML=ok?'🎉 정답! (−)로 대전된 검전기에 X를 가까이 하면 금속박이 <b>오므라들어요</b> → X는 검전기와 다른 종류인 <span class="pos">(+)전하</span>예요.':'✖ 다시 해 봐요. (−)로 대전된 검전기에 X를 가까이 할 때 금속박이 더 벌어지면 같은 종류, 오므라들면 다른 종류예요.';
+    if(ok){ sfx('fanfare'); fireworks(); } else sfx('wrong'); });
+  eRender(); eMsg(0); renderETable();
+  document.querySelectorAll('[data-ans]').forEach(b=>b.addEventListener('click',()=>{ const a=$(b.dataset.ans); const h=a.classList.toggle('hidden'); sfx('tap'); b.textContent=h?'예시 답안 보기':'예시 답안 숨기기'; }));
+  addTask(fTask); addTask(iTask); addTask(eTask); addTask(hairTask);
+}
+
+/* ============ 스티커 붙이기 ============ */
+const BOARDS=[
+  {short:'마찰 전기와 전기력',title:'판 1 · 마찰 전기와 전기력 정리하기',desc:'표 채우기형 — 털가죽으로 플라스틱 막대를 문지를 때 일어나는 일과 전기력을 정리해요.',color:'c1',type:'table',
+   stickers:['전자','(+)전하','(−)전하','척력','인력','원자핵','중성'],
+   slots:[{id:'p',answer:'전자',name:'이동하는 입자 칸',hints:['원자에서 가볍고 움직일 수 있는 입자예요.','탐구 ①에서 파란 (−) 입자가 이동했어요.']},
+          {id:'f',answer:'(+)전하',name:'털가죽 칸',hints:['털가죽은 전자를 잃었어요.','전자를 잃으면 (+)전하가 더 많아져요.']},
+          {id:'r',answer:'(−)전하',name:'플라스틱 막대 칸',hints:['플라스틱 막대는 전자를 얻었어요.','탐구 ① 기록표를 확인해요.']},
+          {id:'s',answer:'척력',name:'같은 종류 칸',hints:['(−) 빨대 두 개를 가까이 하면?','탐구 ②에서 빨대가 밀려났어요.']},
+          {id:'d',answer:'인력',name:'다른 종류 칸',hints:['(−) 빨대에 (+) 털가죽을 가까이 하면?','탐구 ②에서 빨대가 끌려왔어요.']}],
+   render(){ const row=(a,id)=>`<tr><td style="text-align:left">${a}</td><td><div class="slot" id="slot-0-${id}"></div></td></tr>`;
+     return `<div class="tbl-wrap"><table class="tbl res-tbl"><tr><th>털가죽으로 플라스틱 막대를 문지르면…</th><th>스티커</th></tr>${row('① 두 물체 사이에서 <b>이동하는 입자</b>','p')}${row('② 전자를 <b>잃은</b> 털가죽이 띠는 전하','f')}${row('③ 전자를 <b>얻은</b> 플라스틱 막대가 띠는 전하','r')}${row('④ <b>같은 종류</b>의 전하 사이에 작용하는 힘','s')}${row('⑤ <b>다른 종류</b>의 전하 사이에 작용하는 힘','d')}</table></div>`; },
+   summary:'마찰하면 <b>전자</b>가 이동해 전자를 잃은 쪽은 <b>(+)</b>, 얻은 쪽은 <b>(−)</b>로 대전돼요. 같은 종류의 전하끼리는 <b>척력</b>, 다른 종류끼리는 <b>인력</b>!'},
+  {short:'정전기 유도',title:'판 2 · 금속 막대의 정전기 유도',desc:'그림 이름표형 — (−)대전체를 금속 막대의 A 끝에 가까이 할 때를 정리해요.',color:'c4',type:'scene',
+   stickers:['(+)전하','(−)전하','자유 전자','B 쪽으로','A 쪽으로','원자핵'],
+   slots:[{id:'p',answer:'자유 전자',name:'이동하는 입자 칸',hints:['금속 안에서 자유롭게 움직이는 입자예요.','탐구 ③에서 따라가 본 입자예요.']},
+          {id:'d',answer:'B 쪽으로',name:'이동 방향 칸',hints:['(−)대전체와 전자는 같은 종류의 전하예요.','같은 종류끼리는 밀어내요(척력).']},
+          {id:'a',answer:'(+)전하',name:'A 끝 칸',hints:['A 끝에서는 전자가 빠져나갔어요.','가까운 쪽은 대전체와 다른 종류!']},
+          {id:'b',answer:'(−)전하',name:'B 끝 칸',hints:['B 끝으로 전자가 몰려왔어요.','먼 쪽은 대전체와 같은 종류!']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-1-${id}"></div>`;
+     return `<div class="sc-grid"><div class="sc">${inducSVG({s:-1,f:1,gap:24,letters:true,blank:true})}</div><div class="sc"><div class="sc-slots"><span>이동하는 입자</span>${sl('p')}<span>입자가 이동하는 방향</span>${sl('d')}<span>A 끝이 띠는 전하</span>${sl('a')}<span>B 끝이 띠는 전하</span>${sl('b')}</div></div></div>`; },
+   summary:'대전체를 가까이 하면 금속 속 <b>자유 전자</b>가 이동해 <b>가까운 쪽은 다른 종류</b>, <b>먼 쪽은 같은 종류</b>의 전하를 띠어요. 이것이 <b>정전기 유도</b>!'},
+  {short:'검전기',title:'판 3 · 검전기에 (+)대전체 가까이 하기',desc:'그림 이름표형 — (+)대전체를 대전되지 않은 검전기의 금속판에 가까이 할 때를 정리해요.',color:'c2',type:'scene',
+   stickers:['(−)전하','(+)전하','벌어진다','오므라든다','변화 없다','원자핵이 이동'],
+   slots:[{id:'p',answer:'(−)전하',name:'금속판 칸',hints:['(+)대전체가 자유 전자를 끌어당겨요.','전자가 금속판 쪽으로 모였어요.']},
+          {id:'f',answer:'(+)전하',name:'금속박 칸',hints:['금속박에서는 전자가 빠져나갔어요.','먼 쪽은 대전체와 같은 종류!']},
+          {id:'s',answer:'벌어진다',name:'금속박 모양 칸',hints:['두 금속박이 같은 종류의 전하를 띠어요.','같은 종류끼리는 밀어내요.']},
+          {id:'r',answer:'오므라든다',name:'멀리 하면 칸',hints:['대전체를 치우면 자유 전자는 어떻게 될까요?','탐구 ④에서 거리를 멀리 해 보았어요.']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-2-${id}"></div>`;
+     return `<div class="sc-grid"><div class="sc" style="max-width:320px;margin:0 auto;width:100%">${escSVG({s:1,gap:16,blank:true,letters:true})}</div><div class="sc"><div class="sc-slots"><span>(가) 금속판</span>${sl('p')}<span>(나) 금속박</span>${sl('f')}<span>금속박의 모양</span>${sl('s')}<span>대전체를 멀리 하면 금속박은</span>${sl('r')}</div></div></div>`; },
+   summary:'(+)대전체를 가까이 하면 자유 전자가 금속판으로 끌려가 <b>금속판 (−), 금속박 (+)</b>! 두 금속박이 같은 전하로 밀어내 <b>벌어지고</b>, 대전체를 멀리 하면 <b>오므라들어요</b>.'}
+];
+BOARDS.forEach(b=>b.slots.forEach(s=>s.ph='?'));
+const STK={cur:0,boards:[]}; let picked=null;
+function stkLoad(){ const s=lsGet('stk',null); STK.boards=BOARDS.map((b,i)=>Object.assign({placed:{},ok:{},tries:0,done:false,hint:{}},(s&&s.boards&&s.boards[i])||{})); STK.cur=s&&s.cur?s.cur:0; }
+function stkSave(){ lsSet('stk',{cur:STK.cur,boards:STK.boards}); }
+function unlocked(i){ return i===0||STK.boards[i-1].done; }
+function renderBoardTabs(){
+  $('boardTabs').innerHTML=BOARDS.map((b,i)=>`<button class="board-tab${i===STK.cur?' active':''}${unlocked(i)?'':' locked'}${STK.boards[i].done?' done':''}" data-b="${i}">${unlocked(i)?'':'<span class="lk">🔒</span>'}${i+1}. ${b.short}</button>`).join('');
+  $('boardTabs').querySelectorAll('.board-tab').forEach(t=>t.addEventListener('click',()=>{ const i=+t.dataset.b; if(!unlocked(i)){ sfx('wrong'); toast('🔒 앞 판을 먼저 완성해요'); return; } picked=null; STK.cur=i; stkSave(); sfx('tap'); renderBoardFrame(); }));
+}
+function renderBoardFrame(){
+  const b=BOARDS[STK.cur], bi=STK.cur;
+  renderBoardTabs(); $('boardTitle').textContent=b.title; $('boardDesc').textContent=b.desc;
+  let html=b.render();
+  if(b.type==='svg'){ html=html.replace('</div>',b.slots.map(s=>`<div class="slot abs" id="slot-${bi}-${s.id}" style="left:${s.x}%;top:${s.y}%"></div>`).join('')+'</div>'); }
+  $('stkBoard').innerHTML=html; $('stkMsg').innerHTML='<span class="trap-note">⚠️ 함정 스티커는 어디에도 붙이지 않아야 정답이에요.</span>';
+  const bd=$('stkBoard'); bd.classList.remove('rise-in'); void bd.offsetWidth; bd.style.animation='riseIn .45s both';
+  renderDone(false); renderStickers();
+}
+function stLabel(sid){ const [bi,i]=sid.split('-').map(Number); return BOARDS[bi].stickers[i]; }
+function renderStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi];
+  const used=new Set(Object.values(st.placed));
+  const tray=$('stkTray'); tray.innerHTML='<div class="tray-lbl">🗂️ 스티커 보관함 — 하나를 골라 빈칸을 눌러요</div>';
+  b.stickers.forEach((lab,i)=>{ const sid=bi+'-'+i; if(used.has(sid)) return;
+    const s=document.createElement('button'); s.className='sticker '+b.color+(picked===sid?' picked wiggle':''); s.dataset.sid=sid; s.style.setProperty('--tilt',(((i*7)%5)-2)*1.3+'deg'); s.textContent=lab;
+    s.addEventListener('click',()=>{ if(st.done) return; picked=picked===sid?null:sid; sfx(picked?'pick':'tap'); renderStickers(); });
+    tray.appendChild(s); });
+  if(tray.children.length===1) tray.insertAdjacentHTML('beforeend','<span class="muted">보관함이 비었어요</span>');
+  b.slots.forEach(sl=>{
+    const el=$('slot-'+bi+'-'+sl.id); if(!el) return; const sid=st.placed[sl.id], ok=!!st.ok[sl.id];
+    el.classList.toggle('ready',!!picked&&!ok); el.classList.toggle('ok',ok); el.innerHTML='';
+    if(sid){ const s=document.createElement('button'); s.className='sticker '+b.color; s.textContent=stLabel(sid);
+      s.addEventListener('click',e=>{ e.stopPropagation(); if(ok||st.done){ sfx('tap'); return; } if(picked){ place(sl.id); return; } delete st.placed[sl.id]; sfx('peel'); stkSave(); renderStickers(); });
+      el.appendChild(s); }
+    else el.innerHTML=`<span class="slot-num">${sl.ph||'?'}</span>`;
+    el.onclick=()=>{ if(ok||st.done) return; if(!picked){ sfx('tap'); toast('👇 먼저 보관함에서 스티커를 골라요'); return; } place(sl.id); };
+  });
+  $('stkCount').textContent=Object.keys(st.placed).length+' / '+b.slots.length; $('stkTry').textContent=st.tries;
+  $('stkCheck').disabled=st.done;
+}
+function place(slId){
+  const bi=STK.cur, st=STK.boards[bi]; const src=document.querySelector(`#stkTray .sticker[data-sid="${picked}"]`); const r0=src?src.getBoundingClientRect():null;
+  st.placed[slId]=picked; picked=null; sfx('stick'); stkSave(); renderStickers();
+  const dst=$('slot-'+bi+'-'+slId).querySelector('.sticker');
+  if(r0&&dst&&!REDUCED){ const r1=dst.getBoundingClientRect(); dst.style.transition='none'; dst.style.transform=`translate(${r0.left-r1.left}px,${r0.top-r1.top}px) scale(1.15) rotate(-6deg)`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ dst.style.transition='transform .42s cubic-bezier(.2,1.35,.4,1)'; dst.style.transform=''; })); }
+}
+function checkStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi]; if(st.done) return;
+  st.tries++; let wrong=0, empty=0, newOk=0; const msgs=[];
+  b.slots.forEach(sl=>{
+    if(st.ok[sl.id]) return; const el=$('slot-'+bi+'-'+sl.id), sid=st.placed[sl.id];
+    if(!sid){ empty++; return; }
+    if(Array.isArray(sl.answer)?sl.answer.includes(stLabel(sid)):stLabel(sid)===sl.answer){ st.ok[sl.id]=true; newOk++; setTimeout(()=>burstAt(el,{count:14,speed:5,size:6}),newOk*90); }
+    else { wrong++; el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); st.hint[sl.id]=Math.min((st.hint[sl.id]||0)+1,sl.hints.length);
+      msgs.push(`<span class="h">💡 <b>${sl.name}</b> — ${sl.hints[st.hint[sl.id]-1]}</span>`);
+      setTimeout(()=>{ if(st.placed[sl.id]===sid) delete st.placed[sl.id]; el.classList.remove('no'); stkSave(); renderStickers(); },850); }
+  });
+  const allOk=b.slots.every(sl=>st.ok[sl.id]);
+  if(allOk){ st.done=true; stkSave(); renderStickers(); $('stkMsg').innerHTML=''; setTimeout(()=>renderDone(true),350); }
+  else {
+    if(wrong){ sfx('wrong'); if(newOk) setTimeout(()=>sfx('correct'),250); }
+    else if(newOk) sfx('correct'); else sfx('tap');
+    let m=''; if(newOk) m+=`<span style="color:#12a874;font-weight:800">✔ ${newOk}칸 정답!</span> `;
+    if(wrong) m+=`<span style="color:#e5484d;font-weight:800">✖ ${wrong}칸은 다시 생각해 봐요.</span>`;
+    if(empty) m+=` <span class="muted">빈칸이 ${empty}개 남았어요.</span>`;
+    $('stkMsg').innerHTML=m+msgs.join(''); stkSave(); renderStickers();
+  }
+}
+function renderDone(fx){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi], next=bi<BOARDS.length-1, all=STK.boards.every(x=>x.done);
+  $('stkDone').innerHTML=st.done?`<div class="complete-banner"><div class="stamp">완성!</div><h3 style="margin:0 0 6px">🎉 ${b.short} 정리판 완성!</h3><p>${b.summary}</p><p class="muted">시도 ${st.tries}회 · 이 정리판이 바로 나의 개념 정리 노트예요 📒</p></div>`:'';
+  $('stkNext').classList.toggle('hidden',!(st.done&&next&&!all)); $('stkToLife').classList.toggle('hidden',!(all||(st.done&&!next)));
+  if(st.done&&fx){ sfx('fanfare'); setTimeout(()=>sfx('stamp'),180); fireworks(); renderBoardTabs();
+    if(next){ setTimeout(()=>{ sfx('unlock'); const t=$('boardTabs').children[bi+1]; if(t){ t.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:600,easing:'cubic-bezier(.3,1.6,.5,1)'}); burstAt(t,{count:20,speed:6}); } toast('🔓 다음 판이 열렸어요!'); },900); }
+    if(all) setTimeout(()=>toast('🏅 스티커 정리판 '+BOARDS.length+'개를 모두 완성했어요!'),1300);
+  }
+}
+
+/* ============ 실생활 ============ */
+const LIFE=[
+  ['🧥','스웨터를 벗을 때 "타닥"','겨울에 털 스웨터를 벗으면 "타닥타닥" 소리가 나고 어두운 곳에서는 작은 불꽃도 보여요.','스웨터와 속옷(또는 머리카락)이 마찰하며 <b>전자가 이동해 대전</b>돼요. 쌓인 전하가 한꺼번에 이동하며 작은 불꽃과 소리가 나요.','마찰 전기'],
+  ['🎈','풍선에 달라붙는 머리카락','풍선을 머리에 문지른 뒤 들어 올리면 머리카락이 따라 올라가요.','머리카락의 전자가 풍선으로 이동해 풍선은 (−), 머리카락은 (+)를 띠어요. <b>다른 종류의 전하 사이의 인력</b> 때문에 끌려 올라가요. (생각 열기)','마찰 전기 · 인력'],
+  ['🧹','정전기 먼지떨이','비닐 먼지떨이를 흔든 뒤 가까이 대면 먼지가 착 달라붙어요.','먼지떨이를 흔들거나 문지르면 <b>마찰 전기</b>로 대전돼요. 대전체는 가벼운 먼지를 끌어당기므로 먼지가 잘 붙어요.','마찰 전기 · 전기력'],
+  ['🍱','그릇에 착 붙는 비닐 랩','비닐 랩을 뜯어 그릇에 대면 저절로 달라붙어요.','랩을 감긴 롤에서 뜯어낼 때 마찰로 <b>랩이 대전</b>돼요. 대전된 랩이 그릇을 끌어당겨 잘 달라붙어요.','마찰 전기'],
+  ['🚪','문손잡이의 "찌릿"','겨울에 카펫 위를 걷다가 금속 문손잡이에 손을 대면 찌릿해요.','걸을 때 신발과 바닥이 마찰해 몸이 대전돼요. 손을 금속 손잡이에 가까이 하면 <b>정전기 유도</b>로 손잡이의 가까운 쪽에 다른 종류의 전하가 모이고, 쌓인 전하가 한꺼번에 이동하며 찌릿해요.','마찰 전기 · 정전기 유도'],
+  ['⚡','번개와 피뢰침','높은 건물 꼭대기에는 뾰족한 금속 막대(피뢰침)가 있어요.','대전된 구름이 다가오면 <b>정전기 유도</b>로 피뢰침 끝에 다른 종류의 전하가 모여요. 번개의 전하가 피뢰침과 도선을 따라 땅으로 흘러가 건물을 보호해요. <span class="badge ext">확장</span>','정전기 유도'],
+  ['⛽','주유소의 정전기 방지 패드','주유하기 전에 "정전기 방지 패드"를 손으로 만지라고 해요.','몸에 쌓인 전하가 기름 증기 근처에서 불꽃을 일으키면 위험해요. 패드를 만지면 몸의 전하가 땅으로 빠져나가 <b>대전된 상태를 없애</b> 줘요. <span class="badge ext">확장</span>','마찰 전기의 피해 줄이기'],
+  ['💧','겨울에 정전기가 잘 생기는 까닭','여름보다 건조한 겨울에 정전기가 훨씬 자주 생겨요.','공기 중에 수증기가 많으면 물체에 쌓인 전하가 공기 중으로 쉽게 빠져나가요. <b>건조한 겨울</b>에는 전하가 빠져나가지 못하고 쌓여 정전기가 잘 생겨요. 가습기를 켜면 줄어들어요.','대전과 전하']
+];
+function buildLife(){
+  $('lifeGrid').innerHTML=LIFE.map((l,i)=>`<div class="life-card rise-in" style="--i:${i}"><span class="ic">${l[0]}</span><h3>${l[1]}</h3><p style="margin:0">${l[2]}</p><div class="more">👆 왜 그럴까?</div><div class="why"><p style="color:var(--color-text)">${l[3]}</p><span class="link-tag">🔗 ${l[4]}</span></div></div>`).join('');
+  $('lifeGrid').querySelectorAll('.life-card').forEach(c=>c.addEventListener('click',()=>{ if(c.classList.contains('open')) return; c.classList.add('open'); sfx('zap'); burstAt(c.querySelector('.ic'),{count:12,speed:5,size:6,colors:['#ffd43b','#f2a900','#2f6fdb','#e03131']});
+    if($('lifeGrid').querySelectorAll('.life-card.open').length===LIFE.length){ setTimeout(()=>{ sfx('combo'); toast('🌟 생활 속 정전기 카드를 모두 열었어요!'); burstAt($('toQuiz'),{count:30,speed:8}); },400); } }));
+}
+
+/* ============ 개념 확인 10문항 ============ */
+const QF=(h)=>`<div style="max-width:420px;margin:0 auto">${h}</div>`;
+const QUIZ=[
+  {type:'개념 이해',q:'서로 다른 두 물체를 마찰할 때 한 물체에서 다른 물체로 <b>이동하는 것</b>은?',opts:['전자','원자핵','(+)전하를 띤 입자','(+)전하와 (−)전하 모두'],exp:'원자핵은 이동하지 않고, 가벼운 <b>전자</b>만 이동해요. 전자를 잃은 물체는 (+), 얻은 물체는 (−)로 대전돼요.'},
+  {type:'적용 · 가상실험',q:'털가죽으로 플라스틱 막대를 문질렀더니 플라스틱 막대가 (−)전하를 띠었다. 그 까닭은?',opts:['털가죽의 전자가 플라스틱 막대로 이동했기 때문이다.','플라스틱 막대의 전자가 털가죽으로 이동했기 때문이다.','털가죽의 원자핵이 플라스틱 막대로 이동했기 때문이다.','마찰할 때 (−)전하가 새로 만들어졌기 때문이다.'],exp:'플라스틱 막대가 털가죽에서 온 <b>전자를 얻어</b> (−)전하를 띠어요. 털가죽은 전자를 잃어 (+)전하를 띠어요. (탐구 ①)'},
+  {type:'자료 해석 · 원자 모형',q:'그림 (가)는 마찰하기 전, (나)는 마찰한 후 물체 A를 이루는 원자를 모형으로 나타낸 것이다. 옳은 것은?',fig:'',opts:['A는 전자를 잃어 (+)전하로 대전되었다.','A는 (+)전하를 얻어 (+)전하로 대전되었다.','A는 전자를 얻어 (−)전하로 대전되었다.','마찰한 뒤 원자핵의 (+)전하량이 늘어났다.'],exp:'원자핵의 (+)전하량은 그대로(+3)인데 전자가 3개 → 2개로 줄었어요. A는 <b>전자를 잃어 (+)전하</b>로 대전되었어요.'},
+  {type:'개념 이해',q:'털가죽과 플라스틱 막대를 마찰했더니 털가죽에서 플라스틱 막대로 전자가 이동했다. 마찰한 뒤 두 물체에 대한 설명으로 옳은 것은?',opts:['두 물체가 띤 전하의 양은 같고, 종류는 반대이다.','털가죽이 띤 전하의 양이 플라스틱 막대보다 많다.','두 물체는 모두 (−)전하를 띤다.','두 물체가 띤 전하의 합은 (−)전하이다.'],exp:'이동한 전자 수만큼 한쪽은 (+), 다른 쪽은 (−)가 되므로 <b>양은 같고 종류는 반대</b>예요. 전하는 새로 생기지 않고 이동만 해요.'},
+  {type:'적용 · 전기력',q:'털가죽으로 문지른 플라스틱 빨대를 실에 매달고 물체 B를 가까이 했더니 빨대가 B에서 <b>멀어졌다</b>. B에 대한 설명으로 옳은 것은?',opts:['B는 (−)전하로 대전되어 있다.','B는 (+)전하로 대전되어 있다.','B는 대전되지 않은 물체이다.','B는 빨대를 문지른 털가죽이다.'],exp:'빨대는 (−)전하예요. 밀어내는 힘(<b>척력</b>)은 <b>같은 종류</b>의 전하 사이에 작용하므로 B는 (−)전하예요. 빨대를 문지른 털가죽은 (+)전하라서 끌어당겨요. (탐구 ②)'},
+  {type:'가상실험 결과',q:'탐구 ①에서 명주 헝겊으로 유리 막대를 문질렀을 때의 결과로 옳은 것은?',opts:['유리 막대의 전자가 명주 헝겊으로 이동해 유리 막대는 (+)전하를 띤다.','명주 헝겊의 전자가 유리 막대로 이동해 유리 막대는 (−)전하를 띤다.','유리 막대와 명주 헝겊은 모두 (+)전하를 띤다.','유리 막대의 원자핵이 명주 헝겊으로 이동한다.'],exp:'유리 막대가 전자를 잃어 <b>(+)전하</b>, 명주 헝겊이 전자를 얻어 (−)전하를 띠어요. 같은 명주 헝겊도 플라스틱 막대와 문지르면 (+)전하를 띠어요.'},
+  {type:'자료 해석 · 스티커 연계',q:'그림과 같이 (+)대전체를 금속 막대의 A 끝에 닿지 않게 가까이 하였다. A 끝과 B 끝이 띠는 전하는?',fig:'',opts:['A: (−)전하, B: (+)전하','A: (+)전하, B: (−)전하','A, B 모두 (+)전하','A, B 모두 중성'],exp:'(+)대전체가 자유 전자를 <b>끌어당겨</b> 전자가 A 쪽으로 이동해요. 가까운 A는 <b>다른 종류인 (−)</b>, 먼 B는 <b>같은 종류인 (+)</b>를 띠어요. (스티커 판 2와 반대 상황)'},
+  {type:'자료 해석 · 검전기',q:'대전되지 않은 검전기의 금속판에 (−)대전체를 가까이 하였다. (가) 금속판과 (나) 금속박에 대한 설명으로 옳은 것은?',fig:'',opts:['(가)는 (+)전하, (나)는 (−)전하를 띠고 금속박이 벌어진다.','(가)는 (−)전하, (나)는 (+)전하를 띠고 금속박이 벌어진다.','(가), (나) 모두 (−)전하를 띠고 금속박이 오므라든다.','대전체의 전자가 금속판으로 넘어와 금속박이 벌어진다.'],exp:'(−)대전체가 금속판의 자유 전자를 <b>밀어내</b> 전자가 금속박으로 이동해요. 금속판 (+), 금속박 (−)이 되고 두 금속박이 같은 전하로 밀어내 <b>벌어져요</b>. 대전체가 닿지 않았으니 전하가 넘어오지는 않아요. (탐구 ④)'},
+  {type:'가상실험 결과 · 통합',q:'대전되지 않은 알루미늄 캔에 (−)대전체와 (+)대전체를 각각 닿지 않게 가까이 하였다. 결과로 옳은 것은?',opts:['두 경우 모두 캔이 대전체 쪽으로 끌려온다.','(−)대전체 쪽으로만 끌려온다.','(+)대전체 쪽으로만 끌려온다.','두 경우 모두 캔이 대전체에서 멀어진다.'],exp:'정전기 유도로 캔의 <b>가까운 쪽에 항상 다른 종류</b>의 전하가 모여요. 가까운 쪽의 인력이 먼 쪽의 척력보다 크므로 <b>어느 대전체든</b> 캔이 끌려와요. (탐구 ③)'},
+  {type:'오개념 확인 · 통합',q:'(−)대전체를 금속 막대에 닿지 않게 가까이 했을 때 금속 막대에 대한 설명으로 옳은 것은?',opts:['금속 막대 전체가 띤 전하의 합은 0(중성)이다.','금속 막대 전체가 (−)전하로 대전된다.','대전체의 전자가 금속 막대로 이동한다.','금속 막대의 원자핵이 대전체 쪽으로 이동한다.'],exp:'자유 전자가 한쪽으로 <b>몰렸을 뿐</b> 금속 막대의 전자 수는 그대로이므로 전체는 <b>중성</b>이에요. 대전체를 치우면 전자가 다시 고르게 퍼져요.'}
+];
+QUIZ[2].fig=QF(`<div style="display:flex;gap:10px"><div style="flex:1">${atomSVG(3,{label:'(가) 마찰 전'})}</div><div style="flex:1">${atomSVG(2,{label:'(나) 마찰 후'})}</div></div>`);
+QUIZ[6].fig=QF(inducSVG({s:1,f:1,gap:24,letters:true,blank:true}));
+QUIZ[7].fig=`<div style="max-width:240px;margin:0 auto">${escSVG({s:-1,gap:16,blank:true,letters:true})}</div>`;
+let qz=null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(list,retry){ qz={list:shuffle(list||QUIZ.map((_,i)=>i)),i:0,score:0,wrong:[],t0:Date.now(),answered:false,streak:0,retry:!!retry,done:false}; if(cur!==5) goTo(5); renderQuestion(); }
+function renderQuestion(){
+  const qi=qz.list[qz.i], q=QUIZ[qi]; qz.answered=false; qz.order=shuffle(q.opts.map((_,i)=>i));
+  $('qNum').textContent=(qz.i+1)+' / '+qz.list.length; $('qBar').style.width=(qz.i/qz.list.length*100)+'%';
+  const card=$('qCard'); card.classList.remove('q-card'); void card.offsetWidth; card.classList.add('q-card');
+  card.innerHTML=`<span class="q-type">${q.type}</span>${qz.retry?' <span class="q-type" style="background:#fff0e2;color:#b35300">다시 풀기</span>':''}<div class="q-text">Q${qz.i+1}. ${q.q}</div>${q.fig?`<div class="q-fig">${q.fig}</div>`:''}
+    <div id="opts">${qz.order.map((oi,k)=>`<button class="opt" data-oi="${oi}"><span class="n">${'①②③④'[k]}</span><span>${q.opts[oi]}</span></button>`).join('')}</div><div id="fb"></div>`;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  $('qNext').classList.add('hidden');
+}
+function answer(btn){
+  if(qz.answered) return; qz.answered=true;
+  const qi=qz.list[qz.i], q=QUIZ[qi], ok=+btn.dataset.oi===0;
+  $('qCard').querySelectorAll('.opt').forEach(b=>{ if(+b.dataset.oi===0) b.classList.add('correct'); });
+  if(ok){ qz.score++; qz.streak++; sfx(qz.streak>=3?'combo':'correct'); burstAt(btn,{count:qz.streak>=3?60:34,speed:qz.streak>=3?11:8});
+    const r=btn.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,qz.streak>=3?`🔥 ${qz.streak}연속!`:'정답! +1',qz.streak>=3?'#ff6a00':'#12a874');
+    const cb=$('combo'); cb.textContent=qz.streak>=2?`🔥 ${qz.streak}연속`:''; cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump');
+  } else { qz.streak=0; btn.classList.add('wrong'); sfx('wrong'); qz.wrong.push(qi); $('combo').textContent=''; if(navigator.vibrate) try{navigator.vibrate(80);}catch(e){} }
+  $('fb').innerHTML=`<div class="feedback ${ok?'ok':'no'}"><b class="big">${ok?'⭕ 정답이에요!':'❌ 아쉬워요! 정답은 초록색 보기예요.'}</b><br>${q.exp}</div>`;
+  $('qBar').style.width=((qz.i+1)/qz.list.length*100)+'%';
+  const nb=$('qNext'); nb.textContent=qz.i===qz.list.length-1?'결과 보기 🏁':'다음 문제 →'; nb.classList.remove('hidden');
+  setTimeout(()=>{ const r=$('fb').getBoundingClientRect(); if(r.bottom>innerHeight) window.scrollBy({top:r.bottom-innerHeight+90,behavior:'smooth'}); },60);
+}
+function nextQ(){ sfx('tap'); if(qz.i<qz.list.length-1){ qz.i++; renderQuestion(); window.scrollTo(0,0); } else showResult(); }
+function showResult(){
+  qz.done=true; const total=qz.list.length, sc=qz.score, rate=sc/total, sec=Math.round((Date.now()-qz.t0)/1000);
+  goTo(6);
+  const stars=rate>=.9?3:rate>=.7?2:rate>=.4?1:0;
+  $('trophy').textContent=rate>=.9?'🏆':rate>=.7?'🥈':'💪';
+  $('trophy').style.animation='none'; void $('trophy').offsetWidth; $('trophy').style.animation='';
+  [...$('stars').children].forEach((s,i)=>{ s.classList.remove('on'); if(i<stars) setTimeout(()=>{ s.classList.add('on'); sfx('pop'); burstAt(s,{count:14,speed:6,shapes:['s'],colors:['#ffd43b','#ffb238']}); },500+i*320); });
+  $('scoreBig').parentElement.nextElementSibling; $('scoreBig').nextElementSibling.textContent=' / '+total;
+  let n=0; const el=$('scoreBig'); el.textContent='0'; const tm=setInterval(()=>{ if(n>=sc){ clearInterval(tm); return; } n++; el.textContent=n; sfx('tick'); },110);
+  $('resultMsg').textContent=qz.retry?`틀렸던 ${total}문제 중 ${sc}문제를 맞혔어요!`:rate===1?'완벽해요! 정전기 박사 인정! 🎉':rate>=.8?'아주 잘했어요! 마찰 전기와 정전기 유도를 잘 이해했어요.':rate>=.5?'좋아요! 틀린 문제를 다시 풀어 보면 완벽해질 거예요.':'괜찮아요! 개념과 가상실험을 다시 보고 도전해 봐요.';
+  $('resultTime').textContent=`⏱ 걸린 시간 ${Math.floor(sec/60)}분 ${sec%60}초`;
+  $('wrongBox').innerHTML=qz.wrong.length?'<h3>📌 틀린 문제</h3>'+qz.wrong.map(qi=>`<p style="color:var(--color-text)">• ${QUIZ[qi].q}<br><span class="muted">정답: ${QUIZ[qi].opts[0]}</span></p>`).join(''):'<h3>🎯 틀린 문제가 없어요!</h3><p>모든 문제를 맞혔어요.</p>';
+  $('retryWrong').classList.toggle('hidden',!qz.wrong.length);
+  setTimeout(()=>{ if(rate>=.8){ sfx('fanfare'); fireworks(); } else { sfx('correct'); confetti(innerWidth/2,innerHeight*.3,{count:50,speed:9}); } },350);
+}
+
+/* ============ 시작 ============ */
+function init(){
+  const bb=$('bgBubbles'); for(let i=0;i<14;i++){ const s=document.createElement('span'); const z=14+Math.random()*36; s.style.width=s.style.height=z+'px'; s.style.left=Math.random()*100+'%'; s.style.animationDuration=(14+Math.random()*16)+'s'; s.style.animationDelay=(-Math.random()*20)+'s'; s.style.opacity=.35+Math.random()*.4; bb.appendChild(s); }
+  FX.cv=$('fx'); FX.ctx=FX.cv.getContext('2d'); fxResize(); addEventListener('resize',fxResize);
+  const sb=$('soundBtn'); const upd=()=>{ sb.textContent=SND.on?'🔊':'🔇'; }; upd();
+  sb.addEventListener('click',()=>{ SND.on=!SND.on; lsSet('sound',SND.on); upd(); if(SND.on) sfx('correct'); toast(SND.on?'🔊 효과음 켜짐':'🔇 효과음 꺼짐'); });
+  document.addEventListener('pointerdown',e=>{ const b=e.target.closest('.btn'); if(!b||b.disabled) return; const r=b.getBoundingClientRect(), z=Math.max(r.width,r.height); const s=document.createElement('span'); s.className='ripple'; s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px'; b.appendChild(s); setTimeout(()=>s.remove(),650); });
+  document.addEventListener('pointerdown',e=>{ if(e.target.closest('.chip,.tab,.step-dot,.icon-btn,.board-tab,.btn,.myth,.life-card,.part')) confetti(e.clientX,e.clientY,{count:7,speed:3.5,size:5,g:.1,decay:.045,shapes:['c','s'],colors:['#ffd43b','#f2a900','#2f6fdb','#e03131','#7b2ff7']}); });
+  document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ goTo(+g.dataset.go); return; } const t=e.target.closest('[data-tabgo]'); if(t){ setTab(t.dataset.tabgo); } });
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+  document.querySelectorAll('[data-save]').forEach(t=>{ const k=t.dataset.save; t.value=lsGet('note-'+k,''); let tm=null;
+    t.addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(()=>{ lsSet('note-'+k,t.value); const s=$('saved-'+k); if(s){ s.textContent='저장됨 ✓'; setTimeout(()=>s.textContent='',1500); } },400); }); });
+  document.querySelectorAll('[data-save-check]').forEach(c=>{ const k='chk-'+c.dataset.saveCheck; c.checked=!!lsGet(k,false); c.addEventListener('change',()=>{ lsSet(k,c.checked); if(c.checked){ sfx('pop'); burstAt(c,{count:12,speed:5,size:6}); if([...document.querySelectorAll('[data-save-check]')].every(x=>x.checked)){ sfx('combo'); toast('✅ 학습목표를 모두 달성했어요!'); } } }); });
+  // 도입
+  $('heroBox').innerHTML=heroSVG(); hairDraw();
+  $('startBtn').addEventListener('click',()=>{ goTo(1); });
+  const pg=lsGet('progress',0); if(pg>0){ $('resumeBtn').classList.remove('hidden'); $('resumeBtn').addEventListener('click',()=>goTo(pg)); }
+  $('thinkAnsBtn').addEventListener('click',()=>{ const a=$('thinkAns'); const h=a.classList.toggle('hidden'); sfx('tap'); $('thinkAnsBtn').textContent=h?'예시 답안 보기':'예시 답안 숨기기'; });
+  $('hairRub').addEventListener('click',()=>{ if(HAIR.lift){ HAIR.lift=false; HAIR.bty=96; HAIR.tt=0; }
+    HAIR.n=Math.min(6,HAIR.n+1); sfx('rub'); if(HAIR.n%2===0) setTimeout(()=>sfx('crackle'),150); HAIR.tt=Math.min(.25,HAIR.n*.05); hairDraw(); const g=$('balloonG'); if(g&&!REDUCED) g.animate([{transform:'translateX(0)'},{transform:'translateX(-26px)'},{transform:'translateX(26px)'},{transform:'translateX(0)'}],{duration:420}); kick(); });
+  $('hairLift').addEventListener('click',()=>{ if(!HAIR.n){ toast('🎈 먼저 풍선을 머리에 문질러 보세요'); sfx('tap'); return; } HAIR.lift=true; HAIR.bty=48; HAIR.tt=Math.min(1,.3+HAIR.n*.14); sfx('attract'); setTimeout(()=>sfx('crackle'),200); kick();
+    setTimeout(()=>{ toast(HAIR.n>=3?'😲 머리카락이 풍선을 따라 올라가요!':'조금 더 문지르면 더 잘 끌려와요'); burstAt($('hairBox'),{count:16,speed:6}); },500); });
+  $('hairReset').addEventListener('click',()=>{ HAIR.n=0; HAIR.lift=false; HAIR.tt=0; HAIR.bty=96; sfx('tap'); kick(); hairDraw(); });
+  // 모듈
+  buildConcepts(); buildExperiments(); buildLife(); stkLoad();
+  $('stkCheck').addEventListener('click',checkStickers);
+  $('stkReset').addEventListener('click',()=>{ const st=STK.boards[STK.cur]; Object.assign(st,{placed:{},ok:{},tries:0,done:false,hint:{}}); picked=null; stkSave(); sfx('peel'); renderBoardFrame(); });
+  $('stkNext').addEventListener('click',()=>{ if(STK.cur<BOARDS.length-1){ STK.cur++; picked=null; stkSave(); sfx('unlock'); renderBoardFrame(); window.scrollTo(0,0); } });
+  $('toQuiz').addEventListener('click',()=>{ startQuiz(); });
+  $('qNext').addEventListener('click',nextQ);
+  $('retryWrong').addEventListener('click',()=>startQuiz(qz.wrong.slice(),true));
+  $('retryAll').addEventListener('click',()=>startQuiz());
+  enterHooks[0]=()=>{ hairDraw(); };
+  enterHooks[2]=()=>{ setTab(curTab); };
+  enterHooks[3]=()=>{ renderBoardFrame(); };
+  enterHooks[5]=()=>{ if(!qz||qz.done) startQuiz(); };
+  curTab=lsGet('tab','plan');
+  goTo(0);
+}
+init();
+
+</script>
+</body>
+</html>
