@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전류, 전압, 저항 사이의 관계 가상실험실</title>
+<style>
+:root{
+  --color-primary:#3361e8;
+  --color-primary-dark:#1f43b8;
+  --color-secondary:#0fb59b;
+  --color-accent:#ff8a3d;
+  --color-bg:#f1f0ff;
+  --color-surface:#ffffff;
+  --color-text:#1b1d4a;
+  --color-text-light:#5a5f80;
+  --color-success:#12a874;
+  --color-error:#e5484d;
+  --art:#e03131;
+  --ven:#4263eb;
+  --kid:#c2255c;
+  --urine:#f5b700;
+  --filt:#7048e8;
+  --reab:#12b886;
+  --sec:#f76707;
+  --line:#e2e3f3;
+  --radius:20px;
+  --shadow:0 10px 30px rgba(60,40,140,.10);
+  --shadow-s:0 4px 12px rgba(60,40,140,.10);
+  --font:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;font-family:var(--font);color:var(--color-text);}
+body{overflow-x:hidden;background:radial-gradient(1200px 600px at 10% -10%,#dfe8ff 0,transparent 60%),radial-gradient(900px 500px at 110% 10%,#d9fbf3 0,transparent 55%),var(--color-bg);min-height:100vh;}
+button{font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#bgBubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+#bgBubbles span{position:absolute;bottom:-80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(120,170,255,.25) 60%,rgba(120,170,255,.05));animation:rise linear infinite;}
+@keyframes rise{to{transform:translateY(-120vh) translateX(30px);}}
+#fx{position:fixed;inset:0;width:100vw !important;height:100vh;pointer-events:none;z-index:9000;background:transparent !important;border-radius:0 !important;}
+#app{position:relative;z-index:1;max-width:980px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:12px 16px 70px;}
+/* 상단 바 */
+.topbar{position:sticky;top:0;z-index:50;margin:0 -16px 14px;padding:10px 16px 8px;background:rgba(238,243,255,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.topbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brand{font-weight:800;font-size:15px;color:var(--color-primary-dark);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brand i{font-style:normal;margin-right:4px;}
+.icon-btn{border:none;background:#fff;border-radius:14px;min-width:48px;height:48px;font-size:21px;box-shadow:var(--shadow-s);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.icon-btn:active{transform:scale(.92);}
+.step-indicator{display:flex;gap:6px;}
+.step-dot{flex:1;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:12px;color:var(--color-text-light);min-width:0;background:none;border:none;padding:0;min-height:40px;}
+.step-dot i{display:block;width:100%;height:8px;border-radius:5px;background:#d7e0f5;position:relative;overflow:hidden;}
+.step-dot i::after{content:'';position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--color-secondary),#3ad1b8);border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.step-dot.done i::after{width:100%;}
+.step-dot.active i::after{width:100%;background:linear-gradient(90deg,var(--color-primary),#6a8cff);}
+.step-dot.active{color:var(--color-primary);font-weight:800;}
+.step-dot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* 화면 전환 */
+.screen{display:none;flex:1;flex-direction:column;}
+.screen.active{display:flex;animation:screenIn .5s cubic-bezier(.2,.8,.2,1);}
+.screen.active.back{animation:screenInBack .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes screenIn{from{opacity:0;transform:translateX(40px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes screenInBack{from{opacity:0;transform:translateX(-40px) scale(.985);}to{opacity:1;transform:none;}}
+.screen.active .rise-in{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 80ms);}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+h1{font-size:clamp(28px,5.4vw,42px);margin:6px 0 8px;line-height:1.25;letter-spacing:-.02em;}
+h2{font-size:clamp(21px,3.6vw,27px);margin:0 0 10px;letter-spacing:-.01em;}
+h3{font-size:18px;margin:0 0 8px;}
+p{line-height:1.7;color:var(--color-text-light);margin:6px 0;}
+b,strong{color:var(--color-text);}
+.grad-text{background:linear-gradient(100deg,#2448d8,#3a8bff 45%,#13b8a0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.card{background:var(--color-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.7);}
+.btn{position:relative;overflow:hidden;border:none;border-radius:16px;padding:14px 24px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,#3d6cff,#2448d8);min-height:52px;box-shadow:0 6px 0 #1a37a3,0 10px 20px rgba(36,72,216,.25);transition:transform .12s,box-shadow .12s;}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1a37a3,0 4px 10px rgba(36,72,216,.2);}
+.btn.secondary{background:#fff;color:var(--color-primary);box-shadow:0 5px 0 #c6d3f5,0 8px 16px rgba(36,72,216,.08);}
+.btn.secondary:active{box-shadow:0 1px 0 #c6d3f5;}
+.btn.mint{background:linear-gradient(135deg,#21c9a9,#0d9e86);box-shadow:0 6px 0 #0a7a67,0 10px 20px rgba(13,158,134,.25);}
+.btn.small{padding:10px 16px;font-size:15px;min-height:48px;border-radius:14px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none;}
+.btn.secondary .ripple{background:rgba(51,97,232,.2);}
+@keyframes ripple{to{transform:scale(4);opacity:0;}}
+.pulse{animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 6px 0 #1a37a3,0 0 0 0 rgba(61,108,255,.45);}50%{box-shadow:0 6px 0 #1a37a3,0 0 0 14px rgba(61,108,255,0);}}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:20px;}
+.btn-row.center{justify-content:center;}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 10px;}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#e3eaff;color:var(--color-primary-dark);font-size:13px;font-weight:800;}
+.badge.teal{background:#d8f6ef;color:#0a7f6c;}
+.badge.ext{background:#fff0e2;color:#b35300;font-size:12px;padding:3px 9px;vertical-align:middle;}
+.muted{font-size:13px;color:var(--color-text-light);}
+.row{display:flex;gap:14px;flex-wrap:wrap;}
+.row>*{flex:1 1 300px;min-width:0;}
+.hidden{display:none !important;}
+.gas-o2{color:var(--o2);font-weight:800;}
+.gas-co2{color:var(--co2);font-weight:800;}
+/* 도입 */
+#screen-intro{text-align:center;}
+.unit-tag{display:inline-block;font-size:14px;font-weight:800;color:#0a7f6c;background:#d8f6ef;padding:6px 14px;border-radius:999px;}
+.hero{width:min(260px,62vw);margin:4px auto 0;}
+.hero svg{width:100%;height:auto;display:block;overflow:visible;}
+.hero .lungs{transform-origin:130px 70px;animation:breathe 4s ease-in-out infinite;}
+.hero .dia{animation:diaMove 4s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:scale(.94);}50%{transform:scale(1.06);}}
+@keyframes diaMove{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
+.hero .puff{animation:puff 4s ease-in-out infinite;transform-origin:130px 10px;}
+@keyframes puff{0%,40%{opacity:0;transform:translateY(-14px) scale(.6);}50%{opacity:1;}90%,100%{opacity:0;transform:translateY(40px) scale(1);}}
+.goal-list{text-align:left;max-width:600px;margin:14px auto;padding:0;list-style:none;}
+.goal-list li{background:var(--color-surface);border-radius:14px;padding:13px 14px 13px 50px;margin-bottom:9px;box-shadow:var(--shadow-s);position:relative;line-height:1.55;}
+.goal-list li::before{content:attr(data-n);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:640px;margin:12px auto;}
+.flow div{background:var(--color-surface);border-radius:14px;padding:8px 2px;font-size:12px;box-shadow:var(--shadow-s);font-weight:700;color:var(--color-text-light);}
+.flow div b{display:block;font-size:22px;margin-bottom:2px;}
+.think{max-width:640px;margin:12px auto;text-align:left;}
+.breath-guide{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:8px 0 12px;}
+.breath-ball{width:96px;height:96px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffffff,#8fc6ff 45%,#3361e8);box-shadow:0 10px 30px rgba(51,97,232,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;transform:scale(.7);transition:transform 4s ease-in-out;}
+/* 개념 */
+.core-idea{position:relative;overflow:hidden;background:linear-gradient(130deg,#2448d8,#3a8bff 55%,#13b8a0);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:0 14px 30px rgba(36,72,216,.28);}
+.core-idea::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{50%{transform:translate(-12px,14px) scale(1.08);}}
+.core-idea .lbl{font-size:13px;font-weight:800;opacity:.92;letter-spacing:.06em;}
+.core-idea p{color:#fff;font-size:18px;margin:6px 0 0;line-height:1.65;position:relative;z-index:1;}
+.core-idea b{color:#fff;background:rgba(255,255,255,.18);padding:0 4px;border-radius:6px;}
+.concept-card>.head{display:flex;align-items:center;gap:12px;cursor:pointer;min-height:52px;}
+.concept-card>.head .num{flex:none;width:38px;height:38px;border-radius:12px;background:#e3eaff;color:var(--color-primary);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.concept-card>.head strong{flex:1;font-size:17px;}
+.concept-card>.head .chev{transition:transform .3s;color:var(--color-text-light);font-size:18px;}
+.concept-card.open>.head .chev{transform:rotate(180deg);}
+.concept-card.seen>.head .num{background:var(--color-secondary);color:#fff;}
+.concept-card .concept-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1);}
+.concept-card.open .concept-body{grid-template-rows:1fr;}
+.concept-card .concept-body>div{overflow:hidden;}
+.concept-card .concept-body>div>*:first-child{margin-top:12px;}
+.analogy{background:#fff7ee;border-left:5px solid var(--color-accent);border-radius:12px;padding:11px 13px;margin:8px 0;font-size:15px;line-height:1.65;}
+.info-panel{background:#f1f5ff;border-radius:14px;padding:12px 14px;min-height:66px;font-size:15px;line-height:1.65;transition:background .3s;}
+.info-panel.flash{animation:flashBg .6s;}
+@keyframes flashBg{0%{background:#dce6ff;}100%{background:#f1f5ff;}}
+.info-panel b{color:var(--color-primary-dark);}
+.diagram-wrap{max-width:560px;margin:0 auto;position:relative;}
+.diagram-wrap svg{width:100%;height:auto;display:block;}
+svg .part{cursor:pointer;transition:filter .2s;}
+svg .part:hover{filter:brightness(1.06);}
+svg .part.sel{filter:drop-shadow(0 0 6px rgba(51,97,232,.9));}
+.tbl-wrap{overflow-x:auto;}
+table.tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:15px;min-width:420px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;text-align:center;vertical-align:middle;line-height:1.45;}
+table.tbl tr>*:last-child{border-right:none;}
+table.tbl tr:last-child>*{border-bottom:none;}
+table.tbl th{background:#eef3ff;}
+table.tbl td.rev{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#effcf8;font-weight:700;color:#0a6d5d;}
+table.tbl td.q{color:#a6b1cc;font-weight:800;}
+@keyframes popIn{0%{transform:scale(.4);opacity:0;}100%{transform:none;opacity:1;}}
+.myth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;}
+.myth{background:var(--color-surface);border-radius:16px;box-shadow:var(--shadow-s);padding:14px;cursor:pointer;min-height:110px;position:relative;}
+.myth .no{color:#b4232a;font-weight:800;margin-bottom:6px;line-height:1.5;}
+.myth .yes{color:#0a6d5d;line-height:1.6;font-size:15px;display:none;}
+.myth .tapme{font-size:13px;color:var(--color-text-light);}
+.myth.open .yes{display:block;animation:riseIn .45s both;}
+.myth.open .tapme{display:none;}
+.myth.open .no{text-decoration:line-through;text-decoration-color:rgba(180,35,42,.5);}
+.area-demo{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.area-demo canvas{flex:1 1 260px;max-width:340px;}
+.area-demo .area-ctrl{flex:1 1 220px;}
+.meter{height:16px;border-radius:9px;background:#e6ecf8;overflow:hidden;margin:4px 0 10px;}
+.meter>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#21c9a9,#3361e8);transition:width .4s cubic-bezier(.2,.8,.2,1);}
+/* 탐구 */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:10px;scrollbar-width:thin;}
+.tab{flex:none;border:none;border-radius:14px;padding:10px 15px;font-size:15px;font-weight:800;background:#fff;color:var(--color-text-light);min-height:48px;box-shadow:var(--shadow-s);transition:all .2s;}
+.tab.active{background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;transform:translateY(-1px);}
+.tabpane{display:none;}
+.tabpane.active{display:block;animation:riseIn .45s both;}
+.plan-step{display:flex;gap:12px;margin-bottom:12px;}
+.plan-step .k{flex:none;width:86px;font-weight:800;color:var(--color-primary);font-size:15px;padding-top:2px;}
+.plan-step .v{flex:1;line-height:1.65;color:var(--color-text);font-size:15px;min-width:0;}
+.plan-step ol{margin:0;padding-left:20px;}
+textarea,.inp{width:100%;border-radius:14px;border:1.5px solid #d3dcf0;padding:11px;font-family:var(--font);font-size:15px;resize:vertical;background:#fff;color:var(--color-text);transition:border .2s,box-shadow .2s;}
+textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 4px rgba(51,97,232,.15);}
+textarea{min-height:68px;}
+.saved{font-size:12px;color:var(--color-success);height:16px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.ctrl label{font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
+.ctrl label em{font-style:normal;color:var(--color-primary);}
+input[type=range]{width:100%;height:44px;accent-color:var(--color-primary);}
+.toggle{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{border:2px solid #d3dcf0;background:#fff;border-radius:999px;padding:9px 15px;font-size:15px;font-weight:800;min-height:46px;color:var(--color-text);transition:all .2s;}
+.chip.on{border-color:var(--color-primary);background:#e8eeff;color:var(--color-primary-dark);}
+.chip.warn.on{border-color:var(--color-error);background:#ffeced;color:#a3161b;}
+canvas{display:block;width:100%;border-radius:16px;background:#fff;touch-action:manipulation;}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:10px 0;}
+.readout div{background:#f1f5ff;border-radius:14px;padding:9px 11px;}
+.readout small{display:block;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.readout b{font-size:21px;font-variant-numeric:tabular-nums;}
+.state-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-weight:800;font-size:15px;background:#eef1f8;color:var(--color-text-light);transition:all .3s;}
+.state-pill.in{background:#e0f1ff;color:#0f62b8;}
+.state-pill.out{background:#f1e9ff;color:#5b2fc4;}
+.model-wrap{max-width:420px;margin:0 auto;position:relative;touch-action:none;}
+.model-wrap svg{width:100%;height:auto;display:block;}
+.hold-btn{width:100%;border:none;border-radius:22px;min-height:84px;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(135deg,#45b3ff,#3361e8);box-shadow:0 8px 0 #2245b5,0 14px 28px rgba(51,97,232,.3);user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .12s,box-shadow .12s,background .3s;}
+.hold-btn.holding{transform:translateY(6px);box-shadow:0 2px 0 #2245b5,0 6px 16px rgba(51,97,232,.3);background:linear-gradient(135deg,#2ec4a6,#0f8f7b);}
+.gauge{position:relative;height:22px;border-radius:12px;background:linear-gradient(90deg,#7a4ff0 0%,#e9e3ff 38%,#eef2f8 50%,#e0f1ff 62%,#45b3ff 100%);margin:6px 0 2px;}
+.gauge i{position:absolute;top:-5px;width:6px;height:32px;border-radius:3px;background:#16204a;left:50%;transform:translateX(-50%);transition:left .12s;}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.lock-note{font-size:13px;color:var(--color-text-light);}
+.rec-table td,.rec-table th{font-size:14px;padding:7px;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--color-text-light);font-weight:700;margin:6px 0;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;}
+.legend i.tri{border-radius:2px;transform:rotate(45deg);width:11px;height:11px;}
+/* 스티커 */
+.board-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;}
+.board-tab{flex:none;border:none;background:#fff;border-radius:14px;padding:9px 13px;min-height:48px;font-weight:800;font-size:14px;color:var(--color-text-light);box-shadow:var(--shadow-s);}
+.board-tab.active{background:linear-gradient(135deg,#ffb238,#ff7a2f);color:#fff;}
+.board-tab.locked{opacity:.55;}
+.board-tab.done::after{content:' ✔';}
+.sticker-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;}
+.sticker-status .pill{background:#fff;border-radius:999px;padding:7px 13px;font-weight:800;font-size:14px;box-shadow:var(--shadow-s);}
+.sticker-board{position:relative;}
+.sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:76px;background:repeating-linear-gradient(45deg,#fffaf0,#fffaf0 12px,#fff4de 12px,#fff4de 24px);border:2px dashed #f2c98a;}
+.sticker-tray .tray-lbl{width:100%;font-size:13px;font-weight:800;color:#b36b00;}
+.sticker{position:relative;border:none;border-radius:13px;padding:11px 15px;font-size:16px;font-weight:800;min-height:48px;color:#3b2a00;background:linear-gradient(160deg,#fff,#fff3c4);box-shadow:0 3px 0 rgba(0,0,0,.12),0 6px 12px rgba(150,100,0,.12);transform:rotate(var(--tilt,0deg));transition:transform .18s,box-shadow .18s;}
+.sticker::before{content:'';position:absolute;inset:3px;border:1.5px dashed rgba(180,130,0,.35);border-radius:10px;pointer-events:none;}
+.sticker.c1{background:linear-gradient(160deg,#fff,#d6ecff);color:#0d3f78;}
+.sticker.c2{background:linear-gradient(160deg,#fff,#ffdbe2);color:#7c1430;}
+.sticker.c3{background:linear-gradient(160deg,#fff,#dcf8ee);color:#0a5747;}
+.sticker.c4{background:linear-gradient(160deg,#fff,#ece3ff);color:#3c1f8f;}
+.sticker.picked{transform:rotate(0) scale(1.12) translateY(-4px);box-shadow:0 12px 22px rgba(0,0,0,.22);outline:3px solid var(--color-primary);outline-offset:2px;z-index:3;}
+.sticker.wiggle{animation:wiggle .9s ease-in-out infinite;}
+@keyframes wiggle{0%,100%{transform:rotate(-2deg) scale(1.12) translateY(-4px);}50%{transform:rotate(2deg) scale(1.12) translateY(-4px);}}
+.slot{min-height:50px;min-width:86px;border:2.5px dashed #b6c3e2;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:4px;position:relative;background:rgba(255,255,255,.92);transition:border-color .2s,background .2s,transform .2s;}
+.slot .sticker{padding:8px 10px;font-size:15px;min-height:40px;transform:none;}
+.slot.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+@keyframes slotGlow{50%{box-shadow:0 0 0 5px rgba(51,97,232,.18);}}
+.slot.ok{border-style:solid;border-color:var(--color-success);background:#ecfbf5;}
+.slot.ok::after{content:'✔';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-success);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;animation:popIn .4s cubic-bezier(.3,1.6,.5,1);z-index:2;}
+.slot.no{border-style:solid;border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.slot.no::after{content:'✖';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-error);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+.slot .hint{font-size:12px;color:var(--color-text-light);line-height:1.3;text-align:center;}
+.slot.abs{position:absolute;transform:translate(-50%,-50%);}
+.slot.abs.no{animation:shakeAbs .45s;}
+@keyframes shakeAbs{0%,100%{transform:translate(-50%,-50%);}25%{transform:translate(calc(-50% - 7px),-50%);}75%{transform:translate(calc(-50% + 7px),-50%);}}
+.svg-board{position:relative;max-width:540px;margin:0 auto;}
+.svg-board svg{width:100%;height:auto;display:block;}
+.stk-msg{min-height:26px;font-size:15px;line-height:1.6;margin-top:8px;}
+.stk-msg .h{display:block;color:#a35a00;}
+.complete-banner{position:relative;text-align:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,#fff7e6,#ffe8f0);margin-top:12px;overflow:hidden;}
+.complete-banner p{color:var(--color-text);font-weight:700;}
+.stamp{position:absolute;right:14px;top:10px;font-size:22px;font-weight:900;color:#e5484d;border:4px solid #e5484d;border-radius:12px;padding:3px 10px;transform:rotate(-14deg);opacity:.9;animation:stamp .6s cubic-bezier(.2,1.8,.4,1);background:rgba(255,255,255,.6);}
+@keyframes stamp{0%{transform:rotate(-14deg) scale(3);opacity:0;}100%{transform:rotate(-14deg) scale(1);opacity:.9;}}
+.gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;}
+.gx-panel{background:#f7f9ff;border-radius:16px;padding:12px;}
+.gx-panel h4{margin:0 0 8px;font-size:15px;}
+.gx-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.gx-box{border-radius:16px;padding:14px 6px;text-align:center;font-weight:800;font-size:15px;color:#fff;min-height:118px;display:flex;align-items:center;justify-content:center;}
+.gx-box.alv{background:radial-gradient(circle at 35% 35%,#ffd0da,#ff8fa6);color:#6b1028;}
+.gx-box.cap{background:linear-gradient(180deg,#ff6b6b,#c92a4a);}
+.gx-box.cell{background:radial-gradient(circle at 40% 40%,#fff0c2,#f5c451);color:#5c3d00;}
+.gx-arrows{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.gx-arrows .arw{font-size:13px;font-weight:900;color:var(--color-text-light);line-height:1;}
+.gx-principle{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-weight:800;flex-wrap:wrap;}
+/* 실생활 */
+.life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.life-card{background:var(--color-surface);border-radius:18px;box-shadow:var(--shadow);padding:16px;cursor:pointer;transition:transform .2s;position:relative;overflow:hidden;}
+.life-card:active{transform:scale(.98);}
+.life-card .ic{font-size:40px;line-height:1;display:inline-block;transition:transform .4s cubic-bezier(.3,1.6,.5,1);}
+.life-card.open .ic{transform:scale(1.15) rotate(-8deg);}
+.life-card h3{margin:8px 0 6px;}
+.life-card .why{display:none;}
+.life-card.open .why{display:block;animation:riseIn .45s both;}
+.life-card .more{font-size:13px;font-weight:800;color:var(--color-primary);}
+.life-card.open .more{display:none;}
+.link-tag{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:#0a7f6c;background:#d8f6ef;border-radius:999px;padding:4px 10px;}
+/* 퀴즈 */
+.quiz-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.quiz-progress{flex:1;height:12px;border-radius:7px;background:#dde5f6;overflow:hidden;}
+.quiz-progress i{display:block;height:100%;background:linear-gradient(90deg,#21c9a9,#3361e8);border-radius:7px;transition:width .5s cubic-bezier(.2,.8,.2,1);width:0;}
+.combo{font-weight:900;color:#ff6a00;min-width:70px;text-align:right;font-size:15px;}
+.combo.bump{animation:bump .5s cubic-bezier(.3,1.8,.5,1);}
+@keyframes bump{0%{transform:scale(1.8);}100%{transform:scale(1);}}
+.q-card{animation:qIn .45s cubic-bezier(.2,.8,.2,1);}
+@keyframes qIn{from{opacity:0;transform:translateX(30px) rotate(1deg);}to{opacity:1;transform:none;}}
+.q-type{display:inline-block;font-size:12px;font-weight:800;background:#e3eaff;color:var(--color-primary-dark);padding:4px 10px;border-radius:999px;margin-bottom:6px;}
+.q-text{font-size:18px;font-weight:800;line-height:1.6;margin:4px 0 12px;}
+.q-fig{margin:6px 0 12px;}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid #d3dcf0;background:#fff;border-radius:16px;padding:13px 14px;font-size:16px;margin-bottom:10px;min-height:54px;line-height:1.5;color:var(--color-text);transition:transform .12s,border-color .2s,background .2s;}
+.opt:active{transform:scale(.98);}
+.opt .n{flex:none;width:28px;height:28px;border-radius:9px;background:#eef2fb;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.opt.correct{border-color:var(--color-success);background:#e9fbf4;animation:correctPop .5s cubic-bezier(.3,1.6,.5,1);}
+.opt.correct .n{background:var(--color-success);color:#fff;}
+.opt.wrong{border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.opt.wrong .n{background:var(--color-error);color:#fff;}
+@keyframes correctPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+.feedback{border-radius:16px;padding:13px 15px;margin-top:6px;line-height:1.65;font-size:15px;animation:riseIn .4s both;}
+.feedback.ok{background:#e9fbf4;}
+.feedback.no{background:#fff3e8;}
+.feedback b.big{font-size:17px;}
+/* 결과 */
+.result-hero{text-align:center;}
+.trophy{font-size:84px;line-height:1;display:inline-block;animation:trophy 1s cubic-bezier(.3,1.6,.5,1) both;}
+@keyframes trophy{0%{transform:scale(0) rotate(-30deg);}100%{transform:none;}}
+.score-big{font-size:64px;font-weight:900;line-height:1.1;}
+.stars{font-size:38px;letter-spacing:6px;}
+.stars span{display:inline-block;opacity:.18;filter:grayscale(1);}
+.stars span.on{opacity:1;filter:none;animation:starIn .5s cubic-bezier(.3,1.8,.5,1) both;}
+@keyframes starIn{0%{transform:scale(0) rotate(-90deg);}100%{transform:none;}}
+.check-list label{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.55;cursor:pointer;min-height:48px;}
+.check-list input{width:24px;height:24px;flex:none;accent-color:var(--color-success);margin-top:1px;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120px);background:#16204a;color:#fff;padding:12px 20px;border-radius:999px;font-weight:800;z-index:9500;transition:transform .4s cubic-bezier(.3,1.5,.5,1);box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:92vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.float-txt{position:fixed;z-index:9600;pointer-events:none;font-weight:900;font-size:22px;animation:floatUp 1.1s ease-out forwards;text-shadow:0 2px 0 #fff,0 0 8px #fff;}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6);}20%{opacity:1;transform:translate(-50%,-14px) scale(1.15);}100%{opacity:0;transform:translate(-50%,-70px) scale(1);}}
+footer{text-align:center;font-size:12px;color:#8a94b2;padding:24px 0 6px;letter-spacing:.03em;}
+@media (max-width:560px){
+  #app{padding:8px 12px 60px;}
+  .topbar{margin:0 -12px 12px;padding:8px 12px 6px;}
+  .step-dot{font-size:11px;}
+  .card{padding:15px;}
+  .plan-step{flex-direction:column;gap:4px;}
+  .plan-step .k{width:auto;}
+  .flow div{font-size:11px;}
+  .slot{min-width:76px;min-height:44px;}
+  .slot .sticker{font-size:13px;padding:6px 7px;min-height:34px;}
+  .sticker{font-size:15px;padding:10px 12px;}
+  .q-text{font-size:17px;}
+  .gx-box{min-height:104px;font-size:14px;}
+}
+
+/* ====== 전기 단원 전용 ====== */
+:root{--pos:#e03131;--neg:#2f6fdb;--volt:#f2a900;--metal:#a9b4c2;--color-bg:#f3f1ff;}
+body{background:radial-gradient(1100px 600px at 5% -10%,#e4ddff 0,transparent 60%),radial-gradient(900px 500px at 110% 5%,#fff1c9 0,transparent 55%),var(--color-bg);}
+.topbar{background:rgba(243,241,255,.86);}
+#bgBubbles span{border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(242,169,0,.28) 60%,rgba(242,169,0,.04));}
+.grad-text{background:linear-gradient(100deg,#3b2fc9,#6a4cff 45%,#e89a00);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.core-idea{background:linear-gradient(130deg,#2a2c8f,#5a43e6 52%,#e39b00);box-shadow:0 14px 30px rgba(70,50,200,.28);}
+.unit-tag{color:#3d27a8;background:#e6e0ff;}
+.hero{width:min(360px,84vw);}
+.hero .fur{animation:furRub .7s ease-in-out infinite alternate;}
+@keyframes furRub{from{transform:translateX(-46px);}to{transform:translateX(46px);}}
+.hero .ehop{animation:ehop 2.8s ease-in-out infinite;}
+@keyframes ehop{0%,20%{opacity:0;transform:translateY(-34px);}35%{opacity:1;}60%,100%{opacity:1;transform:none;}}
+.hero .bit{animation:bitJump 2.8s ease-in-out infinite;}
+@keyframes bitJump{0%,45%{transform:none;}70%,88%{transform:translateY(-52px) rotate(25deg);}100%{transform:none;}}
+.hero .spark{animation:spark 1.4s steps(2) infinite;}
+@keyframes spark{0%{opacity:0;}50%{opacity:1;}}
+.pm{font-weight:900;}
+.pos{color:var(--pos);font-weight:900;} .neg{color:var(--neg);font-weight:900;}
+/* 생각 열기 */
+.hair-box{max-width:360px;margin:6px auto;}
+.hair-box svg{width:100%;height:auto;display:block;}
+.strand{transition:transform .6s cubic-bezier(.3,1.5,.5,1);transform-box:view-box;}
+/* 그림 */
+.fig{max-width:620px;margin:0 auto;}
+.fig svg{width:100%;height:auto;display:block;}
+.spin{animation:spin 9s linear infinite;transform-origin:120px 120px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.hop{animation:hop .7s cubic-bezier(.2,1.2,.4,1) both;}
+@keyframes hop{from{transform:translate(var(--dx),var(--dy)) scale(1.4);opacity:.3;}to{transform:none;opacity:1;}}
+.rubbing{animation:rubGo .5s ease-in-out;}
+@keyframes rubGo{0%,100%{transform:none;}25%{transform:translate(40px,-6px);}50%{transform:translate(10px,0);}75%{transform:translate(44px,6px);}}
+.part{cursor:pointer;}
+.part.sel{filter:drop-shadow(0 0 6px rgba(242,169,0,.95));}
+.rig{max-width:760px;margin:0 auto;position:relative;}
+.rig svg{width:100%;height:auto;display:block;background:linear-gradient(#f7f6ff,#fff);border-radius:16px;}
+.rig canvas{background:linear-gradient(#f7f6ff,#fff);}
+.status-line{font-weight:800;font-size:15px;margin:8px 0;min-height:26px;}
+.qa{background:#fbf8ff;border-radius:14px;padding:12px;margin-top:10px;}
+.qa h4{margin:0 0 6px;font-size:15px;}
+.rec-tbl td,.rec-tbl th{font-size:14px;padding:8px 6px;}
+.rec-tbl td.new{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#fff7e0;}
+.rec-tbl td.empty{color:#b5bad0;}
+.pred{background:#f7f5ff;border-radius:14px;padding:12px;margin:10px 0;}
+.pred .pq{font-weight:800;font-size:15px;margin:8px 0 6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.pred .mark{font-size:18px;}
+.mission{background:linear-gradient(135deg,#fff8e1,#f3eeff);border-radius:14px;padding:12px;margin-top:10px;}
+.legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;font-weight:800;color:var(--color-text-light);margin:6px 0;}
+.legend2 span{display:inline-flex;align-items:center;gap:5px;}
+.force-meter{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:800;}
+.force-meter .meter{flex:1;margin:0;height:20px;border-radius:12px;}
+.force-meter .meter>i{background:linear-gradient(90deg,#ffd43b,#f2a900 50%,#e8590c);border-radius:12px;}
+/* 스티커 판 */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start;}
+.sc{background:#f8f7fd;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.sc svg{width:100%;height:auto;display:block;background:#fff;border-radius:12px;}
+.sc-slots{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;font-size:14px;font-weight:800;color:var(--color-text-light);}
+.sc-slots .slot{min-width:0;}
+.res-tbl td{font-size:15px;}
+.res-tbl td .slot{margin:0 auto;max-width:200px;}
+.slot-num{font-size:15px;font-weight:900;color:#9aa6c4;}
+.board-tab .lk{margin-right:3px;}
+.slot .sticker{white-space:nowrap;}
+.complete-banner{padding-top:40px;}
+.stamp{font-size:18px;top:8px;}
+.trap-note{font-size:13px;color:#a35a00;font-weight:700;}
+.ion-key{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-weight:900;font-size:15px;line-height:1;}
+.ion-key.p{background:#ffe1e1;color:var(--pos);border:2px solid var(--pos);}
+.ion-key.n{background:#dfe9ff;color:var(--neg);border:2px solid var(--neg);}
+@media (max-width:560px){
+  .rec-tbl td,.rec-tbl th{font-size:12px;padding:6px 3px;}
+  .sc-slots{font-size:12px;}
+}
+/* ====== 전류·전압·저항 전용 ====== */
+:root{--cur:#e8590c;--ele:#2f6fdb;--volt:#f2a900;--res:#7048e8;--wire:#c9a227;--color-bg:#f2f6ff;}
+body{background:radial-gradient(1100px 600px at 5% -10%,#dbe6ff 0,transparent 60%),radial-gradient(900px 500px at 110% 5%,#fff0c4 0,transparent 55%),var(--color-bg);}
+.topbar{background:rgba(242,246,255,.86);}
+#bgBubbles span{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(47,111,219,.25) 60%,rgba(47,111,219,.04));}
+.grad-text{background:linear-gradient(100deg,#1e40af,#2f6fdb 45%,#e8590c);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.core-idea{background:linear-gradient(130deg,#1e3a8a,#2f6fdb 52%,#f08c00);}
+.unit-tag{color:#1e40af;background:#dfe8ff;font-size:13px;line-height:1.5;}
+.hero{width:min(380px,86vw);}
+.hero .glow{animation:glow 1.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+@keyframes glow{0%,100%{opacity:.55;transform:scale(.92);}50%{opacity:1;transform:scale(1.08);}}
+.flowdash{stroke-dasharray:2 22;animation:flowdash 1.2s linear infinite;}
+@keyframes flowdash{to{stroke-dashoffset:-24;}}
+.flowdash.rev{animation-direction:reverse;}
+.think-box{max-width:420px;margin:6px auto;}
+.think-box svg{width:100%;height:auto;display:block;}
+.safety{background:#fff4e6;border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.7;color:#7a3e00;margin-top:6px;}
+.volt-row{display:flex;gap:8px;align-items:center;}
+.volt-row input{flex:1;}
+.volt-row .btn{min-width:52px;padding:8px 12px;}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.steps .st{flex:1 1 120px;background:#eef2fb;border-radius:12px;padding:8px 10px;font-size:13px;font-weight:800;color:var(--color-text-light);line-height:1.35;border:2px solid transparent;}
+.steps .st b{display:block;font-size:12px;color:#8a94b2;}
+.steps .st.now{background:#fff8e1;border-color:#f2a900;color:#7a4b00;animation:slotGlow 1.4s ease-in-out infinite;}
+.steps .st.done{background:#e6f8f1;color:#0a6d5d;}
+.steps .st.done b::after{content:' ✔';}
+.card-in{background:#f7f9ff;border-radius:16px;padding:12px;margin:8px 0;}
+.tablet{background:#1d2333;border-radius:22px;padding:10px 10px 12px;margin:12px auto;max-width:640px;box-shadow:0 10px 24px rgba(20,30,60,.25);}
+.tablet-top{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#dfe6ff;font-weight:800;font-size:14px;padding:2px 6px 8px;flex-wrap:wrap;}
+.tablet svg{width:100%;height:auto;display:block;background:#fff;border-radius:14px;}
+.small-chip{min-height:38px;padding:6px 12px;font-size:13px;}
+.wire-c{stroke-dasharray:1000;stroke-dashoffset:1000;}
+.wire-c.on{animation:drawWire .8s ease-out forwards;}
+@keyframes drawWire{to{stroke-dashoffset:0;}}
+.flow-e{stroke-dasharray:3 15;animation:flowE var(--sp,1.5s) linear infinite;}
+@keyframes flowE{to{stroke-dashoffset:-36;}}
+.knob{transition:transform .35s cubic-bezier(.3,1.5,.5,1);transform-box:fill-box;transform-origin:center;}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.match-col{display:flex;flex-direction:column;gap:8px;}
+.mt{border:2px solid #d3dcf0;background:#fff;border-radius:14px;min-height:48px;font-size:15px;font-weight:800;color:var(--color-text);padding:8px;transition:all .2s;}
+.mt.sel{border-color:var(--color-primary);background:#e8eeff;transform:scale(1.03);}
+.mt.done{border-style:solid;color:#fff;}
+.mt.done::after{content:' ✔';}
+.mt.no{animation:shake .45s;border-color:var(--color-error);}
+.mt.p0{background:#e8590c;border-color:#e8590c;}.mt.p1{background:#2f6fdb;border-color:#2f6fdb;}.mt.p2{background:#0ca678;border-color:#0ca678;}
+.mt.p3{background:#7048e8;border-color:#7048e8;}.mt.p4{background:#d6336c;border-color:#d6336c;}.mt.p5{background:#5c7cfa;border-color:#5c7cfa;}
+.tri-box{max-width:280px;margin:6px auto;}
+.tri-box svg{width:100%;height:auto;display:block;}
+.tri-part{cursor:pointer;}
+.calc-out{background:linear-gradient(135deg,#fff8e1,#eef3ff);border-radius:16px;padding:14px;font-size:17px;font-weight:800;line-height:1.7;text-align:center;}
+.calc-out .big{font-size:30px;color:var(--color-primary-dark);font-variant-numeric:tabular-nums;}
+.ms{background:#f8f9ff;border-radius:16px;padding:12px;margin-bottom:10px;border:2px solid transparent;}
+.ms.solved{border-color:var(--color-success);background:#effcf6;}
+.ms .ms-q{font-weight:800;line-height:1.6;margin-bottom:8px;}
+.ms .ms-fig{max-width:320px;margin:4px auto 8px;}
+.ms .ms-fig svg{width:100%;height:auto;display:block;background:#fff;border-radius:12px;}
+.ms .ms-exp{font-size:15px;line-height:1.6;margin-top:6px;}
+.bins{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.bin{border:2.5px dashed #b6c3e2;background:#fff;border-radius:16px;min-height:120px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:15px;color:var(--color-text);}
+.bin span{font-size:12px;color:var(--color-text-light);}
+.bin.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+.bin-in{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px;}
+.bin-in i{font-style:normal;background:#e6f8f1;color:#0a6d5d;border-radius:10px;padding:4px 8px;font-size:13px;font-weight:800;}
+.bin.no{animation:shake .45s;border-color:var(--color-error);}
+.semi{margin-top:12px;}
+.state-pill.on{background:#e6f8f1;color:#0a6d5d;}
+.cls-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+.cls-bin{background:#f8f7fd;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;align-items:stretch;}
+.cls-bin h4{margin:0;font-size:15px;text-align:center;}
+.cls-bin p{margin:0;font-size:12px;text-align:center;}
+.res-tbl .slot .sticker{white-space:normal;line-height:1.3;}
+.res-tbl td .slot{max-width:240px;}
+.mini-graphs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}
+.mini-graphs svg{width:100%;height:auto;display:block;background:#fff;border-radius:10px;}
+.hot{animation:hot 1s ease-in-out infinite;}
+@keyframes hot{50%{filter:drop-shadow(0 0 8px #ff6b00);}}
+@media (max-width:560px){
+  .match .mt{font-size:13px;padding:6px;}
+  .calc-out .big{font-size:24px;}
+  .bins{gap:8px;}
+}
+
+</style>
+</head>
+<body>
+<div id="bgBubbles" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand"><i>💡</i>전류·전압·저항 가상실험실</div>
+      <button class="icon-btn" id="soundBtn" aria-label="효과음 켜기/끄기" title="효과음">🔊</button>
+    </div>
+    <nav class="step-indicator" id="stepIndicator" aria-label="학습 단계"></nav>
+  </div>
+
+  <!-- 1. 도입 -->
+  <section class="screen" id="screen-intro">
+    <div class="rise-in" style="--i:0"><span class="unit-tag">중2 · Ⅶ. 전기와 자기 · 1. 전기 · ③ 전류와 전압 ④ 전류, 전압, 저항 사이의 관계</span></div>
+    <div class="hero rise-in" style="--i:1" id="heroBox"></div>
+    <h1 class="rise-in" style="--i:2"><span class="grad-text">전류와 전압, 그리고 저항</span></h1>
+    <p class="rise-in" style="--i:3">스위치를 닫으면 전선 속 <b>전자</b>는 어떻게 움직일까? 전압을 높이면 전류는 얼마나 세질까? 전자를 직접 따라가고, 전원 장치의 전압을 바꾸며 그래프를 그려 <b>옴의 법칙</b>을 찾아내 보자.</p>
+    <div class="badges rise-in" style="--i:4">
+      <span class="badge">교과서 248~253쪽</span>
+      <span class="badge">지도서 392~397쪽</span>
+      <span class="badge teal">성취기준 [9과14-02]</span>
+    </div>
+    <p class="muted rise-in" style="--i:4">[9과14-02] 전기 회로에서 전류를 모형으로 설명하고, 실험을 통해 저항, 전류, 전압 사이의 관계를 이끌어낼 수 있다.</p>
+    <ul class="goal-list rise-in" style="--i:5">
+      <li data-n="1">전류와 전압의 개념을 설명하고, 전기 회로에서 전류를 전자의 이동 모형으로 설명할 수 있다.</li>
+      <li data-n="2">실험을 통해 전류, 전압, 저항 사이의 관계를 이끌어낼 수 있다.</li>
+      <li data-n="3">전류, 전압, 저항 사이의 관계(옴의 법칙)를 설명하고, 도체·부도체·반도체를 구분할 수 있다.</li>
+    </ul>
+    <div class="flow rise-in" style="--i:6">
+      <div><b>🚪</b>도입</div><div><b>💡</b>개념</div><div><b>🧪</b>탐구</div><div><b>🏷️</b>스티커</div><div><b>🏠</b>실생활</div><div><b>✅</b>확인</div>
+    </div>
+    <div class="card think rise-in" style="--i:7">
+      <h3>💭 생각 열기 — "시계가 멈췄네. 전지를 바꿀 때가 되었나 봐."</h3>
+      <p style="margin-top:0">전구에 <b>건전지를 하나씩 넣어(직렬 연결)</b> 보고, 전구가 어떻게 달라지는지 관찰해 보세요.</p>
+      <div class="btn-row" style="padding-top:0;margin-top:0">
+        <button class="btn small mint" id="tbAdd">🔋 건전지 넣기</button>
+        <button class="btn small secondary" id="tbSub">➖ 건전지 빼기</button>
+      </div>
+      <div class="think-box" id="thinkBox"></div>
+      <div class="status-line" id="thinkMsg" style="text-align:center">건전지가 없으면 전구가 켜지지 않아요.</div>
+      <p><b>① 전기 기구에서 전지는 어떤 역할을 하는 것일까?</b> <span class="muted">(교과서 248쪽)</span></p>
+      <textarea id="note-think1" data-save="think1" placeholder="예) 전지는 전기 기구에 … 이(가) 흐르게 한다."></textarea>
+      <div class="saved" id="saved-think1"></div>
+      <p><b>② 전구에 걸리는 전압이 커지면 전류는 어떻게 될까?</b> <span class="muted">(교과서 250쪽)</span></p>
+      <textarea id="note-think2" data-save="think2" placeholder="예) 건전지를 더 연결하면 전구가 … 지므로 전류는 …"></textarea>
+      <div class="saved" id="saved-think2"></div>
+      <button class="btn small secondary" id="thinkAnsBtn">예시 답안 보기</button>
+      <p class="hidden" id="thinkAns" style="color:var(--color-text)">① 전기 기구가 작동하려면 <b>전류가 흘러야</b> 하는데, <b>전지는 전류가 흐르게 하는 역할</b>을 한다.<br>② 동일한 전구에 걸리는 <b>전압이 커지면 전류의 세기는 전압에 비례해서 커진다.</b></p>
+    </div>
+    <div class="btn-row center rise-in" style="--i:8">
+      <button class="btn secondary hidden" id="resumeBtn">이어서 하기</button>
+      <button class="btn pulse" id="startBtn">시작하기 →</button>
+    </div>
+  </section>
+
+  <!-- 2. 개념 -->
+  <section class="screen" id="screen-concept">
+    <h2>💡 핵심 아이디어와 개념</h2>
+    <div class="core-idea rise-in" style="--i:0">
+      <div class="lbl">KEY IDEA · 핵심 아이디어</div>
+      <p><b>전류</b>는 전하의 흐름이고, 전지의 <b>전압</b>은 전류를 흐르게 하는 능력이다. 회로에 흐르는 전류의 세기는 <b>전압에 비례</b>하고 전류의 흐름을 방해하는 <b>저항에 반비례</b>한다(<b>옴의 법칙</b>, I = V/R).</p>
+    </div>
+    <div id="conceptCards"></div>
+    <h3 style="margin-top:8px">🔍 오개념 바로잡기 <span class="muted">— 카드를 눌러 확인해요</span></h3>
+    <div class="myth-grid" id="mythGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="0">← 이전</button>
+      <button class="btn" data-go="2" style="margin-left:auto">탐구하러 가기 →</button>
+    </div>
+  </section>
+
+  <!-- 3. 탐구 -->
+  <section class="screen" id="screen-experiment">
+    <h2>🧪 탐구하기</h2>
+    <div class="tabs" id="expTabs" role="tablist">
+      <button class="tab active" data-tab="plan">📝 탐구 계획서</button>
+      <button class="tab" data-tab="circuit">① 전자의 움직임</button>
+      <button class="tab" data-tab="water">② 물의 흐름 비유</button>
+      <button class="tab" data-tab="ohm">③ 전압과 전류 탐구</button>
+      <button class="tab" data-tab="resist">④ 저항과 전류</button>
+      <button class="tab" data-tab="calc">⑤ 옴의 법칙 미션</button>
+      <button class="tab" data-tab="cond">⑥ 도체·부도체</button>
+    </div>
+
+    <div class="tabpane active" id="tab-plan">
+      <div class="card">
+        <h3>📝 탐구 계획서 — 전류는 무엇이고, 무엇에 따라 세기가 달라질까?</h3>
+        <div class="plan-step"><div class="k">문제 인식</div><div class="v">① 전기 회로에서 스위치를 닫으면 전선 속 전자는 어떻게 움직일까? ② 회로에 흐르는 <b>전류의 세기</b>에 영향을 미치는 요인은 무엇일까?</div></div>
+        <div class="plan-step"><div class="k">가설</div><div class="v"><textarea data-save="hypo" id="note-hypo" placeholder="예) 니크롬선에 걸리는 전압이 커지면 전류의 세기는 …, 니크롬선의 길이가 길면 전류의 세기는 …"></textarea><div class="saved" id="saved-hypo"></div></div></div>
+        <div class="plan-step"><div class="k">변인<br><span class="muted">(탐구 ③)</span></div><div class="v"><b>조작 변인</b>: 니크롬선에 걸리는 전압, 니크롬선의 길이<br><b>통제 변인</b>: 니크롬선의 종류와 굵기, (전압과 전류를 비교할 때) 같은 니크롬선 사용<br><b>종속 변인</b>: 니크롬선에 흐르는 전류의 세기</div></div>
+        <div class="plan-step"><div class="k">준비물</div><div class="v">스마트 기기(전기 회로 시뮬레이션), 전원 장치, 길이가 다른 니크롬선 2개, 전압 센서, 전류 센서, 집게 달린 전선, 면장갑</div></div>
+        <div class="plan-step"><div class="k">실험 과정</div><div class="v"><ol>
+          <li><b>① 전자의 움직임</b> <span class="badge">교과서 248쪽 디지털 해 보기</span>: 스위치를 닫기 전과 닫은 후 전선 속 전자의 움직임을 비교한다.</li>
+          <li><b>② 물의 흐름 비유</b> <span class="badge">교과서 249쪽</span>: 펌프·물레방아 모형과 전기 회로를 비교하며 전압의 역할을 알아본다.</li>
+          <li><b>③ 전압과 전류 탐구</b> <span class="badge">교과서 250~251쪽 탐구</span>: 전원 장치의 전압을 조절하며 긴·짧은 니크롬선에 흐르는 전류를 측정해 그래프를 그린다.</li>
+          <li><b>④ 저항과 전류</b> <span class="badge">교과서 252쪽</span>: 전압을 일정하게 하고 니크롬선의 길이를 바꾸며 저항과 전류의 관계를 알아본다.</li>
+          <li><b>⑤ 옴의 법칙 미션</b>: I = V/R로 전류·전압·저항을 구한다.</li>
+          <li><b>⑥ 도체·부도체</b> <span class="badge">교과서 253쪽 해 보기</span>: 여러 물질에 전류가 흐르는지 확인하고, 도체·부도체를 활용한 제품을 분류한다.</li></ol></div></div>
+        <div class="plan-step"><div class="k">예상 결과</div><div class="v"><textarea data-save="expect" id="note-expect" placeholder="예) 전압을 2배로 하면 전류는 (  )배가 될 것이다. 길이가 짧은 니크롬선에 흐르는 전류가 더 (  ) 것이다."></textarea><div class="saved" id="saved-expect"></div></div></div>
+        <div class="safety"><b>⚠️ 안전</b> · 젖은 손으로 전기 기구나 전선을 만지지 않아요. · 전원 장치를 켜거나 끌 때는 전압 조절 손잡이를 <b>0</b>으로 맞춰요. · 니크롬선은 뜨거워질 수 있으니 맨손으로 만지지 않아요.</div>
+        <div class="btn-row" style="padding-top:6px"><button class="btn" data-tabgo="circuit">① 실험 시작 →</button></div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-circuit">
+      <div class="card">
+        <h3>① 전기 회로에서 전류가 흐르는 과정 살펴보기 <span class="badge">교과서 248쪽 디지털 해 보기</span></h3>
+        <p>전선을 크게 확대해 그 속의 <b>전자(<span class="neg">−</span>)</b>와 원자의 <b>(<span class="pos">+</span>)전하</b>를 보여 줘요. 스위치를 닫기 전과 닫은 후 전자의 움직임을 비교해 보세요. <span class="muted">(그림의 스위치를 눌러도 돼요)</span></p>
+        <div class="pred" id="cPred"></div>
+        <div class="row">
+          <div class="ctrl"><label>스위치</label><div class="toggle"><button class="btn small" id="cSwitch">🔌 스위치 닫기</button><button class="btn small secondary" id="cFlip">🔄 전지 방향 바꾸기</button></div></div>
+          <div class="ctrl"><label>보기</label><div class="toggle"><button class="chip on" id="cShowE">🔵 전자의 이동 방향</button><button class="chip" id="cShowI">🔴 전류의 방향</button><button class="chip" id="cFollow">🔍 전자 1개 따라가기</button></div></div>
+        </div>
+        <div class="rig"><canvas id="cCv" height="400"></canvas></div>
+        <div class="legend2"><span><span class="ion-key n">−</span> 전자 (이동함)</span><span><span class="ion-key p">+</span> 원자의 (+)전하 (제자리)</span><span style="color:#2f6fdb">⟶ 전자의 이동 방향</span><span style="color:#e8590c">⟶ 전류의 방향</span></div>
+        <div class="readout"><div><small>스위치</small><b id="cSw">열림</b></div><div><small>전구</small><b id="cBulb">꺼짐</b></div><div><small>전자의 움직임</small><b id="cMove" style="font-size:17px">불규칙</b></div></div>
+        <div class="status-line" id="cMsg">스위치가 열려 있어요. 전자들이 어떻게 움직이나요?</div>
+        <h4 style="margin:12px 0 6px">📋 관찰 기록표 <span class="muted">(관찰하면 자동 기록)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="cTable"></table></div>
+        <div class="qa"><h4>❓ 교과서 질문에 답해 보기</h4>
+          <p style="color:var(--color-text);margin-top:0">전기 회로에서 스위치를 닫기 전과 닫은 후 전자의 움직임을 비교하여 설명해 보자.</p>
+          <textarea data-save="qa-circuit" id="note-qa-circuit" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-circuit"></div>
+          <button class="btn small secondary" data-ans="ans-circuit">예시 답안 보기</button>
+          <p class="hidden" id="ans-circuit" style="color:var(--color-text)">스위치를 닫기 전에는 전자가 <b>방향성 없이 불규칙하게</b> 움직이고, 스위치를 닫으면 전자가 <b>전지의 (+)극을 향해 일정한 방향으로</b> 움직인다. 이처럼 전하가 흐르는 것이 <b>전류</b>이고, 전류의 방향은 전자의 이동 방향과 <b>반대</b>(전지의 (+)극 → (−)극)이다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-water">
+      <div class="card">
+        <h3>② 물의 흐름과 전류 <span class="badge">교과서 249쪽 그림 Ⅶ-5</span></h3>
+        <p>펌프가 물을 높은 곳으로 퍼 올려 <b>높이 차이</b>를 만들면 물이 흘러 물레방아를 돌려요. 전기 회로에서는 무엇이 펌프 역할을 할까요?</p>
+        <div class="row">
+          <div class="ctrl"><label>수도꼭지 · 스위치</label><div class="toggle"><button class="btn small" id="wOpen">🚰 수도꼭지·스위치 열기</button></div></div>
+          <div class="ctrl"><label>펌프의 세기(물의 높이 차) ↔ 전지의 전압 <em id="wLvl">1단계 · 1.5 V</em></label><input type="range" id="wLevel" min="1" max="3" step="1" value="1"></div>
+        </div>
+        <div class="rig"><canvas id="wCv" height="380"></canvas></div>
+        <div class="readout"><div><small>물의 높이 차이</small><b id="wH">낮음</b></div><div><small>물레방아</small><b id="wWheel">멈춤</b></div><div><small>전지의 전압</small><b id="wV">1.5 V</b></div><div><small>전구</small><b id="wB">꺼짐</b></div></div>
+        <div class="status-line" id="wMsg">수도꼭지와 스위치를 열어 보세요.</div>
+        <div class="analogy">⚠️ <b>비유는 비유일 뿐!</b> 물의 흐름은 눈에 보이지 않는 전류를 이해하기 위한 <b>모형</b>이에요. 전류가 물과 똑같은 것은 아니에요.</div>
+        <div class="mission"><h4 style="margin:0 0 6px">🧩 짝 짓기 — 물의 흐름 모형 ↔ 전기 회로</h4>
+          <p style="margin:0 0 8px">왼쪽에서 하나, 오른쪽에서 하나를 눌러 짝을 지어요. (<span id="mtCount">0</span> / 6)</p>
+          <div class="match"><div class="match-col" id="mtL"></div><div class="match-col" id="mtR"></div></div>
+          <div class="status-line" id="mtMsg"></div>
+        </div>
+        <div class="qa"><h4>❓ 스스로 확인하기 2 <span class="muted">(교과서 249쪽)</span></h4>
+          <p style="color:var(--color-text);margin-top:0">그림의 전기 회로에서 전류가 흐르는 과정을 물의 흐름에 비유하여 설명해 보자.</p>
+          <textarea data-save="qa-water" id="note-qa-water" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-water"></div>
+          <button class="btn small secondary" data-ans="ans-water">예시 답안 보기</button>
+          <p class="hidden" id="ans-water" style="color:var(--color-text)">펌프를 이용하여 낮은 곳의 물을 수도관을 통해 높은 곳으로 퍼 올리면 물은 높이 차이에 의해 아래로 떨어지면서 물레방아를 돌린다. 이와 같이 전구가 연결된 전기 회로에서 <b>전지</b>를 연결하면 <b>전압</b>에 의해 전선에 <b>전류</b>가 흘러 전구의 불이 켜진다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-ohm">
+      <div class="card">
+        <h3>③ 전류, 전압, 저항 사이의 관계 탐구하기 <span class="badge">교과서 250~251쪽 탐구</span></h3>
+        <p><b>목표</b> | 전기 회로에 흐르는 전류의 세기에 영향을 미치는 요인을 설명할 수 있다. <span class="muted">— 과정 순서대로 진행해요.</span></p>
+        <div class="steps" id="oSteps"></div>
+        <div class="pred" id="oPred"></div>
+        <div class="ohm-ctrl card-in">
+          <div class="ctrl" id="oConnBox"><label>과정 1 · 집게 달린 전선으로 연결하기</label><div class="toggle" id="oConn"></div></div>
+          <div class="ctrl"><label>과정 2 · 센서를 스마트 기기와 연결</label><div class="toggle"><button class="btn small" id="oDevice">📱 스마트 기기 연결하기</button></div></div>
+          <div class="ctrl"><label>니크롬선 <span class="muted">(바꿀 때는 전압을 0으로!)</span></label><div class="toggle" id="oWire"><button class="chip on" data-v="long">━━━ 길이가 긴 니크롬선</button><button class="chip" data-v="short">━ 길이가 짧은 니크롬선</button></div></div>
+          <div class="ctrl"><label>과정 3·4 · 전원 장치의 전압 <em id="oVl">0.0 V</em></label>
+            <div class="volt-row"><button class="btn small secondary" id="oMinus">−</button><input type="range" id="oV" min="0" max="5" step="0.5" value="0" disabled><button class="btn small secondary" id="oPlus">+</button><button class="btn small secondary" id="oZero">0으로</button></div></div>
+        </div>
+        <div class="rig" id="oRig"></div>
+        <div class="readout"><div><small>전압 센서</small><b id="oRV">— V</b></div><div><small>전류 센서</small><b id="oRI">— A</b></div><div><small>니크롬선</small><b id="oRW" style="font-size:17px">긴 니크롬선</b></div></div>
+        <div class="status-line" id="oMsg">과정 1: 전선을 하나씩 연결해 보세요.</div>
+        <div class="tablet"><div class="tablet-top"><span>📱 스마트 기기 — 전압-전류 그래프</span><span class="toggle"><button class="chip on small-chip" id="oOverlay">겹쳐 보기</button></span></div><div id="oGraph"></div></div>
+        <h4 style="margin:12px 0 6px">📋 측정 기록표 <span class="muted">(전압을 맞추면 자동 기록)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="oTable"></table></div>
+        <div class="btn-row" style="padding-top:8px"><button class="btn small secondary" id="oRatio">➗ 전압 ÷ 전류 계산해 보기</button><button class="btn small secondary" id="oClear">기록 지우기</button></div>
+        <div class="qa"><h4>❓ 결과 및 정리 <span class="muted">(교과서 251쪽)</span></h4>
+          <p style="color:var(--color-text);margin-top:0">1. 과정 3, 4에서 관찰한 그래프를 각각 그려 보자. → 위 스마트 기기 그래프 ✔<br>2. 전압이 커질 때 전류의 세기는 어떻게 달라지는지 설명해 보자.<br>3. 전압이 같을 때 니크롬선의 길이에 따라 전류의 세기는 어떻게 달라지는지 설명해 보자.<br>4. 실험 결과를 바탕으로 하여 회로에 흐르는 전류의 세기에 영향을 미치는 요인에는 어떤 것이 있는지 설명해 보자.</p>
+          <textarea data-save="qa-ohm" id="note-qa-ohm" placeholder="2. … 3. … 4. …"></textarea><div class="saved" id="saved-qa-ohm"></div>
+          <button class="btn small secondary" data-ans="ans-ohm">예시 답안 보기</button>
+          <p class="hidden" id="ans-ohm" style="color:var(--color-text)">2. 니크롬선에 걸리는 <b>전압이 커지면 전류의 세기도 커진다</b>. (전압이 2배, 3배가 되면 전류의 세기도 2배, 3배가 된다.)<br>3. 전압이 같을 때 니크롬선의 <b>길이가 짧을수록 전류의 세기는 커진다</b>.<br>4. 회로에 흐르는 전류의 세기는 <b>전압과 니크롬선의 길이</b>에 따라 달라진다.</p>
+        </div>
+        <p class="muted">💡 측정값은 교과서 예시 그래프(긴 니크롬선 5 V → 0.5 A, 짧은 니크롬선 5 V → 1.0 A)에 맞춘 <b>가상 값</b>이에요. 실제 실험에서는 니크롬선이 뜨거워지면 저항이 조금 커질 수 있으니, 눈금을 읽은 뒤 바로 전압을 0으로 낮춰요. <span class="badge ext">보충 · 온도와 저항</span></p>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-resist">
+      <div class="card">
+        <h3>④ 저항과 전류의 관계 — 전자와 원자의 충돌 <span class="badge">교과서 252쪽 그림 Ⅶ-7</span></h3>
+        <p>전원 장치의 전압을 <b>6 V로 일정하게</b> 하고 니크롬선의 <b>길이</b>를 바꿔 보세요. 전자가 원자와 부딪히는 모습과 전류의 세기를 비교해요.</p>
+        <div class="row">
+          <div class="ctrl"><label>니크롬선의 길이 <em id="rLl">1칸</em></label><input type="range" id="rLen" min="1" max="5" step="1" value="1"></div>
+          <div class="ctrl"><label>니크롬선의 굵기 <span class="badge ext">교과서 보충</span></label><div class="toggle" id="rThick"><button class="chip on" data-v="1">가는 선</button><button class="chip" data-v="2">굵은 선(단면적 2배)</button></div></div>
+        </div>
+        <div class="rig"><canvas id="rCv" height="300"></canvas></div>
+        <div class="readout"><div><small>전압 (일정)</small><b>6 V</b></div><div><small>저항</small><b id="rR">2 Ω</b></div><div><small>전류의 세기</small><b id="rI">3.0 A</b></div><div><small>전자 1개가 지나며 부딪히는 원자</small><b id="rHit">약 4개</b></div></div>
+        <div class="status-line" id="rMsg">길이를 바꿔 보세요.</div>
+        <div class="pred" id="rPred"></div>
+        <div class="tablet"><div class="tablet-top"><span>📈 저항-전류 그래프 (전압 6 V 일정)</span></div><div id="rGraph"></div></div>
+        <h4 style="margin:12px 0 6px">📋 기록표 <span class="muted">(값을 바꾸면 자동 기록)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="rTable"></table></div>
+        <div class="btn-row" style="padding-top:8px"><button class="btn small secondary" id="rClear">기록 지우기</button></div>
+        <p class="muted">저항 값(1칸 = 2 Ω)은 이해를 돕기 위한 <b>가상 값</b>이에요. 굵기에 따른 변화는 교과서 보충 내용이에요.</p>
+        <div class="qa"><h4>❓ 탐구 질문에 답해 보기</h4>
+          <p style="color:var(--color-text);margin-top:0">전압이 일정할 때 니크롬선의 길이가 길어지면 전류의 세기는 어떻게 될까요? 그 까닭을 전자와 원자의 충돌로 설명해 보세요.</p>
+          <textarea data-save="qa-resist" id="note-qa-resist" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-resist"></div>
+          <button class="btn small secondary" data-ans="ans-resist">예시 답안 보기</button>
+          <p class="hidden" id="ans-resist" style="color:var(--color-text)">니크롬선의 길이가 길수록 전자가 지나가며 <b>원자와 충돌하는 횟수가 많아져 저항이 커진다</b>. 전압이 같을 때 <b>저항이 클수록 전류의 세기는 감소</b>한다(전류의 세기는 저항에 반비례). 그래서 길이가 2배가 되면 저항은 2배, 전류는 1/2배가 된다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-calc">
+      <div class="card">
+        <h3>⑤ 옴의 법칙 미션 <span class="badge">교과서 252쪽</span></h3>
+        <div class="row" style="align-items:center">
+          <div>
+            <p style="margin-top:0">삼각형에서 <b>구하고 싶은 양</b>을 눌러 가려 보세요. 남은 두 양으로 식이 만들어져요.</p>
+            <div class="tri-box" id="triBox"></div>
+            <div class="info-panel" id="triInfo">전류의 세기(I) = 전압(V) ÷ 저항(R) &nbsp;⇄&nbsp; V = I × R</div>
+          </div>
+          <div>
+            <div class="ctrl"><label>계산기 — 구할 값</label><div class="toggle" id="kFind"><button class="chip on" data-v="I">전류 I</button><button class="chip" data-v="V">전압 V</button><button class="chip" data-v="R">저항 R</button></div></div>
+            <div id="kInputs"></div>
+            <div class="calc-out" id="kOut"></div>
+          </div>
+        </div>
+        <h4 style="margin:14px 0 6px">🎯 미션 카드 <span class="muted">(<span id="msCount">0</span> / 5 해결)</span></h4>
+        <div id="msBox"></div>
+        <p class="muted">⚠️ 옴의 법칙은 식을 외우는 것보다 <b>"전압이 크면 전류도 크고, 저항이 크면 전류는 작다"</b>는 관계를 이해하는 것이 중요해요.</p>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-cond">
+      <div class="card">
+        <h3>⑥ 도체, 부도체를 활용한 제품 찾아보기 <span class="badge">교과서 253쪽 해 보기</span></h3>
+        <p>집게 사이에 물질을 끼워 전구에 불이 켜지는지 확인해 보세요. 불이 켜지면 전류가 잘 흐르는 <b>도체</b>, 켜지지 않으면 전류가 잘 흐르지 않는 <b>부도체</b>예요.</p>
+        <div class="ctrl"><label>집게 사이에 끼울 물질</label><div class="toggle" id="dMat"></div></div>
+        <div class="rig" id="dRig"></div>
+        <div class="status-line" id="dMsg">물질을 골라 보세요.</div>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="dTable"></table></div>
+        <div class="mission"><h4 style="margin:0 0 6px">🗂️ 제품 분류하기 — 도체를 활용했을까, 부도체를 활용했을까?</h4>
+          <p style="margin:0 0 8px">제품을 하나 고르고 알맞은 상자를 눌러요. (<span id="pdCount">0</span> / 6)</p>
+          <div class="toggle" id="pdItems"></div>
+          <div class="bins"><button class="bin" id="binC" data-v="c"><b>⚡ 도체 활용</b><span>전류가 잘 흐르게</span><div class="bin-in" id="binCIn"></div></button><button class="bin" id="binI" data-v="i"><b>🧤 부도체 활용</b><span>전류가 흐르지 않게</span><div class="bin-in" id="binIIn"></div></button></div>
+          <div class="status-line" id="pdMsg"></div>
+        </div>
+        <div class="semi card-in">
+          <h4 style="margin:0 0 6px">🔬 반도체 — 규소</h4>
+          <p style="margin:0 0 8px">순수한 상태에서는 전류가 잘 흐르지 않는 <b>부도체</b>지만, <b>특정 조건</b>이 되면 <b>도체</b>가 되어 전류가 흐르는 물질이에요. 컴퓨터, 휴대 전화의 반도체 부품 재료로 많이 쓰여요.</p>
+          <button class="btn small mint" id="semiBtn">⚙️ 특정 조건 만들기</button> <span class="state-pill" id="semiState">순수한 상태 · 전류 ✖</span>
+        </div>
+        <div class="qa"><h4>❓ 스스로 확인하기 3 <span class="muted">(교과서 253쪽)</span></h4>
+          <p style="color:var(--color-text);margin-top:0">전기 기구를 만질 때 절연 장갑을 사용하는 까닭을 설명해 보자.</p>
+          <textarea data-save="qa-cond" id="note-qa-cond" placeholder="내 답을 적어 보세요."></textarea><div class="saved" id="saved-qa-cond"></div>
+          <button class="btn small secondary" data-ans="ans-cond">예시 답안 보기</button>
+          <p class="hidden" id="ans-cond" style="color:var(--color-text)">절연 장갑은 <b>저항이 커서 전류가 잘 흐르지 않기</b> 때문이다(부도체).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn secondary" data-go="1">← 이전</button>
+      <button class="btn" data-go="3" style="margin-left:auto">스티커로 정리하기 →</button>
+    </div>
+  </section>
+
+  <!-- 4. 스티커 -->
+  <section class="screen" id="screen-sticker">
+    <h2>🏷️ 스티커 붙이기: 전류·전압·저항 정리판</h2>
+    <p>스티커를 골라 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 <b>확인하기</b>! 어디에도 붙지 않는 <b>함정 스티커</b>도 숨어 있어요.</p>
+    <div class="board-tabs" id="boardTabs"></div>
+    <div class="sticker-status"><span class="pill">🏷️ 붙인 스티커 <span id="stkCount">0 / 0</span></span><span class="pill">🔁 시도 <span id="stkTry">0</span>회</span></div>
+    <div class="card"><h3 id="boardTitle"></h3><p class="muted" id="boardDesc"></p><div class="sticker-board" id="stkBoard"></div><div class="stk-msg" id="stkMsg"></div><div id="stkDone"></div></div>
+    <div class="card sticker-tray" id="stkTray"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="2">← 이전</button>
+      <button class="btn secondary" id="stkReset">↺ 이 판 처음부터</button>
+      <button class="btn" id="stkCheck">확인하기 ✔</button>
+      <button class="btn mint hidden" id="stkNext">다음 판 →</button>
+      <button class="btn mint hidden" id="stkToLife" data-go="4">실생활로 →</button>
+    </div>
+  </section>
+
+  <!-- 5. 실생활 -->
+  <section class="screen" id="screen-life">
+    <h2>🏠 생활 속 전류·전압·저항</h2>
+    <p>카드를 눌러 <b>왜 그럴까?</b>를 확인하세요.</p>
+    <div class="life-grid" id="lifeGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="3">← 이전</button>
+      <button class="btn" id="toQuiz" style="margin-left:auto">개념 확인 10문제 →</button>
+    </div>
+  </section>
+
+  <!-- 6. 퀴즈 -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-top"><b id="qNum">1 / 10</b><div class="quiz-progress"><i id="qBar"></i></div><span class="combo" id="combo"></span></div>
+    <div class="card q-card" id="qCard"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="4">← 실생활</button>
+      <button class="btn hidden" id="qNext" style="margin-left:auto">다음 문제 →</button>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result">
+    <div class="card result-hero">
+      <div class="trophy" id="trophy">🏆</div>
+      <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <div class="score-big"><span class="grad-text" id="scoreBig">0</span><span style="font-size:28px;color:var(--color-text-light)"> / 10</span></div>
+      <p id="resultMsg" style="font-size:17px;color:var(--color-text);font-weight:700"></p>
+      <p class="muted" id="resultTime"></p>
+    </div>
+    <div class="card" id="wrongBox"></div>
+    <div class="card check-list">
+      <h3>✅ 학습목표 자가 점검 — 이제 나는</h3>
+      <label><input type="checkbox" data-save-check="c1"> 전류는 전하의 흐름(단위 A)이고, 전압은 전류를 흐르게 하는 능력(단위 V)임을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c2"> 스위치를 닫기 전과 후 전선 속 전자의 움직임을 비교하고, 전류의 방향이 전자의 이동 방향과 반대임을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c3"> 전기 회로를 물의 흐름에 비유하여 전지(전압)의 역할을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c4"> 실험 그래프로부터 전류의 세기가 전압에 비례하고 저항에 반비례함(옴의 법칙)을 이끌어낼 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c5"> I = V/R을 이용해 전류·전압·저항을 구하고, 도체·부도체·반도체의 예를 들 수 있다.</label>
+    </div>
+    <p class="muted" style="text-align:center">📸 이 화면을 캡처해서 선생님께 제출하세요.</p>
+    <div class="btn-row center">
+      <button class="btn secondary hidden" id="retryWrong">틀린 문제 다시 풀기</button>
+      <button class="btn secondary" id="retryAll">처음부터 다시 풀기</button>
+      <button class="btn" data-go="0">처음 화면으로</button>
+    </div>
+  </section>
+
+  <footer>Made by Lee Jae Kwang</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ============ 저장 ============ */
+const LSP='vlab-ohm-';
+function lsGet(k,d){try{const v=localStorage.getItem(LSP+k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(LSP+k,JSON.stringify(v));}catch(e){}}
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+
+/* ============ 효과음 (Web Audio로 직접 합성, 외부 파일 없음) ============ */
+const SND={ctx:null,on:lsGet('sound',true),master:null,buf:null};
+function audio(){
+  if(!SND.on) return null;
+  try{
+    if(!SND.ctx){const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+      SND.ctx=new C(); SND.master=SND.ctx.createGain(); SND.master.gain.value=.55; SND.master.connect(SND.ctx.destination);}
+    if(SND.ctx.state==='suspended') SND.ctx.resume();
+    return SND.ctx;
+  }catch(e){return null;}
+}
+function tone(f,dur,o={}){
+  const c=audio(); if(!c) return;
+  const t=c.currentTime+(o.when||0), vol=o.vol||.25;
+  const os=c.createOscillator(), g=c.createGain();
+  os.type=o.type||'sine'; os.frequency.setValueAtTime(f,t);
+  if(o.to) os.frequency.exponentialRampToValueAtTime(o.to,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+(o.attack||.006)); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  os.connect(g); g.connect(SND.master); os.start(t); os.stop(t+dur+.05);
+}
+function noise(dur,o={}){
+  const c=audio(); if(!c) return;
+  if(!SND.buf){SND.buf=c.createBuffer(1,Math.floor(c.sampleRate*1.5),c.sampleRate); const d=SND.buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;}
+  const t=c.currentTime+(o.when||0);
+  const s=c.createBufferSource(); s.buffer=SND.buf; s.loop=true;
+  const fl=c.createBiquadFilter(); fl.type=o.type||'bandpass'; fl.Q.value=o.q||1;
+  fl.frequency.setValueAtTime(o.f1||800,t); fl.frequency.exponentialRampToValueAtTime(o.f2||2000,t+dur);
+  const g=c.createGain(), a=o.attack!=null?o.attack:dur*.4;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.vol||.15,t+a); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(fl); fl.connect(g); g.connect(SND.master); s.start(t); s.stop(t+dur+.05);
+}
+function sfx(n){
+  try{switch(n){
+    case 'tap': tone(660,.07,{type:'triangle',vol:.14}); break;
+    case 'tick': tone(1250,.035,{type:'square',vol:.04}); break;
+    case 'pick': tone(520,.1,{vol:.22,to:900}); break;
+    case 'stick': tone(320,.09,{type:'square',vol:.07,to:150}); noise(.09,{vol:.16,f1:2200,f2:600,attack:.004}); break;
+    case 'peel': noise(.18,{vol:.12,f1:900,f2:3500,attack:.01}); break;
+    case 'correct': tone(784,.12,{type:'triangle',vol:.28}); tone(1047,.24,{type:'triangle',vol:.28,when:.1}); break;
+    case 'wrong': tone(230,.28,{type:'sawtooth',vol:.1,to:130}); break;
+    case 'combo': [523,659,784,1047].forEach((f,i)=>tone(f,.15,{type:'triangle',vol:.24,when:i*.07})); noise(.5,{vol:.08,f1:4000,f2:9000,type:'highpass',when:.2,attack:.01}); break;
+    case 'fanfare': [[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.2],[784,.58,.14],[1047,.7,.6]].forEach(a=>tone(a[0],a[2],{type:'triangle',vol:.27,when:a[1]})); noise(1,{vol:.1,f1:3000,f2:9000,type:'highpass',when:.36,attack:.02}); break;
+    case 'pop': tone(380+Math.random()*320,.07,{vol:.22,to:1300}); break;
+    case 'whoosh': noise(.32,{vol:.09,f1:400,f2:2600,q:.7}); break;
+    case 'inhale': noise(1.3,{vol:.09,f1:450,f2:1500,q:.5}); break;
+    case 'exhale': noise(1.5,{vol:.09,f1:1400,f2:380,q:.5}); break;
+    case 'stamp': tone(110,.2,{type:'square',vol:.13,to:55}); noise(.16,{vol:.22,f1:900,f2:200,attack:.003}); break;
+    case 'burst': noise(.55,{vol:.16,f1:4000,f2:9500,type:'highpass',attack:.004}); tone(900,.14,{vol:.12,to:1900}); break;
+    case 'unlock': tone(660,.1,{type:'triangle',vol:.22}); tone(990,.28,{type:'triangle',vol:.22,when:.09}); break;
+    case 'drip': tone(1400,.09,{vol:.2,to:420}); tone(700,.05,{vol:.08,when:.08}); break;
+    case 'flush': noise(1.3,{vol:.2,f1:300,f2:1800,type:'lowpass',q:.6,attack:.15}); noise(.9,{vol:.08,f1:2500,f2:600,when:.4}); break;
+    case 'flow': noise(.7,{vol:.1,f1:250,f2:700,type:'lowpass',q:.8}); break;
+    case 'filter': noise(.6,{vol:.1,f1:3000,f2:1200,q:2}); [0,.12,.24].forEach(w=>tone(900+w*600,.06,{vol:.08,when:w})); break;
+    case 'absorb': [523,659,784].forEach((f,i)=>tone(f,.14,{type:'sine',vol:.16,when:i*.08,to:f*1.25})); break;
+    case 'secrete': [784,622,494].forEach((f,i)=>tone(f,.14,{type:'triangle',vol:.14,when:i*.08,to:f*.8})); break;
+    case 'zoom': tone(300,.45,{vol:.14,to:1500}); noise(.4,{vol:.06,f1:600,f2:5000}); break;
+    case 'sparkle': [1319,1568,2093].forEach((f,i)=>tone(f,.12,{type:'sine',vol:.12,when:i*.06})); break;
+    case 'heat': for(let i=0;i<8;i++) tone(250+Math.random()*350,.08,{vol:.12,to:700+Math.random()*500,when:i*.13}); break;
+    case 'pen': tone(1800,.02,{type:'triangle',vol:.03}); break;
+    case 'bubble': tone(300,.12,{vol:.18,to:700}); break;
+    case 'scrape': noise(.45,{vol:.16,f1:700,f2:1600,q:3,attack:.02}); noise(.3,{vol:.08,f1:2400,f2:1200,q:4,when:.12}); break;
+    case 'slide': noise(.8,{vol:.1,f1:1800,f2:500,type:'bandpass',q:.8,attack:.03}); break;
+    case 'thud': tone(95,.18,{type:'square',vol:.12,to:50}); noise(.12,{vol:.18,f1:500,f2:150,attack:.003}); break;
+    case 'slip': tone(900,.5,{type:'triangle',vol:.16,to:180}); noise(.4,{vol:.1,f1:3000,f2:800,when:.05}); break;
+    case 'step': tone(160,.07,{type:'square',vol:.07,to:90}); noise(.06,{vol:.12,f1:900,f2:400,attack:.003}); break;
+    case 'rub': noise(.32,{vol:.15,f1:1500,f2:3800,q:1.4,attack:.03}); noise(.2,{vol:.07,f1:3000,f2:1200,q:2,when:.14}); break;
+    case 'zap': noise(.14,{vol:.24,f1:7000,f2:2600,type:'highpass',attack:.002}); tone(2200,.07,{type:'square',vol:.05,to:500}); break;
+    case 'crackle': for(let i=0;i<6;i++) noise(.035,{vol:.2,f1:6000,f2:3500,type:'highpass',attack:.002,when:i*.06+Math.random()*.04}); break;
+    case 'hum': tone(120,.45,{type:'sawtooth',vol:.035,to:200}); break;
+    case 'repel': tone(480,.28,{type:'triangle',vol:.18,to:980}); break;
+    case 'attract': tone(980,.28,{type:'triangle',vol:.18,to:420}); break;
+    case 'roll': noise(1.1,{vol:.13,f1:180,f2:520,type:'lowpass',q:1.2,attack:.12}); break;
+    case 'foil': [1568,2093,2637].forEach((f,i)=>tone(f,.12,{vol:.08,when:i*.05})); break;
+    case 'electron': tone(1300,.06,{type:'sine',vol:.09,to:2000}); break;
+    case 'switch': tone(190,.05,{type:'square',vol:.09,to:120}); noise(.05,{vol:.18,f1:3000,f2:1200,attack:.002}); break;
+    case 'bulb': tone(660,.3,{type:'sine',vol:.13,to:1320}); tone(1980,.25,{type:'sine',vol:.05,when:.08}); break;
+    case 'buzz': tone(110,.35,{type:'sawtooth',vol:.03,to:118}); break;
+    case 'knob': tone(1500,.03,{type:'square',vol:.035}); break;
+    case 'beep': tone(1760,.07,{type:'square',vol:.05}); break;
+    case 'water': noise(.9,{vol:.12,f1:250,f2:900,type:'lowpass',q:.7,attack:.1}); break;
+    case 'connect': tone(600,.06,{type:'triangle',vol:.16}); tone(900,.09,{type:'triangle',vol:.16,when:.06}); break;
+    case 'thunk': tone(150,.12,{type:'triangle',vol:.14,to:90}); break;
+    case 'device': [880,1175,1568].forEach((f,i)=>tone(f,.1,{type:'sine',vol:.13,when:i*.07})); break;
+    case 'creak': tone(140,.5,{type:'sawtooth',vol:.05,to:260}); break;
+  }}catch(e){}
+}
+
+/* ============ 애니메이션 루프 & 폭죽(컨페티) ============ */
+const TASKS=[]; let loopOn=false, lastT=0;
+function addTask(fn){TASKS.push(fn);}
+function kick(){ if(!loopOn){loopOn=true; lastT=performance.now(); requestAnimationFrame(loop);} }
+function loop(t){
+  const dt=clamp((t-lastT)/1000,0.001,0.05); lastT=t; let any=false;
+  for(const f of TASKS){ try{ if(f(dt,t)) any=true; }catch(e){ console.error(e); } }
+  const fxAny=fxStep();
+  if(any||fxAny) requestAnimationFrame(loop); else loopOn=false;
+}
+const FX={cv:null,ctx:null,parts:[],dpr:1,dirty:false};
+const FXCOL=['#ff4d6d','#ffb238','#3361e8','#21c9a9','#7a4ff0','#45b3ff','#ffd43b','#ff8a3d'];
+function fxResize(){ if(!FX.cv) return; FX.dpr=Math.min(2,window.devicePixelRatio||1); FX.cv.width=Math.round(innerWidth*FX.dpr); FX.cv.height=Math.round(innerHeight*FX.dpr); }
+function confetti(x,y,o={}){
+  let n=o.count||40; if(REDUCED) n=Math.ceil(n/4);
+  const sp=o.speed||9, cols=o.colors||FXCOL, shapes=o.shapes||['r','c','s','b'];
+  for(let i=0;i<n;i++){
+    const a=(o.angle!=null?o.angle:-Math.PI/2)+(Math.random()-.5)*(o.spread!=null?o.spread:Math.PI*2);
+    const v=sp*(.4+Math.random()*.8);
+    FX.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:o.g!=null?o.g:.28,rot:Math.random()*6,vr:(Math.random()-.5)*.45,
+      s:(o.size||8)*(.6+Math.random()*.8),shape:shapes[i%shapes.length],col:cols[i%cols.length],life:1,dec:o.decay||(.009+Math.random()*.008),drag:o.drag||.985});
+  }
+  kick();
+}
+function burstAt(el,o={}){ if(!el) return; const r=el.getBoundingClientRect(); confetti(r.left+r.width/2,r.top+r.height/2,o); }
+function fireworks(){
+  sfx('burst'); const W=innerWidth,H=innerHeight;
+  for(let k=0;k<5;k++) setTimeout(()=>{ confetti(W*(.15+Math.random()*.7),H*(.18+Math.random()*.35),{count:60,speed:11,g:.17}); sfx('pop'); },k*260);
+  setTimeout(()=>{ const n=REDUCED?15:90; for(let i=0;i<n;i++) FX.parts.push({x:Math.random()*W,y:-20-Math.random()*240,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,g:.05,rot:Math.random()*6,vr:(Math.random()-.5)*.3,s:6+Math.random()*7,shape:['r','b','s'][i%3],col:FXCOL[i%FXCOL.length],life:1,dec:.004,drag:.995}); kick(); },300);
+}
+function starPath(c,r){ c.beginPath(); for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2, rr=i%2?r*.45:r; c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} c.closePath(); c.fill(); }
+function fxStep(){
+  const P=FX.parts, c=FX.ctx; if(!c) return false;
+  if(!P.length){ if(FX.dirty){ c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,FX.cv.width,FX.cv.height); FX.dirty=false; } return false; }
+  FX.dirty=true; c.setTransform(FX.dpr,0,0,FX.dpr,0,0); c.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i]; p.vx*=p.drag; p.vy=p.vy*p.drag+p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=p.dec;
+    if(p.life<=0||p.y>innerHeight+40){P.splice(i,1);continue;}
+    c.save(); c.globalAlpha=Math.min(1,p.life*1.6); c.translate(p.x,p.y); c.rotate(p.rot); c.fillStyle=p.col; const s=p.s;
+    if(p.shape==='c'){c.beginPath();c.arc(0,0,s/2,0,7);c.fill();}
+    else if(p.shape==='s') starPath(c,s*.7);
+    else if(p.shape==='b') c.fillRect(-s/2,-s/5,s,(s/2.5)*Math.abs(Math.cos(p.rot*2))+1);
+    else c.fillRect(-s/2,-s/2,s,s*.62);
+    c.restore();
+  }
+  return true;
+}
+function floatText(x,y,txt,color){
+  const d=document.createElement('div'); d.className='float-txt'; d.textContent=txt; d.style.left=x+'px'; d.style.top=y+'px'; d.style.color=color||'#12a874';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1200);
+}
+function floatAt(el,txt,color){ if(!el) return; const r=el.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,txt,color); }
+let toastTimer=null;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2300); }
+
+/* ============ 캔버스 도우미 ============ */
+function prepCanvas(cv){
+  const w=cv.clientWidth; if(!w) return null;
+  const H=+cv.getAttribute('height'); const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=H+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv._w=w; cv._dpr=dpr; cv._H=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); return {ctx,W:w,H:cv._H};
+}
+function visible(el){ return !!(el && el.offsetParent!==null); }
+
+/* ============ 화면 이동 ============ */
+const SCREENS=['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const STEP_NAMES=['도입','개념','탐구','스티커','실생활','개념 확인'];
+let cur=-1; const enterHooks={};
+function renderSteps(){
+  const box=$('stepIndicator');
+  if(!box.children.length){
+    STEP_NAMES.forEach((n,k)=>{ const b=document.createElement('button'); b.className='step-dot'; b.innerHTML='<i></i><span>'+n+'</span>'; b.setAttribute('aria-label',(k+1)+'단계 '+n);
+      b.addEventListener('click',()=>{ sfx('tap'); goTo(k===5?(qz&&qz.done?6:5):k); }); box.appendChild(b); });
+  }
+  const pos=Math.min(cur,6);
+  [...box.children].forEach((b,k)=>{ b.classList.toggle('active',k===pos||(pos===6&&k===5)); b.classList.toggle('done',k<pos); });
+}
+function goTo(i){
+  if(i===cur) return;
+  const back=i<cur, prev=cur;
+  SCREENS.forEach((id,k)=>{ const el=$(id); el.classList.toggle('active',k===i); el.classList.toggle('back',k===i&&back); });
+  cur=i; renderSteps(); window.scrollTo(0,0);
+  if(prev>=0) sfx('whoosh');
+  if(i<=5) lsSet('progress',i);
+  if(enterHooks[i]) enterHooks[i]();
+  kick();
+}
+
+</script>
+<script>
+'use strict';
+/* ============ 공통 그림 도우미 ============ */
+const C_POS='#e03131', C_NEG='#2f6fdb', C_F='#7b2ff7';
+let SVGID=0;
+const r1=v=>Math.round(v*10)/10;
+function arw(x1,y1,x2,y2,c,w,dash){
+  w=w||6; const a=Math.atan2(y2-y1,x2-x1), L=Math.hypot(x2-x1,y2-y1); if(L<3) return '';
+  const h=Math.min(w*3,L*.7), hx=x2-Math.cos(a)*h, hy=y2-Math.sin(a)*h, px=Math.sin(a)*h*.6, py=-Math.cos(a)*h*.6;
+  return `<g><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#fff" stroke-width="${w+5}" stroke-linecap="round" opacity=".85"/><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"${dash?' stroke-dasharray="11 8"':''}/><polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(hx+px).toFixed(1)},${(hy+py).toFixed(1)} ${(hx-px).toFixed(1)},${(hy-py).toFixed(1)}" fill="${c}" stroke="#fff" stroke-width="1.5"/></g>`;
+}
+function txt(x,y,t,o){ o=o||{}; return `<text x="${x}" y="${y}" text-anchor="${o.a||'middle'}" font-size="${o.s||17}" font-weight="900" fill="${o.c||'#1b1d4a'}" stroke="#fff" stroke-width="${o.halo==null?4:o.halo}" paint-order="stroke">${t}</text>`; }
+/* 전하 기호: s>0 (+) 빨강 원, s<0 (−) 파랑 원 — 색과 기호를 함께 */
+function chg(x,y,s,r,attr){ r=r||9; const p=s>0; x=r1(x); y=r1(y);
+  return `<g${attr||''}><circle cx="${x}" cy="${y}" r="${r}" fill="${p?'#ffe1e1':'#dfe9ff'}" stroke="${p?C_POS:C_NEG}" stroke-width="${r>7?2:1.5}"/><text x="${x}" y="${r1(y+r*.47)}" text-anchor="middle" font-size="${r1(r*1.45)}" font-weight="900" fill="${p?C_POS:C_NEG}">${p?'+':'−'}</text></g>`; }
+function prepRatio(cv,LW,LH){ const w=cv.clientWidth; if(!w) return null; const h=w*LH/LW, dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=h+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv._w=w; cv._dpr=dpr; }
+  const ctx=cv.getContext('2d'); const k=w/LW*dpr; ctx.setTransform(k,0,0,k,0,0); return ctx; }
+function cChg(c,x,y,s,r,al){ c.save(); c.globalAlpha=al==null?1:al; c.beginPath(); c.arc(x,y,r,0,7); c.fillStyle=s>0?'#ffe1e1':'#dfe9ff'; c.fill(); c.lineWidth=r>8?2.4:1.8; c.strokeStyle=s>0?C_POS:C_NEG; c.stroke();
+  c.fillStyle=s>0?C_POS:C_NEG; c.font=`900 ${Math.round(r*1.5)}px sans-serif`; c.textAlign='center'; c.textBaseline='middle'; c.fillText(s>0?'+':'−',x,y+r*.08); c.restore(); }
+function cTxt(c,t,x,y,sz,col,al){ c.save(); c.font=`900 ${sz}px 'Noto Sans KR',sans-serif`; c.textAlign=al||'center'; c.textBaseline='middle'; c.lineWidth=5; c.strokeStyle='#fff'; c.strokeText(t,x,y); c.fillStyle=col||'#1b1d4a'; c.fillText(t,x,y); c.restore(); }
+const C_CUR='#e8590c';
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
+const f2=v=>(Math.round(v*100)/100).toFixed(2);
+const fmt=v=>{ const r=Math.round(v*100)/100; return (Math.abs(r-Math.round(r))<1e-9)?String(Math.round(r)):String(r); };
+function polyLen(P){ let L=0; for(let i=1;i<P.length;i++) L+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]); return L; }
+function polyAt(P,s){
+  for(let i=1;i<P.length;i++){ const ax=P[i-1][0],ay=P[i-1][1],bx=P[i][0],by=P[i][1],l=Math.hypot(bx-ax,by-ay);
+    if(s<=l||i===P.length-1){ const t=l?clamp(s/l,0,1):0, dx=(bx-ax)/(l||1), dy=(by-ay)/(l||1); return {x:ax+(bx-ax)*t,y:ay+(by-ay)*t,dx,dy,nx:-dy,ny:dx}; }
+    s-=l; }
+}
+function polySub(P,s0,s1){ const out=[]; let acc=0; const a=polyAt(P,s0); out.push([a.x,a.y]);
+  for(let i=1;i<P.length;i++){ acc+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]); if(acc>s0&&acc<s1) out.push(P[i]); }
+  const b=polyAt(P,s1); out.push([b.x,b.y]); return out; }
+function cPath(c,pts){ c.beginPath(); pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])); }
+function cArrow(c,x1,y1,x2,y2,col,w){ w=w||6; const a=Math.atan2(y2-y1,x2-x1), h=w*3;
+  c.save(); c.lineCap='round'; c.strokeStyle='#fff'; c.lineWidth=w+5; c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2-Math.cos(a)*h,y2-Math.sin(a)*h); c.stroke();
+  c.strokeStyle=col; c.lineWidth=w; c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2-Math.cos(a)*h,y2-Math.sin(a)*h); c.stroke();
+  c.fillStyle=col; c.beginPath(); c.moveTo(x2,y2); c.lineTo(x2-Math.cos(a)*h+Math.sin(a)*h*.65,y2-Math.sin(a)*h-Math.cos(a)*h*.65); c.lineTo(x2-Math.cos(a)*h-Math.sin(a)*h*.65,y2-Math.sin(a)*h+Math.cos(a)*h*.65); c.closePath(); c.fill(); c.restore(); }
+function cRound(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+
+/* 전지(세로) SVG: x 중심, y1 위, y2 아래, top=(+)가 위인지 */
+function battV(x,y1,y2,plusTop,o){ o=o||{}; const w=o.w||48, h=y2-y1, u='bt'+(++SVGID);
+  const band=plusTop?`<rect x="${x-w/2}" y="${y1}" width="${w}" height="${h*.32}" rx="6" fill="#f08c00"/>`:`<rect x="${x-w/2}" y="${y2-h*.32}" width="${w}" height="${h*.32}" rx="6" fill="#f08c00"/>`;
+  const nub=plusTop?`<rect x="${x-10}" y="${y1-9}" width="20" height="10" rx="3" fill="#868e96"/>`:`<rect x="${x-10}" y="${y2-1}" width="20" height="10" rx="3" fill="#868e96"/>`;
+  const lab=o.nolabel?'':(txt(x-w/2-22,(plusTop?y1:y2)+12,'(+)',{s:o.fs||20,c:C_POS})+txt(x-w/2-22,(plusTop?y2:y1)+12,'(−)',{s:o.fs||20,c:C_NEG}));
+  return `<g>${nub}<rect x="${x-w/2}" y="${y1}" width="${w}" height="${h}" rx="7" fill="#343a40"/>${band}<rect x="${x-w/2+6}" y="${y1+4}" width="6" height="${h-8}" rx="3" fill="#fff" opacity=".18"/>${lab}</g>`; }
+function bulbSVG(cx,cy,r,lit,lvl){ lvl=lvl==null?1:lvl; const u='bl'+(++SVGID);
+  return `<g>${lit?`<defs><radialGradient id="${u}"><stop offset="0" stop-color="#fff3a0" stop-opacity="${.95*Math.min(1,.45+lvl*.25)}"/><stop offset="1" stop-color="#ffd43b" stop-opacity="0"/></radialGradient></defs><circle class="glow" cx="${cx}" cy="${cy}" r="${r*(1.5+lvl*.6)}" fill="url(#${u})"/>`:''}
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="${lit?'#fff7c2':'#f1f3f5'}" fill-opacity=".9" stroke="#9aa6bb" stroke-width="3"/>
+  <path d="M${cx-r*.45},${cy+r*.75} L${cx-r*.3},${cy-r*.1} l${r*.15},-${r*.25} l${r*.15},${r*.25} l${r*.15},-${r*.25} l${r*.15},${r*.25} L${cx+r*.45},${cy+r*.75}" fill="none" stroke="${lit?'#f76707':'#868e96'}" stroke-width="${lit?4:3}" stroke-linejoin="round"/>
+  <rect x="${cx-r*.55}" y="${cy+r*.78}" width="${r*1.1}" height="${r*.5}" rx="4" fill="#adb5bd"/></g>`; }
+
+/* 기본 전기 회로 그림 (600×380): 전지 왼쪽 세로, 전구 위, 스위치 아래 */
+const CIRP='M90,141 V60 H272 M328,60 H510 V320 H332 M268,320 H90 V230';
+function circSVG(o){ o=o||{}; const top=!o.flip, open=!!o.open, u='ci'+(++SVGID);
+  let s=`<svg viewBox="0 0 600 380" role="img" aria-label="전기 회로">`;
+  s+=`<path d="${CIRP}" fill="none" stroke="#5c6475" stroke-width="7" stroke-linejoin="round"/>`;
+  s+=`<circle cx="268" cy="320" r="7" fill="#495057"/><circle cx="332" cy="320" r="7" fill="#495057"/>`;
+  s+=open?`<line x1="268" y1="320" x2="322" y2="288" stroke="#495057" stroke-width="8" stroke-linecap="round"/>`:`<line x1="268" y1="320" x2="332" y2="320" stroke="#495057" stroke-width="8" stroke-linecap="round"/>`;
+  s+=bulbSVG(300,52,30,!!o.lit,o.lvl);
+  s+=battV(90,150,230,top,{nolabel:o.nolabel});
+  if(o.flowE&&!open){ const dirRev=!top; s+=`<path d="${CIRP}" fill="none" stroke="${C_NEG}" stroke-width="7" class="flowdash${dirRev?'':' rev'}" stroke-linecap="round"/>`; }
+  const ar=(x1,y1,x2,y2,c)=>arw(x1,y1,x2,y2,c,6);
+  if(o.arrowsI&&!open){ const d=top?1:-1; s+=d>0?ar(380,28,460,28,C_CUR)+ar(540,150,540,230,C_CUR)+ar(230,350,150,350,C_CUR):ar(460,28,380,28,C_CUR)+ar(540,230,540,150,C_CUR)+ar(150,350,230,350,C_CUR); }
+  if(o.arrowsE&&!open){ const d=top?1:-1; s+=d>0?ar(460,92,380,92,C_NEG)+ar(480,230,480,150,C_NEG)+ar(150,290,230,290,C_NEG):ar(380,92,460,92,C_NEG)+ar(480,150,480,230,C_NEG)+ar(230,290,150,290,C_NEG); }
+  (o.marks||[]).forEach(m=>{ s+=arw(m.x1,m.y1,m.x2,m.y2,m.c||'#495057',6)+txt(m.lx,m.ly,m.label,{s:22,c:m.c||'#1b1d4a'}); });
+  (o.texts||[]).forEach(t=>{ s+=txt(t[0],t[1],t[2],{s:t[3]||22,c:t[4]}); });
+  return s+`</svg>`; }
+
+/* 그래프 SVG (520×330) */
+function graphSVG(o){ const W=o.W||520,H=o.H||330, x0=o.x0||74, x1=W-24, yb=H-52, yt=26;
+  const X=v=>x0+(x1-x0)*v/o.xmax, Y=v=>yb-(yb-yt)*v/o.ymax, fs=o.fs||17;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria||'그래프'}">`;
+  (o.xticks||[]).forEach(v=>{ s+=`<line x1="${X(v)}" y1="${yt}" x2="${X(v)}" y2="${yb}" stroke="#e7ebf3" stroke-width="1.5"/>`+(o.noTickLbl?'':`<text x="${X(v)}" y="${yb+22}" text-anchor="middle" font-size="${fs}" fill="#5a5f80" font-weight="700">${v}</text>`); });
+  (o.yticks||[]).forEach(v=>{ s+=`<line x1="${x0}" y1="${Y(v)}" x2="${x1}" y2="${Y(v)}" stroke="#e7ebf3" stroke-width="1.5"/>`+(o.noTickLbl?'':`<text x="${x0-8}" y="${Y(v)+6}" text-anchor="end" font-size="${fs}" fill="#5a5f80" font-weight="700">${o.ytf?o.ytf(v):v}</text>`); });
+  s+=`<line x1="${x0}" y1="${yb}" x2="${x1+6}" y2="${yb}" stroke="#343a40" stroke-width="2.5"/><line x1="${x0}" y1="${yb}" x2="${x0}" y2="${yt-8}" stroke="#343a40" stroke-width="2.5"/>`;
+  s+=`<text x="${x0-10}" y="${yb+22}" text-anchor="end" font-size="${fs}" fill="#5a5f80" font-weight="700">0</text>`;
+  s+=`<text x="${x1}" y="${H-6}" text-anchor="end" font-size="${fs+1}" font-weight="900" fill="#1b1d4a">${o.xlabel}</text><text x="${x0+8}" y="${yt-6}" font-size="${fs+1}" font-weight="900" fill="#1b1d4a">${o.ylabel}</text>`;
+  if(o.curve){ let d=''; const c=o.curve; for(let i=0;i<=60;i++){ const xv=c.from+(c.to-c.from)*i/60, yv=c.fn(xv); if(yv>o.ymax*1.02) continue; d+=(d?'L':'M')+X(xv).toFixed(1)+','+Y(yv).toFixed(1); } s+=`<path d="${d}" fill="none" stroke="${c.color}" stroke-width="${c.w||3}" ${c.dash?'stroke-dasharray="8 7"':''} stroke-linecap="round"/>`; }
+  (o.series||[]).forEach(se=>{ const pts=se.pts.slice().sort((a,b)=>a[0]-b[0]);
+    if(se.line&&pts.length){ const pp=se.origin?[[0,0]].concat(pts):pts; if(pp.length>1) s+=`<polyline points="${pp.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ')}" fill="none" stroke="${se.color}" stroke-width="${se.w||3.5}" ${se.dash?'stroke-dasharray="9 7"':''} stroke-linecap="round" stroke-linejoin="round" opacity="${se.op||1}"/>`; }
+    if(!se.noDots) pts.forEach(p=>{ const x=X(p[0]),y=Y(p[1]); s+=se.shape==='sq'?`<rect x="${x-7}" y="${y-7}" width="14" height="14" rx="2" fill="${se.color}" stroke="#fff" stroke-width="2" opacity="${se.op||1}"/>`:`<circle cx="${x}" cy="${y}" r="7.5" fill="${se.color}" stroke="#fff" stroke-width="2" opacity="${se.op||1}"/>`; });
+    if(se.label&&pts.length){ const p=pts[pts.length-1]; s+=txt(X(p[0])+(se.lx||8),Y(p[1])+(se.ly||-10),se.label,{s:se.ls||20,c:se.color,a:se.la||'start'}); } });
+  if(o.marker){ const [mx,my]=o.marker; s+=`<line x1="${X(mx)}" y1="${yb}" x2="${X(mx)}" y2="${Y(my)}" stroke="#adb5bd" stroke-dasharray="4 4" stroke-width="2"/><line x1="${x0}" y1="${Y(my)}" x2="${X(mx)}" y2="${Y(my)}" stroke="#adb5bd" stroke-dasharray="4 4" stroke-width="2"/><circle cx="${X(mx)}" cy="${Y(my)}" r="11" fill="none" stroke="${o.markerColor||'#1b1d4a'}" stroke-width="3"/>`; }
+  if(o.legend){ let lx=x0+96; o.legend.forEach(l=>{ s+=(l[2]==='sq'?`<rect x="${lx}" y="${yt+4}" width="14" height="14" rx="2" fill="${l[1]}"/>`:`<circle cx="${lx+7}" cy="${yt+11}" r="7" fill="${l[1]}"/>`)+`<text x="${lx+20}" y="${yt+17}" font-size="${fs-1}" font-weight="800" fill="#343a40">${l[0]}</text>`; lx+=l[0].length*15+44; }); }
+  (o.extra||[]).forEach(e=>{ s+=e(X,Y); });
+  return s+`</svg>`; }
+
+/* ============ 도입 그림 ============ */
+function heroSVG(){
+  const els=[0,1,2,3,4,5,6,7,8,9].map(i=>`<circle r="7" fill="#dfe9ff" stroke="${C_NEG}" stroke-width="2.5"><animateMotion dur="7s" begin="-${(i*0.7).toFixed(1)}s" repeatCount="indefinite" path="M90,230 V320 H510 V60 H90 V141"/></circle>`).join('');
+  let s=circSVG({lit:true,lvl:1.4,nolabel:false});
+  s=s.replace('</svg>',`${els}${arw(420,22,490,22,C_CUR,5)}${txt(455,14,'전류',{s:16,c:C_CUR})}${txt(560,190,'전자',{s:16,c:C_NEG})}</svg>`);
+  return s; }
+
+/* ============ 생각 열기: 건전지와 전구 ============ */
+const TB={n:0};
+function thinkSVG(){ const n=TB.n, lit=n>0;
+  let s=`<svg viewBox="0 0 420 240" role="img" aria-label="건전지와 전구">`;
+  s+=`<path d="M190,92 V120 H60 V200 H80 M340,200 H360 V120 H230 V92" fill="none" stroke="#5c6475" stroke-width="6" stroke-linejoin="round"/>`;
+  s+=bulbSVG(210,62,32,lit,n*.8);
+  s+=`<rect x="80" y="178" width="260" height="44" rx="10" fill="#f1f3f5" stroke="#ced4da" stroke-width="2"/>`;
+  for(let i=0;i<3;i++){ const x=86+i*84; if(i<n) s+=`<g><rect x="${x}" y="184" width="76" height="32" rx="7" fill="#343a40"/><rect x="${x+52}" y="184" width="24" height="32" rx="6" fill="#f08c00"/><rect x="${x+76}" y="193" width="6" height="14" rx="2" fill="#868e96"/>${txt(x+30,207,'1.5V',{s:13,c:'#fff',halo:0})}</g>`; else s+=`<rect x="${x}" y="184" width="76" height="32" rx="7" fill="none" stroke="#adb5bd" stroke-dasharray="6 5" stroke-width="2"/>`; }
+  s+=txt(210,165,n?`전압 ${fmt(n*1.5)} V`:'건전지 없음',{s:20,c:n?'#b35300':'#868e96'});
+  return s+`</svg>`; }
+function thinkDraw(){ $('thinkBox').innerHTML=thinkSVG(); const n=TB.n;
+  $('thinkMsg').textContent=n===0?'건전지가 없으면 전구가 켜지지 않아요.':n===1?'💡 전구에 불이 켜졌어요!':n===2?'💡💡 건전지를 하나 더 연결하니 더 밝아졌어요!':'💡💡💡 전압이 커질수록 전구가 더 밝아져요!'; }
+
+/* ============ 개념 ============ */
+const CONCEPTS=[
+ {t:'전류 — 전하의 흐름',html:`<p>전지를 연결하면 전기 기구의 회로를 따라 <b>전자들이 이동</b>해요. 이와 같은 <b>전하의 흐름</b>을 <b>전류</b>라고 해요. 전류의 단위는 <b>A(암페어)</b>예요.</p>
+  <div class="rig"><canvas id="k1Cv" height="190"></canvas></div>
+  <div class="btn-row" style="padding-top:6px;margin-top:0"><button class="btn small" id="k1Sw">🔌 스위치 닫기</button></div>
+  <div class="info-panel" id="k1Info">스위치가 열려 있으면 전선 속 전자들이 <b>불규칙하게</b> 움직여요. → 전류가 흐르지 않아요.</div>
+  <div class="analogy">📏 <b>mA(밀리암페어)</b> — 작은 전류의 단위. m는 1/1000을 뜻해요. <b>1 mA = 1/1000 A</b>, 1000 mA = 1 A</div>`},
+ {t:'전류의 방향과 전자의 이동 방향',html:`<p>전선 속에서 실제로 움직이는 것은 <span class="neg">(−)전하</span>를 띤 <b>전자</b>예요. 그런데 <b>전류의 방향</b>은 전자의 이동 방향과 <b>반대</b>로 약속했어요.</p>
+  <div class="toggle" id="k2Btns"><button class="chip on" data-v="e">🔵 전자의 이동 방향</button><button class="chip" data-v="i">🔴 전류의 방향</button><button class="chip" data-v="b">둘 다 보기</button></div>
+  <div class="fig" id="k2Fig" style="max-width:460px;margin-top:6px"></div>
+  <div class="tbl-wrap"><table class="tbl"><tr><th>구분</th><th>방향</th></tr><tr><td><span class="neg">전자의 이동 방향</span></td><td>전지의 <b>(−)극 → (+)극</b></td></tr><tr><td><span style="color:#e8590c;font-weight:900">전류의 방향</span></td><td>전지의 <b>(+)극 → (−)극</b></td></tr></table></div>
+  <button class="btn small secondary" id="k2Hist" style="margin-top:10px">📜 왜 반대일까? (과학사)</button>
+  <div class="info-panel hidden" id="k2HistBox" style="margin-top:8px">전류의 방향은 과거에 <b>(+)전하가 이동하는 방향</b>으로 정해졌어요. 그 뒤 전선 속에서 실제로 이동하는 것은 (−)전하를 띤 <b>전자</b>라는 것이 알려졌지만, 처음 정한 전류의 방향을 그대로 사용해요. 그래서 <b>전류의 방향은 실제 전자의 이동 방향과 반대</b>예요. 전기 회로는 <b>전류의 방향</b>을 기준으로 해석해요.</div>`},
+ {t:'전압 — 전류를 흐르게 하는 능력',html:`<p>펌프로 물을 퍼 올리면 <b>물의 높이 차이</b>가 생기고, 물은 높은 곳에서 낮은 곳으로 흘러요. 전기 회로에서 전류가 계속 흐르게 하는 이런 높이 차를 <b>전압</b>이라고 해요. 전압의 단위는 <b>V(볼트)</b>예요.</p>
+  <p class="muted">👇 그림의 각 부분을 눌러 짝을 확인하세요.</p>
+  <div class="fig" id="k3Fig"></div>
+  <div class="info-panel" id="k3Info">펌프가 물을 계속 흐르게 하는 것처럼, <b>전지</b>는 전자를 이동시켜 <b>전류가 흐르게</b> 해요.</div>
+  <div class="analogy">⚠️ 물의 흐름은 전류를 이해하기 위한 <b>비유(모형)</b>예요. 전류가 물과 똑같은 것은 아니에요.</div>`},
+ {t:'저항 — 전류의 흐름을 방해하는 정도',html:`<p>길이가 다른 니크롬선에 같은 전압을 걸면 흐르는 전류의 세기가 달라요. 물질의 종류와 모양에 따라 전류의 흐름을 방해하는 정도가 다르기 때문이에요. 이 정도를 <b>전기 저항(저항)</b>이라 하고, 단위는 <b>Ω(옴)</b>을 사용해요.</p>
+  <div class="toggle" id="k4Btns"><button class="chip on" data-v="s">짧은 선</button><button class="chip" data-v="l">긴 선(길이 2배)</button><button class="chip" data-v="t">굵은 선(단면적 2배)</button></div>
+  <div class="rig" style="margin-top:6px"><canvas id="k4Cv" height="220"></canvas></div>
+  <div class="info-panel" id="k4Info"><b>저항이 생기는 까닭</b>: 전류가 흐를 때 전자들이 이동하면서 <b>원자와 충돌</b>하기 때문이에요.</div>
+  <div class="tbl-wrap" style="margin-top:8px"><table class="tbl"><tr><th>저항을 변화시키는 요인 <span class="badge ext">보충</span></th><th>저항</th></tr><tr><td>물질의 종류 (원자 배열이 달라 충돌 정도가 다름)</td><td>물질마다 다르다</td></tr><tr><td>길이가 길수록 (충돌 횟수 증가)</td><td><b>크다</b></td></tr><tr><td>단면적이 넓을수록 (지나가는 전자 수 증가)</td><td><b>작다</b></td></tr></table></div>
+  <div class="analogy">🔢 <b>1 Ω</b>은 1 V의 전압을 걸었을 때 1 A의 전류가 흐르는 저항의 크기예요.</div>`},
+ {t:'옴의 법칙 — I = V / R',html:`<p>회로에 흐르는 전류의 세기는 <b>전압에 비례</b>하고 <b>저항에 반비례</b>해요. 이 관계를 <b>옴의 법칙</b>이라고 해요.</p>
+  <div class="calc-out" style="margin:8px 0"><span class="big">I = V / R</span><br>전류의 세기(I) = 전압(V) ÷ 저항(R) &nbsp;⇄&nbsp; V = I × R</div>
+  <div class="gx-grid">
+    <div class="gx-panel"><h4>(가) 저항 2 Ω 일정 · 전압을 바꾸면</h4><div class="ctrl"><label>전압 <em id="k5Vl">2 V</em></label><input type="range" id="k5V" min="1" max="6" step="1" value="2"></div><div id="k5G1"></div><p class="muted" id="k5T1" style="text-align:center"></p></div>
+    <div class="gx-panel"><h4>(나) 전압 6 V 일정 · 저항을 바꾸면</h4><div class="ctrl"><label>저항 <em id="k5Rl">2 Ω</em></label><input type="range" id="k5R" min="1" max="6" step="1" value="2"></div><div id="k5G2"></div><p class="muted" id="k5T2" style="text-align:center"></p></div>
+  </div>
+  <div class="analogy">✏️ <b>교과서 예제</b> — 저항이 2 Ω인 물체에 6 V의 전압이 걸리면? I = V/R = 6 V ÷ 2 Ω = <b>3 A</b></div>
+  <p class="muted">옴(Ohm, 1789~1854): 독일의 과학자. 전류와 전압 사이의 관계인 옴의 법칙을 발견했고, 저항의 단위 Ω(옴)은 그의 이름에서 따왔어요.</p>`},
+ {t:'도체 · 부도체 · 반도체',html:`<p>우리 주변의 물질은 모두 고유한 저항값을 가지고 있어요. 물질을 눌러 확인해 보세요.</p>
+  <div class="toggle" id="k6Btns"></div>
+  <div class="info-panel" id="k6Info" style="margin-top:8px">물질을 눌러 보세요.</div>
+  <div class="tbl-wrap" style="margin-top:8px"><table class="tbl"><tr><th>구분</th><th>특징</th><th>예</th></tr><tr><td><b>도체</b></td><td>저항이 작아서 전류가 잘 흐름</td><td>금, 은, 구리, 철</td></tr><tr><td><b>부도체</b></td><td>저항이 커서 전류가 잘 흐르지 않음</td><td>유리, 고무, 플라스틱, 종이</td></tr><tr><td><b>반도체</b></td><td>순수한 상태에서는 부도체지만 특정 조건이 되면 도체가 됨</td><td>규소, 저마늄</td></tr></table></div>`}
+];
+const MYTHS=[
+ ['전류는 전자가 이동하는 방향으로 흐른다.','전류의 방향은 <b>전자의 이동 방향과 반대</b>예요. 전류는 전지의 (+)극 → (−)극, 전자는 (−)극 → (+)극으로 이동해요.'],
+ ['스위치를 열면 전선 속 전자가 모두 멈춰 있다.','스위치가 열려 있어도 전자들은 <b>불규칙하게 움직여요</b>. 다만 일정한 방향으로 흐르지 않아 전류가 흐르지 않아요.'],
+ ['전류가 흐를 때 이동하는 것은 원자핵의 (+)전하이다.','전선 속에서 이동하는 것은 <b>전자</b>예요. 원자의 (+)전하는 제자리에 있어요.'],
+ ['전지에서 나온 전자는 전구에서 다 써 버려 없어진다.','전자는 없어지지 않고 <b>회로를 따라 계속 돌아요</b>. 전지는 전자를 이동시켜 전류가 흐르게 할 뿐이에요.'],
+ ['전류는 물과 똑같다.','물의 흐름은 전류를 이해하기 위한 <b>비유(모형)</b>일 뿐이에요. 전류는 전하의 흐름이에요.'],
+ ['같은 전압이면 길이가 긴 니크롬선에 전류가 더 많이 흐른다.','길이가 길수록 <b>저항이 커서</b> 전류의 세기는 <b>작아져요</b>. 전압이 같을 때 짧은 니크롬선에 더 센 전류가 흘러요.'],
+ ['전압을 높이면 니크롬선의 저항도 커져서 전류는 그대로이다.','같은 니크롬선이면 저항은 (거의) 일정해서, 전압이 2배, 3배가 되면 <b>전류도 2배, 3배</b>가 돼요. (니크롬선이 뜨거워지면 저항이 조금 커질 수 있어서 바로 전압을 낮춰요.)'],
+ ['반도체는 항상 전류가 잘 흐르는 물질이다.','반도체는 <b>순수한 상태에서는 부도체</b>지만 <b>특정 조건</b>이 되면 도체가 되어 전류가 흐르는 물질이에요(예: 규소).']
+];
+/* 개념 1: 전선 속 전자 */
+const K1={closed:false,els:[],ions:[]};
+function k1Init(){ K1.els=[]; K1.ions=[]; for(let x=58;x<560;x+=36){ K1.ions.push([x,80]); K1.ions.push([x+18,112]); } for(let i=0;i<24;i++) K1.els.push({x:50+Math.random()*510,y:70+Math.random()*52,vx:(Math.random()-.5)*120,vy:(Math.random()-.5)*80,t:Math.random()*.4}); }
+function k1Task(dt){ if(cur!==1) return false; const cv=$('k1Cv'); if(!visible(cv)||!cv.closest('.concept-card').classList.contains('open')) return false; const c=prepRatio(cv,600,190); if(!c) return false;
+  c.clearRect(0,0,600,190); cRound(c,30,58,540,76,38); c.fillStyle='#f4f6fb'; c.fill(); c.lineWidth=4; c.strokeStyle='#9aa5b8'; c.stroke();
+  cTxt(c,'전지의 (−)극 쪽',110,26,22,C_NEG); cTxt(c,'전지의 (+)극 쪽',490,26,22,C_POS);
+  K1.ions.forEach(p=>cChg(c,p[0],p[1],1,8,.5));
+  const T=K1.closed?35:90, D=K1.closed?120:0;
+  K1.els.forEach(e=>{ e.t-=dt; if(e.t<=0){ e.t=.15+Math.random()*.35; e.vx=(Math.random()-.5)*2*T; e.vy=(Math.random()-.5)*1.6*T; }
+    e.x+=(e.vx+D)*dt; e.y+=e.vy*dt; if(e.y<70){e.y=70;e.vy=Math.abs(e.vy);} if(e.y>122){e.y=122;e.vy=-Math.abs(e.vy);}
+    if(K1.closed){ if(e.x>560) e.x=42; if(e.x<40) e.x=40; } else { if(e.x<44){e.x=44;e.vx=Math.abs(e.vx);} if(e.x>556){e.x=556;e.vx=-Math.abs(e.vx);} }
+    cChg(c,e.x,e.y,-1,9,1); });
+  if(K1.closed){ cArrow(c,230,165,370,165,C_NEG,6); cTxt(c,'전자의 이동',300,150,18,C_NEG); }
+  else cTxt(c,'방향 없이 제멋대로!',300,168,20,'#868e96');
+  return true; }
+/* 개념 3: 물의 흐름 비유 그림 */
+const K3PARTS={pump:['펌프','전지','펌프가 물을 퍼 올려 높이 차이를 만들듯이, <b>전지</b>는 전압을 만들어 전류가 흐르게 해요.'],
+  height:['물의 높이 차이','전압','물의 <b>높이 차이</b>가 클수록 물이 세게 흐르듯이, <b>전압</b>이 클수록 전류가 세게 흘러요.'],
+  flow:['물의 흐름','전류','수도관을 따라 흐르는 물처럼, 전선을 따라 <b>전하가 흐르는 것</b>이 전류예요.'],
+  wheel:['물레방아','전구','흐르는 물이 물레방아를 돌리듯이, 전류가 흐르면 <b>전구</b>에 불이 켜져요.']};
+let K3sel=null;
+function k3SVG(){ const sel=K3sel, hl=k=>sel===k?' sel':'';
+  return `<svg viewBox="0 0 640 260" role="img" aria-label="물의 흐름과 전기 회로 비유">
+  <rect x="10" y="10" width="300" height="240" rx="18" fill="#eef7ff"/><rect x="330" y="10" width="300" height="240" rx="18" fill="#fff8e6"/>
+  ${txt(160,38,'물의 흐름',{s:20,c:'#1864ab'})}${txt(480,38,'전기 회로',{s:20,c:'#b35300'})}
+  <rect x="30" y="215" width="260" height="22" rx="6" fill="#74c0fc"/>
+  <g class="part${hl('pump')}" data-k="pump"><rect x="30" y="160" width="56" height="50" rx="8" fill="#495057"/>${txt(58,192,'펌프',{s:16,c:'#fff',halo:0})}</g>
+  <path d="M58,160 V70 H200" fill="none" stroke="#4dabf7" stroke-width="12" class="part${hl('flow')}" data-k="flow"/>
+  <path d="M58,160 V70 H200" fill="none" stroke="#1c7ed6" stroke-width="5" class="flowdash" style="pointer-events:none"/>
+  <path d="M200,70 Q214,74 222,120" fill="none" stroke="#4dabf7" stroke-width="8"/>
+  <g class="part${hl('wheel')}" data-k="wheel"><g class="spin" style="transform-origin:236px 160px;animation-duration:3s"><circle cx="236" cy="160" r="36" fill="#d9a066" stroke="#8a5a2b" stroke-width="4"/>${[0,45,90,135].map(a=>`<line x1="${236+36*Math.cos(a*Math.PI/180)}" y1="${160+36*Math.sin(a*Math.PI/180)}" x2="${236-36*Math.cos(a*Math.PI/180)}" y2="${160-36*Math.sin(a*Math.PI/180)}" stroke="#8a5a2b" stroke-width="5"/>`).join('')}</g>${txt(236,212,'물레방아',{s:15})}</g>
+  <g class="part${hl('height')}" data-k="height">${arw(280,140,280,72,'#1864ab',4)}${arw(280,72,280,206,'#1864ab',4)}<rect x="250" y="120" width="60" height="30" fill="transparent"/>${txt(282,112,'높이 차',{s:15,c:'#1864ab'})}</g>
+  <path d="M380,150 V70 H580 V210 H380 V190" fill="none" stroke="#5c6475" stroke-width="6" class="part${hl('flow')}" data-k="flow"/>
+  <path d="M380,150 V70 H580 V210 H380 V190" fill="none" stroke="${C_CUR}" stroke-width="5" class="flowdash" style="pointer-events:none"/>
+  <g class="part${hl('pump')}" data-k="pump">${battV(380,152,190,true,{w:40,nolabel:true})}${txt(420,176,'전지',{s:16,a:'start'})}</g>
+  <g class="part${hl('wheel')}" data-k="wheel"><rect x="555" y="105" width="50" height="70" fill="#fff8e6"/>${bulbSVG(580,138,22,true,1)}${txt(580,196,'전구',{s:15})}</g>
+  <g class="part${hl('height')}" data-k="height"><rect x="430" y="80" width="110" height="34" rx="10" fill="#fff" stroke="#f2a900" stroke-width="2"/>${txt(485,104,'전압 (V)',{s:16,c:'#b35300'})}</g>
+  ${txt(480,240,'전류의 방향 →',{s:14,c:C_CUR})}
+  </svg>`; }
+function k3Render(){ $('k3Fig').innerHTML=k3SVG(); $('k3Fig').querySelectorAll('.part').forEach(p=>p.addEventListener('click',()=>{ K3sel=p.dataset.k; sfx('pop'); const d=K3PARTS[K3sel]; k3Render(); const ip=$('k3Info'); ip.innerHTML=`<b>${d[0]}</b> ↔ <b>${d[1]}</b> — ${d[2]}`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); })); }
+
+/* 저항 시뮬레이션 (개념 4 · 탐구 ④ 공용) */
+function resGeom(st){ const len=136*st.L, x0=40, x1=x0+len, h=st.th==2?112:56, yc=st.yc; return {x0,x1,len,h,yt:yc-h/2,yb:yc+h/2,rows:st.th==2?4:2}; }
+function resInit(st){ const g=resGeom(st); st.els=[]; st.flash={}; const n=(st.th==2?18:9)*Math.max(1,Math.round(st.L/2+.5));
+  for(let i=0;i<n;i++) st.els.push({x:g.x0+8+Math.random()*(g.len-16),y:g.yt+10+Math.random()*(g.h-20),vy:0,hit:''}); }
+function resStep(st,dt,c){ const g=resGeom(st), v=170/st.L;
+  for(const k in st.flash){ st.flash[k]-=dt; if(st.flash[k]<=0) delete st.flash[k]; }
+  st.els.forEach(e=>{ e.x+=v*dt; e.y+=e.vy*dt; e.vy*=Math.pow(.05,dt);
+    if(e.y<g.yt+9){e.y=g.yt+9;e.vy=Math.abs(e.vy);} if(e.y>g.yb-9){e.y=g.yb-9;e.vy=-Math.abs(e.vy);}
+    if(e.x>g.x1-8){ e.x=g.x0+8; e.y=g.yt+10+Math.random()*(g.h-20); e.hit=''; }
+    const ci=Math.round((e.x-(g.x0+17))/34); for(let r=0;r<g.rows;r++){ const ax=g.x0+17+ci*34, ay=g.yt+g.h*(r+.5)/g.rows; const k=ci+'-'+r;
+      if(ax<g.x1-8&&Math.hypot(e.x-ax,e.y-ay)<17&&e.hit!==k){ e.hit=k; st.flash[k]=.28; e.vy=(Math.random()<.5?-1:1)*(120+Math.random()*120); e.x-=4; } } });
+  // 그리기
+  c.save(); cRound(c,g.x0-6,g.yt-6,g.len+12,g.h+12,14); c.fillStyle='#f3e3cf'; c.fill(); c.lineWidth=4; c.strokeStyle='#a0703c'; c.stroke(); c.restore();
+  for(let ci=0;g.x0+17+ci*34<g.x1-8;ci++) for(let r=0;r<g.rows;r++){ const ax=g.x0+17+ci*34, ay=g.yt+g.h*(r+.5)/g.rows, f=st.flash[ci+'-'+r];
+    c.beginPath(); c.arc(ax,ay,11,0,7); c.fillStyle=f?'#ffd43b':'#c8ced8'; c.fill(); if(f){ c.lineWidth=4; c.strokeStyle='rgba(255,170,0,.6)'; c.stroke(); } }
+  st.els.forEach(e=>cChg(c,e.x,e.y,-1,8,1));
+}
+const K4={L:2,th:1,yc:120,els:[],flash:{}};
+function k4Task(dt){ if(cur!==1) return false; const cv=$('k4Cv'); if(!visible(cv)||!cv.closest('.concept-card').classList.contains('open')) return false; const c=prepRatio(cv,760,220); if(!c) return false;
+  c.clearRect(0,0,760,220); resStep(K4,dt,c); cTxt(c,K4.th==2?'굵은 선: 지나갈 수 있는 전자가 많아요':K4.L>2?'긴 선: 원자와 더 많이 부딪혀요':'짧은 선',380,22,20,'#5a3a12'); return true; }
+/* 개념 5: 그래프 */
+function k5Render(){ const V=+$('k5V').value, R=+$('k5R').value;
+  $('k5Vl').textContent=V+' V'; $('k5Rl').textContent=R+' Ω';
+  $('k5G1').innerHTML=graphSVG({xmax:6,ymax:3,xticks:[1,2,3,4,5,6],yticks:[1,2,3],xlabel:'전압(V)',ylabel:'전류(A)',curve:{from:0,to:6,fn:v=>v/2,color:'#2f6fdb'},marker:[V,V/2],aria:'전압-전류 그래프'});
+  $('k5G2').innerHTML=graphSVG({xmax:6,ymax:6,xticks:[1,2,3,4,5,6],yticks:[2,4,6],xlabel:'저항(Ω)',ylabel:'전류(A)',curve:{from:1,to:6,fn:r=>6/r,color:'#7048e8'},marker:[R,6/R],aria:'저항-전류 그래프'});
+  $('k5T1').innerHTML=`I = ${V} V ÷ 2 Ω = <b>${fmt(V/2)} A</b> → 전류는 전압에 <b>비례</b>`; $('k5T2').innerHTML=`I = 6 V ÷ ${R} Ω = <b>${fmt(6/R)} A</b> → 전류는 저항에 <b>반비례</b>`; }
+const MATINFO={gold:['금','도체','저항이 아주 작아 전류가 잘 흘러요. 전자 부품의 연결 단자에 쓰여요.'],silver:['은','도체','저항이 아주 작은 도체예요.'],copper:['구리','도체','저항이 작아 전선의 심으로 많이 써요.'],iron:['철','도체','전류가 잘 흐르는 도체예요.'],
+  glass:['유리','부도체','저항이 커서 전류가 잘 흐르지 않아요.'],rubber:['고무','부도체','저항이 커서 절연 장갑을 만들어요.'],plastic:['플라스틱','부도체','저항이 커서 전선의 피복, 플러그에 써요.'],paper:['종이','부도체','저항이 커서 전류가 잘 흐르지 않아요.'],
+  si:['규소','반도체','순수한 상태에서는 전류가 잘 흐르지 않지만 특정 조건이 되면 전류가 흘러요. 반도체 부품의 재료예요.']};
+function buildConcepts(){
+  const box=$('conceptCards'); const seen=lsGet('seen',{});
+  box.innerHTML=CONCEPTS.map((c,i)=>`<div class="card concept-card rise-in${seen[i]?' seen':''}" style="--i:${i+1}" data-i="${i}">
+    <div class="head" role="button" tabindex="0"><span class="num">${i+1}</span><strong>${c.t}</strong><span class="chev">▾</span></div>
+    <div class="concept-body"><div>${c.html}</div></div></div>`).join('');
+  box.querySelectorAll('.concept-card>.head').forEach(h=>h.addEventListener('click',()=>{
+    const card=h.parentElement, i=+card.dataset.i, open=!card.classList.contains('open');
+    card.classList.toggle('open',open); sfx(open?'pop':'tap');
+    if(open){ card.classList.add('seen'); const s=lsGet('seen',{}); s[i]=1; lsSet('seen',s); setTimeout(kick,60); setTimeout(kick,500); }
+  }));
+  $('mythGrid').innerHTML=MYTHS.map((m,i)=>`<div class="myth rise-in" style="--i:${i+5}"><div class="no">❌ ${m[0]}</div><div class="tapme">👆 눌러서 바로잡기</div><div class="yes">✅ ${m[1]}</div></div>`).join('');
+  $('mythGrid').querySelectorAll('.myth').forEach(m=>m.addEventListener('click',()=>{ if(!m.classList.contains('open')){ m.classList.add('open'); sfx('correct'); burstAt(m,{count:14,speed:6,size:6}); } }));
+  // 1
+  k1Init(); $('k1Sw').addEventListener('click',()=>{ K1.closed=!K1.closed; sfx('switch'); if(K1.closed) setTimeout(()=>sfx('electron'),120);
+    $('k1Sw').textContent=K1.closed?'🔌 스위치 열기':'🔌 스위치 닫기';
+    const ip=$('k1Info'); ip.innerHTML=K1.closed?'스위치를 닫으면 전자들이 <b>전지의 (+)극 쪽으로 일정한 방향</b>으로 이동해요. → 전하가 흐르므로 <b>전류가 흘러요!</b>':'스위치가 열려 있으면 전선 속 전자들이 <b>불규칙하게</b> 움직여요. → 전류가 흐르지 않아요.'; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); kick(); });
+  // 2
+  const k2=v=>{ $('k2Fig').innerHTML=circSVG({lit:true,arrowsE:v!=='i',arrowsI:v!=='e'}); };
+  k2('e'); bindChips('k2Btns',v=>{ sfx('tap'); k2(v); });
+  $('k2Hist').addEventListener('click',()=>{ const b=$('k2HistBox'); const h=b.classList.toggle('hidden'); sfx(h?'tap':'sparkle'); if(!h) burstAt($('k2Hist'),{count:12,speed:5}); });
+  // 3
+  k3Render();
+  // 4
+  resInit(K4); bindChips('k4Btns',v=>{ K4.L=v==='l'?4:2; K4.th=v==='t'?2:1; resInit(K4); sfx('tap');
+    $('k4Info').innerHTML=v==='l'?'<b>길이가 길면</b> 전자가 물질을 지날 때 원자와 <b>충돌하는 횟수가 많아져</b> 저항이 커요.':v==='t'?'<b>단면적이 넓으면</b> 단면을 통과하는 <b>전자의 수가 많아져</b> 저항이 작아요.':'<b>저항이 생기는 까닭</b>: 전류가 흐를 때 전자들이 이동하면서 <b>원자와 충돌</b>하기 때문이에요.'; kick(); });
+  // 5
+  k5Render(); ['k5V','k5R'].forEach(id=>$(id).addEventListener('input',()=>{ sfx('tick'); k5Render(); }));
+  // 6
+  $('k6Btns').innerHTML=Object.keys(MATINFO).map(k=>`<button class="chip" data-v="${k}">${MATINFO[k][0]}</button>`).join('');
+  bindChips('k6Btns',v=>{ const m=MATINFO[v]; sfx(m[1]==='도체'?'bulb':m[1]==='부도체'?'thunk':'sparkle'); const ip=$('k6Info'); ip.innerHTML=`<b>${m[0]}</b> → <b>${m[1]}</b>${m[1]==='도체'?' ⚡':m[1]==='부도체'?' 🚫':' 🔬'} · ${m[2]}`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); });
+}
+
+/* ============ 탐구 탭 ============ */
+let curTab='plan';
+function setTab(t){
+  curTab=t; sfx('tap');
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('#screen-experiment .tabpane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  const tb=$('expTabs').getBoundingClientRect().top+window.scrollY; if(window.scrollY>tb-90) window.scrollTo(0,Math.max(0,tb-90));
+  lsSet('tab',t);
+  if(t==='circuit'){ CIR.view=0; }
+  if(t==='ohm') oRender();
+  if(t==='cond') dRender();
+  kick(); setTimeout(kick,80);
+}
+function chipGroup(id,items,curV,fn){
+  const el=$(id); el.innerHTML=items.map(it=>`<button class="chip${String(it[0])===String(curV)?' on':''}" data-v="${it[0]}">${it[1]}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(fn(c.dataset.v)===false) return; el.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); }));
+}
+function bindChips(id,fn){ $(id).querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(fn(c.dataset.v,c)===false) return; $(id).querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); })); }
+function makePred(boxId,key,items){
+  const st=lsGet(key,{}); const box=$(boxId);
+  box.innerHTML=`<h4 style="margin:0 0 4px">🔮 실험 전에 예측해 보기</h4>`+items.map((it,i)=>`<div class="pq">${i+1}. ${it.q} <span class="mark" id="${boxId}-m${i}"></span></div><div class="toggle" data-pi="${i}">${it.opts.map(o=>`<button class="chip${st[i]===o?' on':''}" data-v="${o}">${o}</button>`).join('')}</div>`).join('')+`<div class="btn-row" style="padding-top:8px"><button class="btn small" id="${boxId}-chk">예측 확인하기</button></div>`;
+  box.querySelectorAll('[data-pi]').forEach(g=>g.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ const i=+g.dataset.pi; st[i]=c.dataset.v; lsSet(key,st); g.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); $(boxId+'-m'+i).textContent=''; sfx('tap'); })));
+  $(boxId+'-chk').addEventListener('click',()=>{ let ok=0,miss=0;
+    if(items.some((it,i)=>!st[i])){ toast('모든 문항을 예측해 주세요'); sfx('tap'); return; }
+    items.forEach((it,i)=>{ const m=$(boxId+'-m'+i); if(!it.done()){ miss++; m.textContent='⏳ 실험 전'; m.style.color='#8a94b2'; return; } const g=st[i]===it.ans; if(g) ok++; m.textContent=g?'✔ 맞았어요':'✖ 실제: '+it.ans; m.style.color=g?'#12a874':'#e5484d'; });
+    if(miss){ toast('⏳ 아직 하지 않은 실험이 있어요. 실험한 뒤 다시 확인해요'); sfx('tap'); return; }
+    if(ok===items.length){ sfx('fanfare'); fireworks(); toast('🎯 예측 '+ok+'개 모두 적중!'); } else { sfx('correct'); toast(`예측 ${ok}/${items.length} 적중! 결과로 다시 생각해 봐요`); burstAt($(boxId+'-chk'),{count:16,speed:6}); } });
+}
+
+/* ---- ① 전자의 움직임 (교과서 248쪽 디지털 해 보기) ---- */
+const CP=[[110,250],[110,345],[650,345],[650,65],[110,65],[110,150]], CL=polyLen(CP), SW0=335, SW1=395, BULB0=1160, BULB1=1210;
+const CIR={closed:false,flip:false,showE:true,showI:false,follow:false,els:[],ions:[],trail:[],recs:lsGet('recC',{}),view:0,tClosed:0,sawI:false,glow:0};
+function cirInit(){ CIR.els=[]; CIR.ions=[];
+  for(let s=14,k=0;s<CL-10;s+=34,k++){ if(s>SW0-10&&s<SW1+10) continue; CIR.ions.push([s,k%2?13:-13]); }
+  for(let i=0;i<70;i++){ let s; do{ s=8+Math.random()*(CL-16); }while(s>SW0-6&&s<SW1+6); CIR.els.push({s,o:(Math.random()-.5)*28,vs:0,vo:0,t:0}); } }
+function cirStatus(){ const c=CIR.closed;
+  $('cSw').textContent=c?'닫힘':'열림'; $('cBulb').textContent=c?'켜짐 💡':'꺼짐';
+  $('cMove').textContent=c?'(+)극 쪽으로 일정하게':'불규칙';
+  $('cSwitch').textContent=c?'🔌 스위치 열기':'🔌 스위치 닫기';
+  $('cMsg').innerHTML=c?`스위치를 닫았어요! 전자들이 전지의 <span class="pos">(+)극</span> 쪽으로 일정한 방향으로 이동해요. 전류는 그 <b>반대 방향</b>으로 흘러요.${CIR.flip?' (전지 방향을 바꿨더니 전자의 이동 방향도 반대가 되었어요!)':''}`:'스위치가 열려 있어요. 전자들은 방향성 없이 <b>불규칙하게</b> 움직여요. → 전류가 흐르지 않아요.'; }
+function cirRecord(k){ if(CIR.recs[k]) return; CIR.recs[k]=1; lsSet('recC',CIR.recs); renderCTable(k); sfx('stamp'); }
+function renderCTable(fresh){ const R=[['open','스위치를 닫기 전','방향성 없이 불규칙하게 움직인다','꺼짐'],['closed','스위치를 닫은 후','전지의 (+)극 쪽으로 일정한 방향으로 이동한다','켜짐'],['flip','전지 방향을 바꾸고 닫은 후','바뀐 (+)극 쪽으로 이동한다 (이동 방향이 반대가 됨)','켜짐']];
+  $('cTable').innerHTML='<tr><th>상황</th><th>전자의 움직임</th><th>전구</th></tr>'+R.map(r=>{ const on=CIR.recs[r[0]], cl=fresh===r[0]?' class="new"':''; return `<tr><td>${r[1]}</td>${on?`<td${cl}>${r[2]}</td><td${cl}>${r[3]}</td>`:'<td class="empty">?</td><td class="empty">?</td>'}</tr>`; }).join(''); }
+function cirTask(dt){ if(cur!==2||curTab!=='circuit') return false; const cv=$('cCv'); if(!visible(cv)) return false; const c=prepRatio(cv,760,400); if(!c) return false;
+  const closed=CIR.closed, dir=CIR.flip?-1:1;
+  CIR.view+=dt; if(!closed&&CIR.view>2.5) cirRecord('open');
+  if(closed){ CIR.tClosed+=dt; if(CIR.tClosed>1.6){ cirRecord(CIR.flip?'flip':'closed'); } } else CIR.tClosed=0;
+  CIR.glow+=((closed?1:0)-CIR.glow)*Math.min(1,dt*5);
+  c.clearRect(0,0,760,400);
+  // 전구 빛
+  if(CIR.glow>.02){ const g=c.createRadialGradient(380,65,10,380,65,150); g.addColorStop(0,`rgba(255,236,120,${.85*CIR.glow})`); g.addColorStop(1,'rgba(255,212,59,0)'); c.fillStyle=g; c.beginPath(); c.arc(380,65,150,0,7); c.fill(); }
+  // 전선(관)
+  const A=polySub(CP,0,SW0), B=polySub(CP,SW1,CL);
+  [[A],[B]].forEach(([P])=>{ cPath(c,P); c.lineJoin='round'; c.lineCap='round'; c.strokeStyle='#9aa5b8'; c.lineWidth=50; c.stroke(); cPath(c,P); c.strokeStyle='#f4f6fb'; c.lineWidth=42; c.stroke(); });
+  // 스위치
+  c.save(); c.translate(350,345); c.rotate(closed?0:-0.62); cRound(c,-6,-17,72,34,17); c.fillStyle=closed?'#dfe4ee':'#ced4da'; c.fill(); c.lineWidth=4; c.strokeStyle='#868e96'; c.stroke(); c.restore();
+  c.beginPath(); c.arc(350,345,9,0,7); c.fillStyle='#495057'; c.fill(); c.beginPath(); c.arc(410,345,9,0,7); c.fill();
+  cTxt(c,'스위치',380,392,22,'#495057');
+  // 전구 유리
+  c.beginPath(); c.arc(380,65,52,0,7); c.fillStyle=`rgba(255,255,255,${.25})`; c.fill(); c.lineWidth=4; c.strokeStyle='#9fb0c8'; c.stroke();
+  const fa=polyAt(CP,BULB1), fb=polyAt(CP,BULB0); c.fillStyle=`rgba(247,103,7,${.18+.5*CIR.glow})`; c.fillRect(fa.x,fa.y-21,fb.x-fa.x,42);
+  cTxt(c,'전구',380,138,22,'#7a4b00');
+  // 원자의 (+)
+  CIR.ions.forEach(p=>{ const q=polyAt(CP,p[0]); cChg(c,q.x+q.nx*p[1],q.y+q.ny*p[1],1,7,.45); });
+  // 전자
+  const T=closed?28:80, D=closed?95*dir:0;
+  CIR.els.forEach((e,i)=>{ e.t-=dt; if(e.t<=0){ e.t=.12+Math.random()*.35; e.vs=(Math.random()-.5)*2*T; e.vo=(Math.random()-.5)*1.4*T; }
+    let ns=e.s+(e.vs+D)*dt; e.o+=e.vo*dt; if(e.o>15){e.o=15;e.vo=-Math.abs(e.vo);} if(e.o<-15){e.o=-15;e.vo=Math.abs(e.vo);}
+    if(closed){ ns=((ns%CL)+CL)%CL; }
+    else { if(ns<6){ns=6;e.vs=Math.abs(e.vs);} if(ns>CL-6){ns=CL-6;e.vs=-Math.abs(e.vs);}
+      if(e.s<=SW0&&ns>SW0-4){ns=SW0-4;e.vs=-Math.abs(e.vs);} if(e.s>=SW1&&ns<SW1+4){ns=SW1+4;e.vs=Math.abs(e.vs);}
+      if(ns>SW0-4&&ns<SW1+4) ns=(ns-SW0<SW1-ns)?SW0-4:SW1+4; }
+    e.s=ns; });
+  // 전지 (전자 위에 그려 단자 속을 가림)
+  const top=!CIR.flip; c.save(); cRound(c,78,150,64,100,10); c.fillStyle='#343a40'; c.fill(); c.fillStyle='#f08c00'; if(top) c.fillRect(78,150,64,30); else c.fillRect(78,220,64,30); c.fillStyle='#868e96'; if(top) c.fillRect(98,140,24,12); else c.fillRect(98,248,24,12); c.restore();
+  cTxt(c,'(+)',44,top?160:240,26,C_POS); cTxt(c,'(−)',44,top?240:160,26,C_NEG); cTxt(c,'전지',178,200,22,'#343a40');
+  const fol=CIR.follow;
+  CIR.els.forEach((e,i)=>{ const q=polyAt(CP,e.s); const x=q.x+q.nx*e.o, y=q.y+q.ny*e.o; e.x=x; e.y=y; if(fol&&i) cChg(c,x,y,-1,8,.25); else if(!fol) cChg(c,x,y,-1,8,1); });
+  if(fol){ const e=CIR.els[0]; CIR.trail.push([e.x,e.y]); if(CIR.trail.length>90) CIR.trail.shift();
+    c.save(); c.setLineDash([6,6]); c.strokeStyle='#f2a900'; c.lineWidth=3; cPath(c,CIR.trail); c.stroke(); c.restore();
+    c.beginPath(); c.arc(e.x,e.y,15,0,7); c.lineWidth=4; c.strokeStyle='#f2a900'; c.stroke(); cChg(c,e.x,e.y,-1,9,1); }
+  // 화살표
+  if(closed){ const marks=[215,520,775,1340];
+    marks.forEach(s=>{ const q=polyAt(CP,s); const ex=q.dx*dir, ey=q.dy*dir;
+      if(CIR.showE){ const ox=q.x+q.nx*42, oy=q.y+q.ny*42; cArrow(c,ox-ex*34,oy-ey*34,ox+ex*34,oy+ey*34,C_NEG,6); }
+      if(CIR.showI){ const ox=q.x-q.nx*42, oy=q.y-q.ny*42; cArrow(c,ox+ex*34,oy+ey*34,ox-ex*34,oy-ey*34,C_CUR,6); } }); }
+  return true; }
+function cirToggle(){ CIR.closed=!CIR.closed; sfx('switch'); if(CIR.closed){ setTimeout(()=>sfx('bulb'),120); } cirStatus(); kick(); }
+
+/* ---- ② 물의 흐름 비유 ---- */
+const WT={open:false,lvl:1,ang:0,u:[],e:[],f:0};
+for(let i=0;i<20;i++) WT.u.push(i/20); for(let i=0;i<16;i++) WT.e.push(i/16);
+const WHY=[0,170,125,80];
+const WEP=[[440,240],[440,320],[730,320],[730,80],[440,80],[440,160]], WEL=polyLen(WEP);
+function wPath(){ const HY=WHY[WT.lvl]; return [[62,300],[62,HY],[250,HY],[262,HY+16],[288,206],[300,318]]; }
+function waterTask(dt){ if(cur!==2||curTab!=='water') return false; const cv=$('wCv'); if(!visible(cv)) return false; const c=prepRatio(cv,760,380); if(!c) return false;
+  const on=WT.open, L=WT.lvl, HY=WHY[L]; WT.f+=((on?1:0)-WT.f)*Math.min(1,dt*4); const f=WT.f;
+  c.clearRect(0,0,760,380);
+  c.fillStyle='#eef7ff'; cRound(c,8,8,372,364,18); c.fill(); c.fillStyle='#fff8e6'; cRound(c,388,8,364,364,18); c.fill();
+  cTxt(c,'물의 흐름',194,32,22,'#1864ab'); cTxt(c,'전기 회로',570,32,22,'#b35300');
+  // 수조
+  c.fillStyle='#74c0fc'; cRound(c,20,312,340,50,10); c.fill();
+  // 관
+  const WP=wPath(); cPath(c,WP.slice(0,3)); c.strokeStyle='#adb5bd'; c.lineWidth=18; c.lineJoin='round'; c.stroke(); cPath(c,WP.slice(0,3)); c.strokeStyle=f>.05?'#4dabf7':'#d0ebff'; c.lineWidth=11; c.stroke();
+  if(f>.05){ cPath(c,WP.slice(2)); c.strokeStyle=`rgba(77,171,247,${.7*f})`; c.lineWidth=8; c.stroke(); }
+  // 수도꼭지
+  c.save(); c.translate(160,HY); c.fillStyle='#e03131'; c.fillRect(-6,-26,12,22); c.translate(0,-28); c.rotate(on?0:Math.PI/2); c.fillRect(-20,-5,40,10); c.restore(); cTxt(c,'수도꼭지',160,HY-48,18,'#c92a2a');
+  cTxt(c,'수도관',130,HY+30,18,'#495057');
+  // 펌프
+  c.fillStyle='#495057'; cRound(c,30,250,64,58,10); c.fill(); c.save(); c.translate(62,279); c.rotate(WT.ang*1.5); c.strokeStyle='#ffd43b'; c.lineWidth=5; for(let k=0;k<3;k++){ c.rotate(Math.PI*2/3); c.beginPath(); c.moveTo(0,0); c.lineTo(0,-18); c.stroke(); } c.restore(); cTxt(c,'펌프',130,282,20,'#343a40');
+  // 물레방아
+  WT.ang+=dt*f*L*1.8; c.save(); c.translate(300,256); c.rotate(WT.ang); c.beginPath(); c.arc(0,0,46,0,7); c.fillStyle='#d9a066'; c.fill(); c.lineWidth=5; c.strokeStyle='#8a5a2b'; c.stroke();
+  for(let k=0;k<8;k++){ c.rotate(Math.PI/4); c.fillStyle='#8a5a2b'; c.fillRect(-4,-56,8,22); c.beginPath(); c.moveTo(0,0); c.lineTo(0,-46); c.stroke(); } c.restore(); cTxt(c,'물레방아',300,190,18,'#5a3a12');
+  // 높이 차
+  cArrow(c,366,(HY+300)/2,366,HY,'#1864ab',4); cArrow(c,366,(HY+300)/2,366,300,'#1864ab',4); cTxt(c,'높이 차',330,HY-14,18,'#1864ab');
+  // 물방울
+  const WL=polyLen(WP); WT.u.forEach((u,i)=>{ WT.u[i]=(u+dt*f*.13*L)%1; if(f<.05) return; const q=polyAt(WP,WT.u[i]*WL); c.beginPath(); c.arc(q.x,q.y,6,0,7); c.fillStyle='#1c7ed6'; c.globalAlpha=f; c.fill(); c.globalAlpha=1; });
+  // 전기 회로
+  cPath(c,WEP); c.strokeStyle='#5c6475'; c.lineWidth=7; c.stroke();
+  c.fillStyle='#fff8e6'; c.fillRect(555,306,50,28); c.beginPath(); c.arc(560,320,7,0,7); c.fillStyle='#495057'; c.fill(); c.beginPath(); c.arc(600,320,7,0,7); c.fill();
+  c.save(); c.translate(560,320); c.rotate(on?0:-0.6); c.strokeStyle='#495057'; c.lineWidth=7; c.lineCap='round'; c.beginPath(); c.moveTo(0,0); c.lineTo(40,0); c.stroke(); c.restore(); cTxt(c,'스위치',580,356,18,'#495057');
+  if(f>.02){ const g=c.createRadialGradient(585,80,8,585,80,40+30*L); g.addColorStop(0,`rgba(255,236,120,${f*Math.min(1,.4+.22*L)})`); g.addColorStop(1,'rgba(255,212,59,0)'); c.fillStyle=g; c.beginPath(); c.arc(585,80,40+30*L,0,7); c.fill(); }
+  c.beginPath(); c.arc(585,80,24,0,7); c.fillStyle=f>.05?'#fff3a0':'#f1f3f5'; c.fill(); c.lineWidth=3; c.strokeStyle='#9aa6bb'; c.stroke(); cTxt(c,'전구',585,128,18,'#7a4b00');
+  WT.e.forEach((u,i)=>{ WT.e[i]=(u+dt*f*.07*L)%1; const q=polyAt(WEP,WT.e[i]*WEL); cChg(c,q.x,q.y,-1,7,f>.05?1:.35); });
+  c.save(); cRound(c,418,156,44,88,8); c.fillStyle='#343a40'; c.fill(); c.fillStyle='#f08c00'; c.fillRect(418,156,44,24); c.fillStyle='#868e96'; c.fillRect(430,148,20,10); c.restore();
+  cTxt(c,`전지 ${fmt(1.5*L)} V`,520,205,20,'#b35300'); cTxt(c,'(+)',405,166,18,C_POS); cTxt(c,'(−)',405,238,18,C_NEG);
+  if(f>.05){ cArrow(c,640,98,700,98,C_CUR,5); cTxt(c,'전류',670,118,16,C_CUR); }
+  return true; }
+function wStatus(){ const L=WT.lvl, on=WT.open;
+  $('wOpen').textContent=on?'🚰 수도꼭지 잠그기 + 🔌 스위치 열기':'🚰 수도꼭지 열기 + 🔌 스위치 닫기';
+  $('wLvl').textContent=`${L}단계 · ${fmt(1.5*L)} V`; $('wH').textContent=['','낮음','보통','높음'][L]; $('wV').textContent=fmt(1.5*L)+' V';
+  $('wWheel').textContent=on?['','천천히','보통','빠르게'][L]+' 돌아감':'멈춤'; $('wB').textContent=on?['','조금 밝음','밝음','아주 밝음'][L]:'꺼짐';
+  $('wMsg').innerHTML=on?`높이 차가 ${['','작으면','보통이면','크면'][L]} 물레방아가 ${['','천천히','보통 빠르기로','빠르게'][L]} 돌아요. 마찬가지로 <b>전압이 클수록 전류가 세게</b> 흘러 전구가 밝아져요.`:'수도꼭지를 잠그면 물이, 스위치를 열면 전류가 흐르지 않아요.'; }
+const MT_L=['펌프','물의 높이 차이','물의 흐름','물레방아','수도관','수도꼭지'], MT_R=['전지','전압','전류','전구','전선','스위치'];
+const MT={done:lsGet('mt',{}),selL:null,selR:null,order:[3,0,5,1,4,2]};
+function mtRender(){ const d=MT.done, inv={}; Object.keys(d).forEach(k=>inv[d[k]]=k);
+  $('mtL').innerHTML=MT_L.map((t,i)=>`<button class="mt${d[i]!=null?' done p'+i:''}${MT.selL===i?' sel':''}" data-l="${i}">${t}</button>`).join('');
+  $('mtR').innerHTML=MT.order.map(j=>`<button class="mt${inv[j]!=null?' done p'+inv[j]:''}${MT.selR===j?' sel':''}" data-r="${j}">${MT_R[j]}</button>`).join('');
+  $('mtCount').textContent=Object.keys(d).length;
+  $('mtL').querySelectorAll('.mt').forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.l; if(MT.done[i]!=null) return; MT.selL=i; sfx('pick'); mtTry(); }));
+  $('mtR').querySelectorAll('.mt').forEach(b=>b.addEventListener('click',()=>{ const j=+b.dataset.r; if(Object.values(MT.done).includes(j)) return; MT.selR=j; sfx('pick'); mtTry(); })); }
+function mtTry(){ if(MT.selL==null||MT.selR==null){ mtRender(); return; } const i=MT.selL, j=MT.selR;
+  if(i===j){ MT.done[i]=j; lsSet('mt',MT.done); MT.selL=MT.selR=null; sfx('correct'); mtRender(); burstAt(document.querySelector(`#mtL [data-l="${i}"]`),{count:14,speed:5}); $('mtMsg').innerHTML=`✔ <b>${MT_L[i]}</b> ↔ <b>${MT_R[j]}</b>`;
+    if(Object.keys(MT.done).length===6){ setTimeout(()=>{ sfx('fanfare'); fireworks(); $('mtMsg').innerHTML='🎉 모두 짝 지었어요! 펌프(전지)가 높이 차(전압)를 만들어 물(전류)이 흐르고 물레방아(전구)가 돌아가요.'; },300); } }
+  else { MT.selL=MT.selR=null; sfx('wrong'); mtRender(); const a=document.querySelector(`#mtL [data-l="${i}"]`), b=document.querySelector(`#mtR [data-r="${j}"]`); [a,b].forEach(x=>x&&x.classList.add('no')); $('mtMsg').innerHTML=`✖ <b>${MT_L[i]}</b>과(와) <b>${MT_R[j]}</b>은(는) 짝이 아니에요. 하는 일을 비교해 봐요.`; } }
+
+/* ---- ③ 전류, 전압, 저항 사이의 관계 탐구 (교과서 250~251쪽) ---- */
+const OR={long:10,short:5};
+const O={conn:lsGet('oConn',[false,false,false,false]),device:lsGet('oDev',false),wire:'long',V:0,recs:lsGet('recO',{long:{},short:{}}),overlay:true,ratio:false,hot:0,warned:false,anim:-1};
+const OCONN=['① 전원 장치 (+) → 전류 센서','② 전류 센서 → 니크롬선','③ 니크롬선 → 전원 장치 (−)','④ 전압 센서 → 니크롬선 양 끝'];
+const oReady=()=>O.conn.every(Boolean)&&O.device;
+const oI=()=>oReady()?O.V/OR[O.wire]:0;
+function oCount(w){ return Object.keys(O.recs[w]).filter(k=>+k>0).length; }
+function oStep(){ if(!O.conn.every(Boolean)) return 0; if(!O.device) return 1; if(oCount('long')<3) return 2; if(oCount('short')<3) return 3; return 4; }
+function oSteps(){ const n=oStep(); const S=['과정 1|전선 연결','과정 2|스마트 기기 연결','과정 3|긴 니크롬선 · 전압 바꾸기 (3번 이상)','과정 4|짧은 니크롬선 · 반복 (3번 이상)','결과 및 정리|그래프 해석'];
+  $('oSteps').innerHTML=S.map((s,i)=>{ const [a,b]=s.split('|'); return `<div class="st${i<n?' done':i===n?' now':''}"><b>${a}</b>${b}</div>`; }).join(''); }
+function oSVG(){ const V=O.V, I=oI(), ready=oReady(), Rx=O.wire==='long'?670:465, ang=-135+V/5*270, hot=O.hot>8&&V>=3;
+  const W=(k,d,col)=>`<path d="${d}" fill="none" stroke="#dee2e6" stroke-width="6" stroke-dasharray="8 8" stroke-linecap="round"/>${O.conn[k]?`<path d="${d}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" class="${O.anim===k?'wire-c on':''}"/>`:''}`;
+  const d0='M170 170 V205 H345 V110', d1='M485 110 V225 H260 V290', d2=`M${Rx} 290 V330 H60 V170`, d3a='M345 345 V312 H262 V298', d3b=`M485 345 V312 H${Rx-2} V298`;
+  let s=`<svg viewBox="0 0 760 420" role="img" aria-label="전원 장치, 전류 센서, 전압 센서, 니크롬선 회로">`;
+  // 전원 장치
+  s+=`<rect x="20" y="28" width="240" height="146" rx="16" fill="#2b3245"/><rect x="40" y="48" width="130" height="52" rx="8" fill="#0b1220"/><text x="160" y="86" text-anchor="end" font-size="30" font-weight="900" fill="#69db7c" font-family="monospace">${f1(V)} V</text>`;
+  s+=`<g><circle cx="215" cy="74" r="28" fill="#495057" stroke="#adb5bd" stroke-width="3"/><g class="knob" style="transform:rotate(${ang}deg)"><line x1="215" y1="74" x2="215" y2="52" stroke="#ffd43b" stroke-width="6" stroke-linecap="round"/></g></g>`;
+  s+=txt(140,132,'전원 장치',{s:18,c:'#fff',halo:0})+`<circle cx="60" cy="160" r="12" fill="#212529" stroke="#fff" stroke-width="2"/><circle cx="170" cy="160" r="12" fill="#e03131" stroke="#fff" stroke-width="2"/>`+txt(60,196,'(−)',{s:18,c:C_NEG})+txt(196,150,'(+)',{s:18,c:C_POS});
+  // 전류 센서
+  s+=`<rect x="330" y="34" width="170" height="78" rx="12" fill="#2b8a3e"/><rect x="344" y="44" width="142" height="38" rx="6" fill="#0b1220"/><text x="476" y="73" text-anchor="end" font-size="24" font-weight="900" fill="#ffd43b" font-family="monospace">${ready?f2(I):'-.--'} A</text>`+txt(415,104,'전류 센서',{s:15,c:'#fff',halo:0});
+  // 니크롬선 판
+  s+=`<rect x="230" y="262" width="470" height="58" rx="10" fill="#e9c995" stroke="#b08850" stroke-width="2"/>`;
+  s+=`<line x1="262" y1="290" x2="${Rx}" y2="290" stroke="${hot?'#ff6b00':'#b5651d'}" stroke-width="${hot?7:5}" class="${hot?'hot':''}"/>`;
+  s+=`<rect x="250" y="280" width="16" height="20" rx="3" fill="#e03131"/><rect x="${Rx-4}" y="280" width="16" height="20" rx="3" fill="#212529"/>`;
+  s+=txt((262+Rx)/2,316,O.wire==='long'?'길이가 긴 니크롬선':'길이가 짧은 니크롬선',{s:15,c:'#7a4b00'});
+  // 전압 센서
+  s+=`<rect x="330" y="345" width="170" height="64" rx="12" fill="#1971c2"/><rect x="344" y="354" width="142" height="32" rx="6" fill="#0b1220"/><text x="476" y="379" text-anchor="end" font-size="22" font-weight="900" fill="#ffd43b" font-family="monospace">${ready?f1(V):'-.-'} V</text>`+txt(415,402,'전압 센서',{s:14,c:'#fff',halo:0});
+  // 스마트 기기
+  s+=`<rect x="560" y="30" width="180" height="200" rx="18" fill="#1d2333"/><rect x="572" y="44" width="156" height="168" rx="10" fill="${O.device?'#fff':'#343a40'}"/>`;
+  if(O.device){ const X=v=>584+v/5*130, Y=a=>196-a/1*136; const pts=k=>Object.keys(O.recs[k]).map(Number).sort((a,b)=>a-b);
+    s+=`<line x1="584" y1="196" x2="718" y2="196" stroke="#343a40" stroke-width="2"/><line x1="584" y1="196" x2="584" y2="56" stroke="#343a40" stroke-width="2"/>`;
+    ['long','short'].forEach(k=>{ const col=k==='long'?C_CUR:'#7048e8'; const p=pts(k); if(p.length) s+=`<polyline points="584,196 ${p.map(v=>X(v)+','+Y(O.recs[k][f1(v)])).join(' ')}" fill="none" stroke="${col}" stroke-width="3"/>`; });
+    if(ready) s+=`<circle cx="${X(V)}" cy="${Y(I)}" r="6" fill="#1b1d4a"/>`;
+    s+=`<text x="650" y="70" text-anchor="middle" font-size="13" font-weight="800" fill="#5a5f80">전압-전류</text>`; }
+  else s+=txt(650,130,'연결 전',{s:16,c:'#adb5bd',halo:0});
+  // 전선
+  s+=W(0,d0,'#e03131')+W(1,d1,'#e03131')+W(2,d2,'#212529')+W(3,d3a,'#1c7ed6')+(O.conn[3]?`<path d="${d3b}" fill="none" stroke="#1c7ed6" stroke-width="6" stroke-linecap="round" class="${O.anim===3?'wire-c on':''}"/>`:`<path d="${d3b}" fill="none" stroke="#dee2e6" stroke-width="6" stroke-dasharray="8 8"/>`);
+  if(ready&&V>0){ const sp=(1.6/(.25+I*2.2)).toFixed(2)+'s'; [d0,d1,`M262 290 H${Rx}`,d2].forEach(d=>{ s+=`<path d="${d}" fill="none" stroke="#ffd43b" stroke-width="5" stroke-linecap="round" class="flow-e" style="--sp:${sp}"/>`; }); s+=txt(300,248,'→ 전류',{s:15,c:C_CUR}); }
+  return s+`</svg>`; }
+function oGraph(){ const ser=[]; const mk=k=>Object.keys(O.recs[k]).map(v=>[+v,O.recs[k][v]]);
+  const showL=O.overlay||O.wire==='long', showS=O.overlay||O.wire==='short';
+  if(showL) ser.push({pts:mk('long'),color:C_CUR,line:true,origin:true,});
+  if(showS) ser.push({pts:mk('short'),color:'#7048e8',shape:'sq',line:true,origin:true,});
+  $('oGraph').innerHTML=graphSVG({xmax:5,ymax:1.0,xticks:[1,2,3,4,5],yticks:[.2,.4,.6,.8,1.0],ytf:v=>v.toFixed(1),xlabel:'전압(V)',ylabel:'전류(A)',series:ser,marker:oReady()?[O.V,oI()]:null,markerColor:O.wire==='long'?C_CUR:'#7048e8',legend:[['긴 니크롬선',C_CUR,'c'],['짧은 니크롬선','#7048e8','sq']],aria:'전압-전류 그래프'}); }
+function renderOTable(fresh){ const Vs=[1,2,3,4,5]; const cell=(k,v)=>{ const x=O.recs[k][f1(v)]; return x==null?'<td class="empty">?</td>':`<td${fresh===k+v?' class="new"':''}>${f2(x)}</td>`; };
+  let h=`<tr><th>전압(V)</th>${Vs.map(v=>`<th>${v}</th>`).join('')}</tr><tr><td>긴 니크롬선 전류(A)</td>${Vs.map(v=>cell('long',v)).join('')}</tr><tr><td>짧은 니크롬선 전류(A)</td>${Vs.map(v=>cell('short',v)).join('')}</tr>`;
+  if(O.ratio){ const rc=(k,v)=>{ const x=O.recs[k][f1(v)]; return x==null?'<td class="empty">?</td>':`<td class="new">${fmt(v/x)}</td>`; };
+    h+=`<tr><td>긴: 전압 ÷ 전류</td>${Vs.map(v=>rc('long',v)).join('')}</tr><tr><td>짧은: 전압 ÷ 전류</td>${Vs.map(v=>rc('short',v)).join('')}</tr>`; }
+  $('oTable').innerHTML=h; }
+function oRender(){ oSteps(); $('oRig').innerHTML=oSVG(); oGraph();
+  const ready=oReady(); $('oV').disabled=!ready; $('oV').value=O.V; $('oVl').textContent=f1(O.V)+' V';
+  $('oRV').textContent=ready?f1(O.V)+' V':'— V'; $('oRI').textContent=ready?f2(oI())+' A':'— A'; $('oRW').textContent=O.wire==='long'?'긴 니크롬선':'짧은 니크롬선';
+  $('oDevice').textContent=O.device?'📱 스마트 기기 연결됨 ✔':'📱 스마트 기기 연결하기'; $('oDevice').disabled=O.device;
+  $('oConn').querySelectorAll('.chip').forEach((b,i)=>b.classList.toggle('on',O.conn[i]));
+  const n=oStep(); let m;
+  if(n===0) m='과정 1: 전선을 하나씩 눌러 연결하세요. 전류 센서는 회로에 <b>한 줄로</b>, 전압 센서는 니크롬선의 <b>양 끝</b>에 연결해요.';
+  else if(n===1) m='과정 2: 전압 센서와 전류 센서를 스마트 기기의 프로그램과 연결하세요.';
+  else if(O.V===0) m=`전압을 0부터 <b>조금씩</b> 높이며 전류의 세기 변화를 관찰해요. (지금: ${O.wire==='long'?'긴':'짧은'} 니크롬선)`;
+  else m=`전압 <b>${f1(O.V)} V</b> → 전류 <b>${f2(oI())} A</b>${n===3&&O.wire==='long'?' · 과정 4: 전압을 0으로 낮춘 뒤 <b>짧은 니크롬선</b>으로 바꿔요.':''}${n===4?' · 그래프를 보고 결과를 정리해 보세요!':''}`;
+  if(O.hot>8&&O.V>=3) m='🔥 니크롬선이 뜨거워지고 있어요! 눈금을 읽었으면 전압을 0으로 낮춰요.';
+  $('oMsg').innerHTML=m; O.anim=-1; }
+function oSetV(v){ if(!oReady()){ toast(O.conn.every(Boolean)?'📱 먼저 스마트 기기를 연결해요':'🔌 먼저 전선을 모두 연결해요'); sfx('tap'); return; }
+  v=clamp(Math.round(v*2)/2,0,5); if(v===O.V) return; O.V=v; sfx('knob'); if(v>0){ setTimeout(()=>sfx('beep'),60); }
+  const key=f1(v); let fresh=null; if(v>0&&O.recs[O.wire][key]==null){ O.recs[O.wire][key]=v/OR[O.wire]; lsSet('recO',O.recs); fresh=O.wire+v; }
+  if(v===0) O.hot=0; oRender(); renderOTable(fresh); kick();
+  if(fresh&&oStep()===3&&oCount('long')===3) setTimeout(()=>toast('👍 과정 3 완료! 전압을 0으로 낮추고 짧은 니크롬선으로 바꿔 봐요'),300);
+  if(fresh&&oStep()===4&&oCount('short')===3){ setTimeout(()=>{ sfx('fanfare'); fireworks(); toast('🎉 두 니크롬선의 그래프 완성! 결과를 정리해 봐요'); },300); } }
+let oHotT=0;
+function ohmTask(dt){ if(cur!==2||curTab!=='ohm'||!oReady()||O.V<3){ return false; } O.hot+=dt; oHotT+=dt; if(O.hot>8&&!O.warned){ O.warned=true; sfx('heat'); oRender(); } return O.hot<9; }
+
+/* ---- ④ 저항과 전류 ---- */
+const RS={L:1,th:1,yc:170,els:[],flash:{},recs:lsGet('recRs',{})};
+const rsR=()=>2*RS.L/RS.th, rsI=()=>6/rsR();
+function rsRecord(){ const R=rsR(), k=fmt(R); if(RS.recs[k]==null){ RS.recs[k]=6/R; lsSet('recRs',RS.recs); return k; } return null; }
+function rsUI(fresh){ const R=rsR(), I=rsI();
+  $('rLl').textContent=RS.L+'칸'; $('rR').textContent=fmt(R)+' Ω'; $('rI').textContent=f1(I)+' A'; $('rHit').textContent='약 '+(RS.L*4)+'개';
+  $('rMsg').innerHTML=`길이 ${RS.L}칸${RS.th==2?' · 굵은 선':''} → 저항 <b>${fmt(R)} Ω</b>, 전류 <b>${f1(I)} A</b>. ${RS.L>1?`길이가 1칸일 때보다 원자와 더 많이 부딪혀 전류가 약해졌어요.`:'길이를 늘려 보세요.'}`;
+  const pts=Object.keys(RS.recs).map(k=>[+k,RS.recs[k]]);
+  $('rGraph').innerHTML=graphSVG({xmax:10,ymax:6,xticks:[2,4,6,8,10],yticks:[1,2,3,4,5,6],xlabel:'저항(Ω)',ylabel:'전류(A)',series:[{pts,color:'#7048e8',noLine:true}],curve:pts.length>=3?{from:1,to:10,fn:r=>6/r,color:'#b197fc',dash:true}:null,marker:[R,I],markerColor:'#7048e8',aria:'저항-전류 그래프'});
+  const ks=Object.keys(RS.recs).map(Number).sort((a,b)=>a-b);
+  $('rTable').innerHTML=ks.length?`<tr><th>저항(Ω)</th>${ks.map(k=>`<th>${fmt(k)}</th>`).join('')}</tr><tr><td>전류(A)</td>${ks.map(k=>`<td${fresh===fmt(k)?' class="new"':''}>${f1(RS.recs[fmt(k)])}</td>`).join('')}</tr>`:'<tr><td class="empty">길이나 굵기를 바꾸면 기록돼요.</td></tr>'; }
+function resTask(dt){ if(cur!==2||curTab!=='resist') return false; const cv=$('rCv'); if(!visible(cv)) return false; const c=prepRatio(cv,760,300); if(!c) return false;
+  c.clearRect(0,0,760,300); resStep(RS,dt,c);
+  const I=rsI(); c.save(); c.translate(600,70); c.beginPath(); c.arc(0,0,58,Math.PI,0); c.fillStyle='#fff'; c.fill(); c.lineWidth=4; c.strokeStyle='#495057'; c.stroke();
+  for(let k=0;k<=6;k++){ const a=Math.PI+Math.PI*k/6; c.beginPath(); c.moveTo(Math.cos(a)*48,Math.sin(a)*48); c.lineTo(Math.cos(a)*58,Math.sin(a)*58); c.lineWidth=3; c.stroke(); }
+  const na=Math.PI+Math.PI*clamp(I/6,0,1); c.strokeStyle='#e03131'; c.lineWidth=5; c.beginPath(); c.moveTo(0,0); c.lineTo(Math.cos(na)*50,Math.sin(na)*50); c.stroke(); c.restore();
+  cTxt(c,`전류 ${f1(I)} A`,600,94,22,'#e03131'); cTxt(c,'🔋 전압 6 V 일정',130,36,22,'#b35300'); cTxt(c,`저항 ${fmt(rsR())} Ω`,330,36,22,'#7048e8');
+  return true; }
+
+/* ---- ⑤ 옴의 법칙 미션 ---- */
+let TRI=null;
+function triSVG(){ const sel=TRI, f=k=>sel===k?'#ced4da':'#fff', tc=k=>sel===k?'#adb5bd':k==='V'?'#b35300':k==='I'?C_CUR:'#7048e8';
+  return `<svg viewBox="0 0 280 240" role="img" aria-label="옴의 법칙 삼각형"><path d="M140,14 L266,226 H14 Z" fill="#fff8e1" stroke="#f2a900" stroke-width="5" stroke-linejoin="round"/><line x1="60" y1="148" x2="220" y2="148" stroke="#f2a900" stroke-width="4"/><line x1="140" y1="148" x2="140" y2="226" stroke="#f2a900" stroke-width="4"/>
+  <g class="tri-part" data-k="V"><path d="M140,22 L214,144 H66 Z" fill="${f('V')}" opacity=".85"/><text x="140" y="124" text-anchor="middle" font-size="46" font-weight="900" fill="${tc('V')}">V</text></g>
+  <g class="tri-part" data-k="I"><path d="M62,152 H136 V222 H22 Z" fill="${f('I')}" opacity=".85"/><text x="92" y="206" text-anchor="middle" font-size="44" font-weight="900" fill="${tc('I')}">I</text></g>
+  <g class="tri-part" data-k="R"><path d="M144,152 H218 L258,222 H144 Z" fill="${f('R')}" opacity=".85"/><text x="190" y="206" text-anchor="middle" font-size="44" font-weight="900" fill="${tc('R')}">R</text></g>
+  <text x="140" y="196" text-anchor="middle" font-size="26" font-weight="900" fill="#b35300">×</text></svg>`; }
+function triRender(){ $('triBox').innerHTML=triSVG(); $('triBox').querySelectorAll('.tri-part').forEach(p=>p.addEventListener('click',()=>{ TRI=p.dataset.k; sfx('pop'); triRender();
+  $('triInfo').innerHTML=TRI==='I'?'<b>I</b>를 가리면 → <b>I = V ÷ R</b> (전류 = 전압 ÷ 저항)':TRI==='V'?'<b>V</b>를 가리면 → <b>V = I × R</b> (전압 = 전류 × 저항)':'<b>R</b>를 가리면 → <b>R = V ÷ I</b> (저항 = 전압 ÷ 전류)'; burstAt(p,{count:10,speed:4}); })); }
+const KC={find:'I',V:6,I:2,R:3};
+const KSPEC={V:['전압 V','V',.5,24,.5],I:['전류 I','A',.1,6,.1],R:['저항 R','Ω',1,20,1]};
+function kRender(){ const need=['V','I','R'].filter(k=>k!==KC.find);
+  $('kInputs').innerHTML=need.map(k=>{ const s=KSPEC[k]; return `<div class="ctrl"><label>${s[0]} <em id="kl-${k}">${fmt(KC[k])} ${s[1]}</em></label><input type="range" id="ki-${k}" min="${s[2]}" max="${s[3]}" step="${s[4]}" value="${KC[k]}"></div>`; }).join('');
+  need.forEach(k=>$('ki-'+k).addEventListener('input',e=>{ KC[k]=+e.target.value; $('kl-'+k).textContent=fmt(KC[k])+' '+KSPEC[k][1]; sfx('tick'); kOut(); })); kOut(); }
+function kOut(){ let h; const V=KC.V,I=KC.I,R=KC.R;
+  if(KC.find==='I') h=`I = V ÷ R = ${fmt(V)} ÷ ${fmt(R)}<br><span class="big">${fmt(V/R)} A</span>`;
+  else if(KC.find==='V') h=`V = I × R = ${fmt(I)} × ${fmt(R)}<br><span class="big">${fmt(I*R)} V</span>`;
+  else h=`R = V ÷ I = ${fmt(V)} ÷ ${fmt(I)}<br><span class="big">${fmt(V/I)} Ω</span>`;
+  $('kOut').innerHTML=h; }
+const MS=[
+ {q:'<b>교과서 예제</b> — 저항이 2 Ω인 물체에 6 V의 전압이 걸릴 때 흐르는 전류의 세기는?',opts:['3 A','12 A','4 A','0.3 A'],exp:'I = V/R = 6 V ÷ 2 Ω = <b>3 A</b>'},
+ {q:'그래프는 어떤 니크롬선에 걸어 준 전압에 따른 전류의 세기를 나타낸 것이다. 이 니크롬선의 저항은? <span class="muted">(대단원 마무리 5번)</span>',fig:'mA',opts:['10 Ω','100 Ω','0.1 Ω','900 Ω'],exp:'300 mA = 0.3 A (1 mA = 1/1000 A). R = V/I = 3 V ÷ 0.3 A = <b>10 Ω</b>'},
+ {q:'그래프는 니크롬선 A, B에 걸리는 전압과 전류의 세기를 나타낸 것이다. 니크롬선 A에 24 V의 전압이 걸릴 때 흐르는 전류의 세기는?',fig:'AB',opts:['12 A','6 A','48 A','3 A'],exp:'A의 저항 = 12 V ÷ 6 A = 2 Ω. 저항이 일정하면 전류는 전압에 비례하므로, 전압이 2배(24 V)가 되면 전류도 2배인 <b>12 A</b> (24 V ÷ 2 Ω = 12 A). B의 저항은 12 V ÷ 3 A = 4 Ω이에요.'},
+ {q:'저항이 5 Ω인 전구에 2 A의 전류가 흐를 때, 전구에 걸린 전압은?',opts:['10 V','2.5 V','7 V','0.4 V'],exp:'V = I × R = 2 A × 5 Ω = <b>10 V</b>'},
+ {q:'탐구 ③의 <b>긴 니크롬선</b>에 4 V의 전압을 걸면 전류 센서에 나타나는 값은?',opts:['0.4 A','4 A','2.5 A','0.8 A'],exp:'탐구 ③에서 긴 니크롬선은 5 V일 때 0.5 A → 저항 10 Ω. I = 4 V ÷ 10 Ω = <b>0.4 A</b>. (0.8 A는 짧은 니크롬선의 값!)'}
+];
+function msFig(k){ if(k==='mA') return graphSVG({xmax:3,ymax:300,xticks:[1,2,3],yticks:[100,200,300],xlabel:'전압(V)',ylabel:'전류(mA)',x0:84,series:[{pts:[[1,100],[2,200],[3,300]],color:'#2f6fdb',line:true,origin:true,noDots:true}],extra:[(X,Y)=>`<line x1="${X(3)}" y1="${Y(0)}" x2="${X(3)}" y2="${Y(300)}" stroke="#868e96" stroke-dasharray="5 5" stroke-width="2"/><line x1="${X(0)}" y1="${Y(300)}" x2="${X(3)}" y2="${Y(300)}" stroke="#868e96" stroke-dasharray="5 5" stroke-width="2"/>`],aria:'니크롬선의 전압-전류 그래프'});
+  if(k==='AB') return graphSVG({xmax:14,ymax:7,xticks:[12],yticks:[3,6],xlabel:'전압(V)',ylabel:'전류(A)',series:[{pts:[[12,6]],color:C_CUR,line:true,origin:true,noDots:true,label:'A',lx:6,ly:-6},{pts:[[12,3]],color:'#7048e8',line:true,origin:true,noDots:true,label:'B',lx:6,ly:-6}],extra:[(X,Y)=>`<line x1="${X(12)}" y1="${Y(0)}" x2="${X(12)}" y2="${Y(6)}" stroke="#868e96" stroke-dasharray="5 5" stroke-width="2"/><line x1="${X(0)}" y1="${Y(6)}" x2="${X(12)}" y2="${Y(6)}" stroke="#868e96" stroke-dasharray="5 5" stroke-width="2"/><line x1="${X(0)}" y1="${Y(3)}" x2="${X(12)}" y2="${Y(3)}" stroke="#868e96" stroke-dasharray="5 5" stroke-width="2"/>`],aria:'니크롬선 A, B의 전압-전류 그래프'});
+  return ''; }
+const MSD=lsGet('ms',{});
+const MSORD=MS.map(m=>{ const o=m.opts.map((_,i)=>i); for(let i=o.length-1;i>0;i--){ const j=(i*7+3)%(i+1); [o[i],o[j]]=[o[j],o[i]]; } return o; });
+function msRender(){ $('msBox').innerHTML=MS.map((m,i)=>`<div class="ms${MSD[i]?' solved':''}" id="ms-${i}"><div class="ms-q">🎯 ${i+1}. ${m.q}</div>${m.fig?`<div class="ms-fig">${msFig(m.fig)}</div>`:''}<div class="toggle">${MSORD[i].map(oi=>`<button class="chip${MSD[i]&&oi===0?' on':''}" data-m="${i}" data-o="${oi}">${m.opts[oi]}</button>`).join('')}</div><div class="ms-exp">${MSD[i]?'✔ '+m.exp:''}</div></div>`).join('');
+  $('msCount').textContent=Object.keys(MSD).length;
+  $('msBox').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.m, o=+b.dataset.o; if(MSD[i]) return; const card=$('ms-'+i);
+    if(o===0){ MSD[i]=1; lsSet('ms',MSD); sfx('correct'); burstAt(b,{count:24,speed:7}); floatAt(b,'정답!','#12a874'); msRender(); if(Object.keys(MSD).length===MS.length) setTimeout(()=>{ sfx('fanfare'); fireworks(); toast('🏅 옴의 법칙 미션 5개 모두 해결!'); },300); }
+    else { sfx('wrong'); b.classList.add('warn','on'); b.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:350}); card.querySelector('.ms-exp').innerHTML='✖ 다시 생각해 봐요. I = V ÷ R, V = I × R, R = V ÷ I 중 어떤 식이 필요할까요?'; setTimeout(()=>b.classList.remove('warn','on'),900); } })); }
+
+/* ---- ⑥ 도체·부도체 (교과서 253쪽 해 보기) ---- */
+const DM=[['cu','구리선',true,'#d9480f'],['fe','철 못',true,'#868e96'],['al','알루미늄 포일',true,'#ced4da'],['au','금반지',true,'#fab005'],['rb','고무지우개',false,'#f783ac'],['pl','플라스틱 자',false,'#74c0fc'],['gl','유리 막대',false,'#c5f6fa'],['pp','종이',false,'#fff9db']];
+const D={sel:null,recs:lsGet('recD',{}),pd:lsGet('pd',{}),pick:null,semi:false};
+function dSVG(){ const m=DM.find(x=>x[0]===D.sel), on=!!(m&&m[2]);
+  let s=`<svg viewBox="0 0 700 300" role="img" aria-label="도체와 부도체를 확인하는 회로">`;
+  s+=`<path d="M140,141 V80 H322 M378,80 H580 V250 H410 M290,250 H140 V230" fill="none" stroke="#5c6475" stroke-width="7" stroke-linejoin="round"/>`;
+  s+=bulbSVG(350,72,30,on,1.3);
+  s+=battV(140,150,230,true,{nolabel:true,w:44})+txt(84,196,'전지',{s:18});
+  s+=`<path d="M290,250 L300,240 L318,244 L300,258 Z" fill="#e03131"/><path d="M410,250 L400,240 L382,244 L400,258 Z" fill="#212529"/>`;
+  if(m){ s+=`<rect x="300" y="236" width="100" height="28" rx="8" fill="${m[3]}" stroke="#495057" stroke-width="2"/>`+txt(350,292,m[1],{s:20}); }
+  else s+=txt(350,292,'집게 사이가 비어 있어요',{s:18,c:'#868e96'});
+  if(on) s+=`<path d="M140,141 V80 H322 M378,80 H580 V250 H410 M290,250 H140 V230" fill="none" stroke="#ffd43b" stroke-width="5" class="flow-e" style="--sp:1.2s"/>`;
+  return s+`</svg>`; }
+function renderDTable(fresh){ const c=DM.filter(m=>D.recs[m[0]]&&m[2]), n=DM.filter(m=>D.recs[m[0]]&&!m[2]);
+  $('dTable').innerHTML=`<tr><th>⚡ 불이 켜짐 → 도체</th><th>🚫 불이 켜지지 않음 → 부도체</th></tr><tr><td>${c.map(m=>`<span${fresh===m[0]?' class="new"':''}>${m[1]}</span>`).join(', ')||'<span class="empty">?</span>'}</td><td>${n.map(m=>`<span${fresh===m[0]?' class="new"':''}>${m[1]}</span>`).join(', ')||'<span class="empty">?</span>'}</td></tr>`; }
+function dRender(){ $('dRig').innerHTML=dSVG(); }
+const PD=[['피뢰침','c'],['정전기 방지 패드','c'],['전력 케이블의 전선','c'],['절연 장갑','i'],['전선의 피복','i'],['플러그의 손잡이','i']];
+function pdRender(){ $('pdItems').innerHTML=PD.map((p,i)=>D.pd[i]?'':`<button class="chip${D.pick===i?' on':''}" data-i="${i}">${p[0]}</button>`).join('')||'<span class="muted">모두 분류했어요! 🎉</span>';
+  $('binCIn').innerHTML=PD.map((p,i)=>D.pd[i]&&p[1]==='c'?`<i>${p[0]}</i>`:'').join(''); $('binIIn').innerHTML=PD.map((p,i)=>D.pd[i]&&p[1]==='i'?`<i>${p[0]}</i>`:'').join('');
+  $('pdCount').textContent=Object.keys(D.pd).length; ['binC','binI'].forEach(b=>$(b).classList.toggle('ready',D.pick!=null));
+  $('pdItems').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ D.pick=+b.dataset.i; sfx('pick'); pdRender(); })); }
+function pdDrop(v,el){ if(D.pick==null){ toast('👆 먼저 제품을 골라요'); sfx('tap'); return; } const p=PD[D.pick];
+  if(p[1]===v){ D.pd[D.pick]=1; lsSet('pd',D.pd); sfx('correct'); burstAt(el,{count:16,speed:6}); $('pdMsg').innerHTML=`✔ <b>${p[0]}</b> — ${v==='c'?'전류가 잘 흐르는 <b>도체</b>를 활용해요.':'전류가 잘 흐르지 않는 <b>부도체</b>를 활용해요.'}`; D.pick=null; pdRender();
+    if(Object.keys(D.pd).length===PD.length) setTimeout(()=>{ sfx('fanfare'); fireworks(); },300); }
+  else { sfx('wrong'); el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); $('pdMsg').innerHTML=`✖ <b>${p[0]}</b>은(는) 전류가 ${v==='c'?'흐르지 않게':'잘 흐르게'} 해야 할까요? 다시 생각해 봐요.`; } }
+
+function buildExperiments(){
+  // ①
+  cirInit(); renderCTable(); cirStatus();
+  $('cSwitch').addEventListener('click',cirToggle);
+  $('cFlip').addEventListener('click',()=>{ CIR.flip=!CIR.flip; CIR.tClosed=0; sfx('thunk'); setTimeout(()=>sfx('switch'),120); cirStatus(); toast(CIR.flip?'🔄 전지의 (+)극이 아래로 바뀌었어요':'🔄 전지를 원래 방향으로 돌려놓았어요'); kick(); });
+  $('cShowE').addEventListener('click',()=>{ CIR.showE=!CIR.showE; $('cShowE').classList.toggle('on',CIR.showE); sfx('tap'); kick(); });
+  $('cShowI').addEventListener('click',()=>{ CIR.showI=!CIR.showI; $('cShowI').classList.toggle('on',CIR.showI); if(CIR.showI&&CIR.closed) CIR.sawI=true; sfx('tap'); if(CIR.showI&&!CIR.closed) toast('스위치를 닫으면 화살표가 보여요'); kick(); });
+  $('cFollow').addEventListener('click',()=>{ CIR.follow=!CIR.follow; CIR.trail=[]; $('cFollow').classList.toggle('on',CIR.follow); sfx('sparkle'); kick(); });
+  $('cCv').addEventListener('pointerdown',e=>{ const r=$('cCv').getBoundingClientRect(), k=760/r.width, x=(e.clientX-r.left)*k, y=(e.clientY-r.top)*k; if(Math.hypot(x-380,y-335)<70) cirToggle(); });
+  makePred('cPred','predC',[{q:'스위치를 닫으면 전선 속 전자는?',opts:['계속 불규칙하게 움직인다','전지의 (+)극 쪽으로 이동한다','전지의 (−)극 쪽으로 이동한다'],ans:'전지의 (+)극 쪽으로 이동한다',done:()=>!!CIR.recs.closed},
+    {q:'전류의 방향은 전자의 이동 방향과?',opts:['같다','반대이다'],ans:'반대이다',done:()=>!!CIR.recs.closed&&CIR.sawI},
+    {q:'전지의 방향을 바꾸면 전자의 이동 방향은?',opts:['반대가 된다','그대로이다','전자가 멈춘다'],ans:'반대가 된다',done:()=>!!CIR.recs.flip}]);
+  // ②
+  wStatus(); mtRender();
+  $('wOpen').addEventListener('click',()=>{ WT.open=!WT.open; sfx(WT.open?'water':'switch'); if(WT.open) setTimeout(()=>sfx('bulb'),200); wStatus(); kick(); });
+  $('wLevel').addEventListener('input',()=>{ WT.lvl=+$('wLevel').value; sfx('tick'); if(WT.open) sfx('water'); wStatus(); kick(); });
+  // ③
+  $('oConn').innerHTML=OCONN.map((t,i)=>`<button class="chip" data-i="${i}">${t}</button>`).join('');
+  $('oConn').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.i; if(O.conn[i]){ sfx('tap'); return; } O.conn[i]=true; O.anim=i; lsSet('oConn',O.conn); sfx('connect'); oRender(); if(O.conn.every(Boolean)){ setTimeout(()=>{ sfx('unlock'); toast('✔ 회로 연결 완료! 과정 2로'); },300); } }));
+  $('oDevice').addEventListener('click',()=>{ if(!O.conn.every(Boolean)){ toast('🔌 먼저 전선을 모두 연결해요'); sfx('tap'); return; } O.device=true; lsSet('oDev',true); sfx('device'); oRender(); burstAt($('oDevice'),{count:18,speed:6}); toast('📱 센서가 연결되었어요! 전압을 0부터 조금씩 높여요'); });
+  bindChips('oWire',v=>{ if(v===O.wire) return; if(O.V>0){ toast('⚠️ 전압을 0으로 낮춘 뒤 니크롬선을 바꿔요'); sfx('wrong'); return false; } O.wire=v; O.hot=0; sfx('connect'); oRender(); renderOTable(); });
+  $('oV').addEventListener('input',()=>oSetV(+$('oV').value));
+  $('oPlus').addEventListener('click',()=>oSetV(O.V+.5)); $('oMinus').addEventListener('click',()=>oSetV(O.V-.5)); $('oZero').addEventListener('click',()=>{ if(O.V>0) oSetV(0); });
+  $('oOverlay').addEventListener('click',()=>{ O.overlay=!O.overlay; $('oOverlay').classList.toggle('on',O.overlay); sfx('tap'); oGraph(); });
+  $('oRatio').addEventListener('click',()=>{ O.ratio=!O.ratio; sfx(O.ratio?'sparkle':'tap'); renderOTable(); $('oRatio').textContent=O.ratio?'➗ 계산 숨기기':'➗ 전압 ÷ 전류 계산해 보기'; if(O.ratio) toast('같은 니크롬선에서는 전압 ÷ 전류 값이 일정해요 → 이 값이 저항(Ω)!'); });
+  $('oClear').addEventListener('click',()=>{ O.recs={long:{},short:{}}; lsSet('recO',O.recs); sfx('peel'); oRender(); renderOTable(); toast('기록을 지웠어요'); });
+  const pairOK=()=>['long','short'].some(k=>Object.keys(O.recs[k]).some(v=>O.recs[k][f1(+v*2)]!=null));
+  const bothOK=()=>Object.keys(O.recs.long).some(v=>O.recs.short[v]!=null);
+  makePred('oPred','predO',[{q:'같은 니크롬선에서 전압을 2배로 하면 전류의 세기는?',opts:['2배가 된다','1/2배가 된다','변하지 않는다'],ans:'2배가 된다',done:pairOK},
+    {q:'같은 전압을 걸 때 전류의 세기가 더 큰 것은?',opts:['짧은 니크롬선','긴 니크롬선','둘이 같다'],ans:'짧은 니크롬선',done:bothOK}]);
+  oRender(); renderOTable();
+  // ④
+  resInit(RS); rsRecord(); rsUI();
+  $('rLen').addEventListener('input',()=>{ RS.L=+$('rLen').value; resInit(RS); const k=rsRecord(); sfx(k?'beep':'tick'); rsUI(k); kick(); });
+  bindChips('rThick',v=>{ RS.th=+v; resInit(RS); const k=rsRecord(); sfx(k?'beep':'tap'); rsUI(k); kick(); });
+  $('rClear').addEventListener('click',()=>{ RS.recs={}; lsSet('recRs',{}); sfx('peel'); rsUI(); });
+  makePred('rPred','predR',[{q:'전압이 같을 때 니크롬선의 길이가 2배가 되면 저항은?',opts:['2배가 된다','1/2배가 된다','변하지 않는다'],ans:'2배가 된다',done:()=>RS.recs['2']!=null&&RS.recs['4']!=null},
+    {q:'이때 전류의 세기는?',opts:['1/2배가 된다','2배가 된다','변하지 않는다'],ans:'1/2배가 된다',done:()=>RS.recs['2']!=null&&RS.recs['4']!=null}]);
+  // ⑤
+  triRender(); kRender(); bindChips('kFind',v=>{ KC.find=v; sfx('tap'); kRender(); }); msRender();
+  // ⑥
+  chipGroup('dMat',DM.map(m=>[m[0],m[1]]),null,v=>{ D.sel=v; const m=DM.find(x=>x[0]===v); dRender(); let fresh=null; if(!D.recs[v]){ D.recs[v]=1; lsSet('recD',D.recs); fresh=v; } renderDTable(fresh);
+    if(m[2]){ sfx('bulb'); burstAt($('dRig'),{count:18,speed:6,colors:['#ffd43b','#f2a900','#fff']}); $('dMsg').innerHTML=`💡 <b>${m[1]}</b>을(를) 끼우니 불이 켜졌어요! 저항이 작아 전류가 잘 흐르는 <b>도체</b>예요.`; }
+    else { sfx('thunk'); $('dMsg').innerHTML=`🚫 <b>${m[1]}</b>을(를) 끼우니 불이 켜지지 않아요. 저항이 커서 전류가 잘 흐르지 않는 <b>부도체</b>예요.`; }
+    if(DM.every(x=>D.recs[x[0]])&&fresh) setTimeout(()=>{ sfx('combo'); toast('🔍 8가지 물질을 모두 확인했어요!'); },400); });
+  dRender(); renderDTable(); pdRender();
+  ['binC','binI'].forEach(b=>$(b).addEventListener('click',()=>pdDrop($(b).dataset.v,$(b))));
+  $('semiBtn').addEventListener('click',()=>{ D.semi=!D.semi; sfx(D.semi?'bulb':'tap'); $('semiState').textContent=D.semi?'특정 조건 · 전류 ✔ (도체처럼)':'순수한 상태 · 전류 ✖'; $('semiState').classList.toggle('on',D.semi); $('semiBtn').textContent=D.semi?'↺ 순수한 상태로':'⚙️ 특정 조건 만들기'; if(D.semi) burstAt($('semiState'),{count:14,speed:5}); });
+  document.querySelectorAll('[data-ans]').forEach(b=>b.addEventListener('click',()=>{ const a=$(b.dataset.ans); const h=a.classList.toggle('hidden'); sfx('tap'); b.textContent=h?'예시 답안 보기':'예시 답안 숨기기'; }));
+  addTask(k1Task); addTask(k4Task); addTask(cirTask); addTask(waterTask); addTask(resTask); addTask(ohmTask);
+}
+
+/* ============ 스티커 붙이기 ============ */
+function stkCircSVG(){ return circSVG({lit:true,nolabel:true,marks:[{x1:545,y1:150,x2:545,y2:232,label:'(가)',lx:572,ly:200},{x1:470,y1:96,x2:390,y2:96,label:'(나)',lx:430,ly:130}],texts:[[46,160,'㉠',24,'#1b1d4a'],[46,236,'㉡',24,'#1b1d4a']]}); }
+function stkGraphs(){ const g1=graphSVG({xmax:5,ymax:1,xticks:[],yticks:[],noTickLbl:true,xlabel:'전압',ylabel:'전류',series:[{pts:[[5,1]],color:'#495057',line:true,origin:true,noDots:true,label:'ⓐ',lx:-34,ly:4},{pts:[[5,.5]],color:'#495057',line:true,origin:true,noDots:true,label:'ⓑ',lx:-30,ly:-12}],aria:'(가) 전압-전류 그래프'});
+  const g2=graphSVG({xmax:6,ymax:6,xticks:[],yticks:[],noTickLbl:true,xlabel:'저항',ylabel:'전류',curve:{from:1,to:6,fn:r=>6/r,color:'#495057',w:3.5},aria:'(나) 저항-전류 그래프'});
+  return {g1,g2}; }
+const BOARDS=[
+  {short:'전류와 전자의 방향',title:'판 1 · 전기 회로에서 전류와 전자의 방향',desc:'그림 이름표형 — 스위치를 닫아 전구에 불이 켜진 회로예요. (가), (나) 화살표와 전지의 ㉠, ㉡을 정리해요. (교과서 248~249쪽)',color:'c1',type:'scene',
+   stickers:['전류의 방향','전자의 이동 방향','(+)극','(−)극','원자핵의 이동 방향','전압'],
+   slots:[{id:'a',answer:'전류의 방향',name:'(가) 화살표 칸',hints:['전지의 (+)극에서 나와 회로를 따라 (−)극으로 들어가는 방향이에요.','탐구 ①에서 🔴 화살표가 가리킨 방향이에요.']},
+          {id:'b',answer:'전자의 이동 방향',name:'(나) 화살표 칸',hints:['전지의 (+)극 쪽을 향해 움직이는 입자의 방향이에요.','탐구 ①에서 전자들이 몰려간 방향이에요.']},
+          {id:'p',answer:'(+)극',name:'㉠ 칸',hints:['전지에서 볼록 튀어나온 쪽이에요.','전류가 나오는 쪽이에요.']},
+          {id:'n',answer:'(−)극',name:'㉡ 칸',hints:['전지의 평평한 쪽이에요.','전자가 나오는 쪽이에요.']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-0-${id}"></div>`;
+     return `<div class="sc-grid"><div class="sc">${stkCircSVG()}</div><div class="sc"><div class="sc-slots"><span>(가) 화살표</span>${sl('a')}<span>(나) 화살표</span>${sl('b')}<span>㉠</span>${sl('p')}<span>㉡</span>${sl('n')}</div></div></div>`; },
+   summary:'전류는 전지의 <b>(+)극 → (−)극</b>, 전자는 <b>(−)극 → (+)극</b>으로 이동해요. <b>전류의 방향은 전자의 이동 방향과 반대</b>!'},
+  {short:'전류·전압·저항',title:'판 2 · 전류, 전압, 저항 정리표',desc:'표 채우기형 — 세 가지 물리량의 뜻과 단위를 정리해요. (교과서 249·252쪽)',color:'c3',type:'table',
+   stickers:['전하의 흐름','전류를 흐르게 하는 능력','전류의 흐름을 방해하는 정도','A(암페어)','V(볼트)','Ω(옴)','원자핵의 흐름','W(와트)'],
+   slots:[{id:'i1',answer:'전하의 흐름',name:'전류의 뜻 칸',hints:['스위치를 닫으면 전선 속에서 무엇이 흐르나요?','전자는 (−)전하를 띠어요.']},
+          {id:'i2',answer:'A(암페어)',name:'전류의 단위 칸',hints:['전류 센서에 표시된 단위예요.','1 mA = 1/1000 ○']},
+          {id:'v1',answer:'전류를 흐르게 하는 능력',name:'전압의 뜻 칸',hints:['물의 흐름에서 높이 차이에 해당해요.','펌프(전지)가 만드는 것이에요.']},
+          {id:'v2',answer:'V(볼트)',name:'전압의 단위 칸',hints:['건전지에 1.5 ○라고 쓰여 있어요.','전원 장치 화면의 단위예요.']},
+          {id:'r1',answer:'전류의 흐름을 방해하는 정도',name:'저항의 뜻 칸',hints:['전자가 원자와 충돌하기 때문에 생겨요.','길수록 커지는 양이에요.']},
+          {id:'r2',answer:'Ω(옴)',name:'저항의 단위 칸',hints:['과학자 옴의 이름에서 따왔어요.','1 V를 걸었을 때 1 A가 흐르는 저항이 1 ○']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-1-${id}"></div>`;
+     return `<div class="tbl-wrap"><table class="tbl res-tbl"><tr><th>물리량</th><th>뜻</th><th>단위</th></tr><tr><td><b>전류</b> (I)</td><td>${sl('i1')}</td><td>${sl('i2')}</td></tr><tr><td><b>전압</b> (V)</td><td>${sl('v1')}</td><td>${sl('v2')}</td></tr><tr><td><b>저항</b> (R)</td><td>${sl('r1')}</td><td>${sl('r2')}</td></tr></table></div>`; },
+   summary:'전류 = <b>전하의 흐름(A)</b>, 전압 = <b>전류를 흐르게 하는 능력(V)</b>, 저항 = <b>전류의 흐름을 방해하는 정도(Ω)</b>'},
+  {short:'탐구 결과 그래프',title:'판 3 · 탐구 결과 그래프 해석하기',desc:'실험 결과형 — (가)는 길이가 다른 니크롬선의 전압-전류 그래프, (나)는 전압이 일정할 때 저항-전류 그래프예요. (교과서 251~252쪽)',color:'c4',type:'scene',
+   stickers:['짧은 니크롬선','긴 니크롬선','비례','반비례','저항','전압','관계없음','전류'],
+   slots:[{id:'a',answer:'짧은 니크롬선',name:'ⓐ 그래프 칸',hints:['같은 전압에서 전류가 더 큰 쪽이에요.','탐구 ③에서 5 V일 때 1.0 A가 흐른 니크롬선!']},
+          {id:'b',answer:'긴 니크롬선',name:'ⓑ 그래프 칸',hints:['같은 전압에서 전류가 더 작은 쪽이에요.','길수록 저항이 커요.']},
+          {id:'k1',answer:'비례',name:'(가) 관계 칸',hints:['원점을 지나는 직선이에요.','전압이 2배 → 전류도 2배']},
+          {id:'c1',answer:'저항',name:'(가) 일정한 것 칸',hints:['한 직선은 같은 니크롬선으로 얻었어요.','전압 ÷ 전류 값이 일정했어요.']},
+          {id:'k2',answer:'반비례',name:'(나) 관계 칸',hints:['저항이 커질수록 전류가 작아지는 곡선이에요.','저항이 2배 → 전류는 1/2배']},
+          {id:'c2',answer:'전압',name:'(나) 일정한 것 칸',hints:['탐구 ④에서 6 V로 고정한 양이에요.','전원 장치에서 일정하게 맞춘 양!']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-2-${id}"></div>`; const g=stkGraphs();
+     return `<div class="sc-grid"><div class="sc"><b style="text-align:center">(가)</b>${g.g1}<div class="sc-slots"><span>ⓐ 그래프</span>${sl('a')}<span>ⓑ 그래프</span>${sl('b')}<span>전압과 전류의 관계</span>${sl('k1')}<span>각 직선에서 일정한 것</span>${sl('c1')}</div></div><div class="sc"><b style="text-align:center">(나)</b>${g.g2}<div class="sc-slots"><span>저항과 전류의 관계</span>${sl('k2')}<span>일정하게 유지한 것</span>${sl('c2')}</div></div></div>`; },
+   summary:'저항이 일정하면 전류는 <b>전압에 비례</b>, 전압이 일정하면 전류는 <b>저항에 반비례</b>! → <b>옴의 법칙 I = V/R</b>'},
+  {short:'도체·부도체·반도체',title:'판 4 · 물질 분류하기',desc:'분류판형 — 물질을 도체, 부도체, 반도체로 분류해요. (교과서 253쪽)',color:'c2',type:'cls',
+   stickers:['금','구리','철','유리','플라스틱','고무','규소','전자','전압'],
+   slots:[{id:'d1',answer:['금','구리','철'],name:'도체 칸',hints:['저항이 작아 전류가 잘 흐르는 물질이에요.','탐구 ⑥에서 전구에 불이 켜진 금속들!']},{id:'d2',answer:['금','구리','철'],name:'도체 칸',hints:['저항이 작아 전류가 잘 흐르는 물질이에요.','전선의 심을 만드는 물질도 있어요.']},{id:'d3',answer:['금','구리','철'],name:'도체 칸',hints:['저항이 작아 전류가 잘 흐르는 물질이에요.','못을 만드는 금속도 있어요.']},
+          {id:'i1',answer:['유리','플라스틱','고무'],name:'부도체 칸',hints:['저항이 커서 전류가 잘 흐르지 않는 물질이에요.','탐구 ⑥에서 불이 켜지지 않은 물질!']},{id:'i2',answer:['유리','플라스틱','고무'],name:'부도체 칸',hints:['저항이 커서 전류가 잘 흐르지 않는 물질이에요.','절연 장갑의 재료도 있어요.']},{id:'i3',answer:['유리','플라스틱','고무'],name:'부도체 칸',hints:['저항이 커서 전류가 잘 흐르지 않는 물질이에요.','전선의 피복 재료도 있어요.']},
+          {id:'s1',answer:'규소',name:'반도체 칸',hints:['특정 조건이 되면 도체가 되는 물질이에요.','컴퓨터·휴대 전화 부품의 재료예요.']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-3-${id}"></div>`;
+     return `<div class="cls-board"><div class="cls-bin"><h4>⚡ 도체</h4><p class="muted">저항이 작아 전류가 잘 흐름</p>${sl('d1')}${sl('d2')}${sl('d3')}</div><div class="cls-bin"><h4>🧤 부도체</h4><p class="muted">저항이 커서 전류가 잘 흐르지 않음</p>${sl('i1')}${sl('i2')}${sl('i3')}</div><div class="cls-bin"><h4>🔬 반도체</h4><p class="muted">특정 조건에서 도체가 됨</p>${sl('s1')}</div></div>`; },
+   summary:'<b>도체</b>(금·구리·철)는 저항이 작고, <b>부도체</b>(유리·플라스틱·고무)는 저항이 커요. <b>반도체</b>(규소)는 특정 조건에서 전류가 흘러요.'}
+];
+BOARDS.forEach(b=>b.slots.forEach(s=>s.ph='?'));
+const STK={cur:0,boards:[]}; let picked=null;
+function stkLoad(){ const s=lsGet('stk',null); STK.boards=BOARDS.map((b,i)=>Object.assign({placed:{},ok:{},tries:0,done:false,hint:{}},(s&&s.boards&&s.boards[i])||{})); STK.cur=s&&s.cur?s.cur:0; }
+function stkSave(){ lsSet('stk',{cur:STK.cur,boards:STK.boards}); }
+function unlocked(i){ return i===0||STK.boards[i-1].done; }
+function renderBoardTabs(){
+  $('boardTabs').innerHTML=BOARDS.map((b,i)=>`<button class="board-tab${i===STK.cur?' active':''}${unlocked(i)?'':' locked'}${STK.boards[i].done?' done':''}" data-b="${i}">${unlocked(i)?'':'<span class="lk">🔒</span>'}${i+1}. ${b.short}</button>`).join('');
+  $('boardTabs').querySelectorAll('.board-tab').forEach(t=>t.addEventListener('click',()=>{ const i=+t.dataset.b; if(!unlocked(i)){ sfx('wrong'); toast('🔒 앞 판을 먼저 완성해요'); return; } picked=null; STK.cur=i; stkSave(); sfx('tap'); renderBoardFrame(); }));
+}
+function renderBoardFrame(){
+  const b=BOARDS[STK.cur], bi=STK.cur;
+  renderBoardTabs(); $('boardTitle').textContent=b.title; $('boardDesc').textContent=b.desc;
+  let html=b.render();
+  if(b.type==='svg'){ html=html.replace('</div>',b.slots.map(s=>`<div class="slot abs" id="slot-${bi}-${s.id}" style="left:${s.x}%;top:${s.y}%"></div>`).join('')+'</div>'); }
+  $('stkBoard').innerHTML=html; $('stkMsg').innerHTML='<span class="trap-note">⚠️ 함정 스티커는 어디에도 붙이지 않아야 정답이에요.</span>';
+  const bd=$('stkBoard'); bd.classList.remove('rise-in'); void bd.offsetWidth; bd.style.animation='riseIn .45s both';
+  renderDone(false); renderStickers();
+}
+function stLabel(sid){ const [bi,i]=sid.split('-').map(Number); return BOARDS[bi].stickers[i]; }
+function renderStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi];
+  const used=new Set(Object.values(st.placed));
+  const tray=$('stkTray'); tray.innerHTML='<div class="tray-lbl">🗂️ 스티커 보관함 — 하나를 골라 빈칸을 눌러요</div>';
+  b.stickers.forEach((lab,i)=>{ const sid=bi+'-'+i; if(used.has(sid)) return;
+    const s=document.createElement('button'); s.className='sticker '+b.color+(picked===sid?' picked wiggle':''); s.dataset.sid=sid; s.style.setProperty('--tilt',(((i*7)%5)-2)*1.3+'deg'); s.textContent=lab;
+    s.addEventListener('click',()=>{ if(st.done) return; picked=picked===sid?null:sid; sfx(picked?'pick':'tap'); renderStickers(); });
+    tray.appendChild(s); });
+  if(tray.children.length===1) tray.insertAdjacentHTML('beforeend','<span class="muted">보관함이 비었어요</span>');
+  b.slots.forEach(sl=>{
+    const el=$('slot-'+bi+'-'+sl.id); if(!el) return; const sid=st.placed[sl.id], ok=!!st.ok[sl.id];
+    el.classList.toggle('ready',!!picked&&!ok); el.classList.toggle('ok',ok); el.innerHTML='';
+    if(sid){ const s=document.createElement('button'); s.className='sticker '+b.color; s.textContent=stLabel(sid);
+      s.addEventListener('click',e=>{ e.stopPropagation(); if(ok||st.done){ sfx('tap'); return; } if(picked){ place(sl.id); return; } delete st.placed[sl.id]; sfx('peel'); stkSave(); renderStickers(); });
+      el.appendChild(s); }
+    else el.innerHTML=`<span class="slot-num">${sl.ph||'?'}</span>`;
+    el.onclick=()=>{ if(ok||st.done) return; if(!picked){ sfx('tap'); toast('👇 먼저 보관함에서 스티커를 골라요'); return; } place(sl.id); };
+  });
+  $('stkCount').textContent=Object.keys(st.placed).length+' / '+b.slots.length; $('stkTry').textContent=st.tries;
+  $('stkCheck').disabled=st.done;
+}
+function place(slId){
+  const bi=STK.cur, st=STK.boards[bi]; const src=document.querySelector(`#stkTray .sticker[data-sid="${picked}"]`); const r0=src?src.getBoundingClientRect():null;
+  st.placed[slId]=picked; picked=null; sfx('stick'); stkSave(); renderStickers();
+  const dst=$('slot-'+bi+'-'+slId).querySelector('.sticker');
+  if(r0&&dst&&!REDUCED){ const r1=dst.getBoundingClientRect(); dst.style.transition='none'; dst.style.transform=`translate(${r0.left-r1.left}px,${r0.top-r1.top}px) scale(1.15) rotate(-6deg)`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ dst.style.transition='transform .42s cubic-bezier(.2,1.35,.4,1)'; dst.style.transform=''; })); }
+}
+function checkStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi]; if(st.done) return;
+  st.tries++; let wrong=0, empty=0, newOk=0; const msgs=[];
+  b.slots.forEach(sl=>{
+    if(st.ok[sl.id]) return; const el=$('slot-'+bi+'-'+sl.id), sid=st.placed[sl.id];
+    if(!sid){ empty++; return; }
+    if(Array.isArray(sl.answer)?sl.answer.includes(stLabel(sid)):stLabel(sid)===sl.answer){ st.ok[sl.id]=true; newOk++; setTimeout(()=>burstAt(el,{count:14,speed:5,size:6}),newOk*90); }
+    else { wrong++; el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); st.hint[sl.id]=Math.min((st.hint[sl.id]||0)+1,sl.hints.length);
+      msgs.push(`<span class="h">💡 <b>${sl.name}</b> — ${sl.hints[st.hint[sl.id]-1]}</span>`);
+      setTimeout(()=>{ if(st.placed[sl.id]===sid) delete st.placed[sl.id]; el.classList.remove('no'); stkSave(); renderStickers(); },850); }
+  });
+  const allOk=b.slots.every(sl=>st.ok[sl.id]);
+  if(allOk){ st.done=true; stkSave(); renderStickers(); $('stkMsg').innerHTML=''; setTimeout(()=>renderDone(true),350); }
+  else {
+    if(wrong){ sfx('wrong'); if(newOk) setTimeout(()=>sfx('correct'),250); }
+    else if(newOk) sfx('correct'); else sfx('tap');
+    let m=''; if(newOk) m+=`<span style="color:#12a874;font-weight:800">✔ ${newOk}칸 정답!</span> `;
+    if(wrong) m+=`<span style="color:#e5484d;font-weight:800">✖ ${wrong}칸은 다시 생각해 봐요.</span>`;
+    if(empty) m+=` <span class="muted">빈칸이 ${empty}개 남았어요.</span>`;
+    $('stkMsg').innerHTML=m+msgs.join(''); stkSave(); renderStickers();
+  }
+}
+function renderDone(fx){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi], next=bi<BOARDS.length-1, all=STK.boards.every(x=>x.done);
+  $('stkDone').innerHTML=st.done?`<div class="complete-banner"><div class="stamp">완성!</div><h3 style="margin:0 0 6px">🎉 ${b.short} 정리판 완성!</h3><p>${b.summary}</p><p class="muted">시도 ${st.tries}회 · 이 정리판이 바로 나의 개념 정리 노트예요 📒</p></div>`:'';
+  $('stkNext').classList.toggle('hidden',!(st.done&&next&&!all)); $('stkToLife').classList.toggle('hidden',!(all||(st.done&&!next)));
+  if(st.done&&fx){ sfx('fanfare'); setTimeout(()=>sfx('stamp'),180); fireworks(); renderBoardTabs();
+    if(next){ setTimeout(()=>{ sfx('unlock'); const t=$('boardTabs').children[bi+1]; if(t){ t.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:600,easing:'cubic-bezier(.3,1.6,.5,1)'}); burstAt(t,{count:20,speed:6}); } toast('🔓 다음 판이 열렸어요!'); },900); }
+    if(all) setTimeout(()=>toast('🏅 스티커 정리판 '+BOARDS.length+'개를 모두 완성했어요!'),1300);
+  }
+}
+
+/* ============ 실생활 ============ */
+const LIFE=[
+  ['⌚','멈춘 시계와 새 건전지','시계가 멈췄을 때 새 건전지로 바꾸면 다시 움직여요.','시계가 작동하려면 <b>전류가 흘러야</b> 해요. 전지는 <b>전압</b>으로 전자를 이동시켜 전류가 흐르게 하는데, 다 쓴 전지는 이 역할을 제대로 못 해요. (교과서 들어가기)','전압 · 전지의 역할'],
+  ['🔦','건전지를 더 넣은 손전등','건전지를 직렬로 더 연결한 손전등이 더 밝아요.','건전지를 직렬로 연결하면 <b>전압이 커지고</b>, 전구에 걸리는 전압이 커지면 <b>전류의 세기도 커져</b> 더 밝아져요.','전압과 전류의 관계'],
+  ['🧤','전기 작업자의 절연 장갑','전기를 다루는 작업자는 두꺼운 고무 장갑을 껴요.','절연 장갑은 <b>저항이 커서 전류가 잘 흐르지 않는 부도체</b>로 만들어 몸에 전류가 흐르는 것을 막아 줘요. (스스로 확인하기 3)','부도체'],
+  ['🔌','전선 속은 구리, 겉은 피복','전선을 잘라 보면 안쪽은 반짝이는 금속, 겉은 플라스틱이에요.','안쪽 <b>구리</b>는 저항이 작은 <b>도체</b>라 전류가 잘 흐르고, 겉의 <b>피복</b>은 <b>부도체</b>라 전류가 밖으로 새지 않게 막아 줘요.','도체 · 부도체'],
+  ['🍞','토스터 속 빨갛게 달아오르는 선','토스터나 헤어드라이어 속 열선은 전류가 흐르면 뜨거워져요.','열선은 탐구에서 쓴 것과 같은 <b>니크롬선</b>이에요. 전류가 흐를 때 전자가 <b>원자와 많이 충돌</b>하며 뜨거워져요. 그래서 실험할 때도 니크롬선을 맨손으로 만지면 안 돼요.','저항 · 니크롬선'],
+  ['⚡','피뢰침과 정전기 방지 패드','건물의 피뢰침, 주유소의 정전기 방지 패드는 금속으로 만들어요.','둘 다 <b>전류가 잘 흐르는 도체</b>를 활용해 전하를 땅으로 흘려보내요. (교과서 253쪽 해 보기)','도체의 활용'],
+  ['📱','휴대 전화 속 반도체 칩','휴대 전화와 컴퓨터에는 작은 반도체 칩이 가득 들어 있어요.','반도체 부품의 재료인 <b>규소</b>는 순수한 상태에서는 전류가 잘 흐르지 않지만 <b>특정 조건</b>이 되면 전류가 흘러요.','반도체'],
+  ['💧','젖은 손으로 플러그를 만지면 안 돼요','젖은 손으로 전기 기구나 플러그를 만지지 말라고 해요.','물기에는 여러 물질이 녹아 있어 전류가 흐르기 쉬워져요. 몸에 전류가 흐르면 위험하므로 탐구할 때도 <b>젖은 손</b>으로 전기 기구를 만지지 않아요. <span class="badge ext">확장</span>','전기 안전']
+];
+function buildLife(){
+  $('lifeGrid').innerHTML=LIFE.map((l,i)=>`<div class="life-card rise-in" style="--i:${i}"><span class="ic">${l[0]}</span><h3>${l[1]}</h3><p style="margin:0">${l[2]}</p><div class="more">👆 왜 그럴까?</div><div class="why"><p style="color:var(--color-text)">${l[3]}</p><span class="link-tag">🔗 ${l[4]}</span></div></div>`).join('');
+  $('lifeGrid').querySelectorAll('.life-card').forEach(c=>c.addEventListener('click',()=>{ if(c.classList.contains('open')) return; c.classList.add('open'); sfx('bulb'); burstAt(c.querySelector('.ic'),{count:12,speed:5,size:6,colors:['#ffd43b','#f2a900','#2f6fdb','#e8590c']});
+    if($('lifeGrid').querySelectorAll('.life-card.open').length===LIFE.length){ setTimeout(()=>{ sfx('combo'); toast('🌟 생활 속 전기 카드를 모두 열었어요!'); burstAt($('toQuiz'),{count:30,speed:8}); },400); } }));
+}
+
+/* ============ 개념 확인 10문항 ============ */
+const QF=(h)=>`<div style="max-width:420px;margin:0 auto">${h}</div>`;
+function quizCirc(){ return circSVG({lit:true,nolabel:false,marks:[{x1:200,y1:96,x2:270,y2:96,label:'(가)',lx:235,ly:130},{x1:470,y1:96,x2:400,y2:96,label:'(나)',lx:435,ly:130}]}); }
+function fourGraphs(){ const mk=(lab,fn,line)=>{ const o={W:260,H:210,x0:40,xmax:6,ymax:6,xticks:[],yticks:[],noTickLbl:true,xlabel:'저항',ylabel:'전류',fs:15,extra:[()=>txt(150,24,lab,{s:20})]}; o.curve={from:line?0:1,to:6,fn,color:'#2f6fdb',w:3.5}; return graphSVG(o); };
+  return `<div class="mini-graphs">${mk('(가)',x=>x,true)}${mk('(나)',x=>3,true)}${mk('(다)',x=>6/x,false)}${mk('(라)',x=>6-x,true)}</div>`; }
+const QUIZ=[
+  {type:'개념 이해',q:'전류에 대한 설명으로 옳은 것은?',opts:['전하의 흐름이며, 단위는 A(암페어)이다.','전류를 흐르게 하는 능력이며, 단위는 V(볼트)이다.','전류의 흐름을 방해하는 정도이며, 단위는 Ω(옴)이다.','원자핵의 흐름이며, 단위는 A(암페어)이다.'],exp:'<b>전류</b>는 전하의 흐름(단위 A)이에요. 전류를 흐르게 하는 능력은 <b>전압</b>(V), 전류의 흐름을 방해하는 정도는 <b>저항</b>(Ω)이에요.'},
+  {type:'자료 해석 · 대단원 문제',q:'그림은 전기 회로에 전류가 흘러 전구에 불이 켜진 모습이다. 위쪽 전선에서의 (가), (나) 방향에 대한 설명으로 옳은 것은?',fig:'',opts:['전류는 (가) 방향으로 흐르고, 전자는 (나) 방향으로 이동한다.','전류와 전자 모두 (가) 방향으로 이동한다.','전자는 (가) 방향으로 이동하고, 전류는 (나) 방향으로 흐른다.','원자핵이 (나) 방향으로 이동한다.'],exp:'전지의 (+)극이 위쪽이에요. 전류는 <b>(+)극 → 회로 → (−)극</b>이므로 위쪽 전선에서 (가) 방향, 전자는 반대인 <b>(나) 방향</b>으로 이동해요. 원자핵은 이동하지 않아요.'},
+  {type:'가상실험 결과',q:'탐구 ①에서 스위치를 닫기 <b>전</b> 전선 속 전자의 움직임으로 옳은 것은?',opts:['방향성 없이 불규칙하게 움직인다.','모두 제자리에 멈춰 있다.','전지의 (+)극 쪽으로 일정하게 이동한다.','전지의 (−)극 쪽으로 일정하게 이동한다.'],exp:'스위치가 열려 있으면 전자들이 <b>불규칙하게</b> 움직여 전하의 흐름이 없으므로 전류가 흐르지 않아요. 스위치를 닫으면 (+)극 쪽으로 일정하게 이동해요.'},
+  {type:'적용 · 비유',q:'전기 회로를 물의 흐름에 비유할 때, <b>펌프</b>에 해당하는 것은?',opts:['전지','전구','전선','스위치'],exp:'펌프 ↔ <b>전지</b>, 물의 높이 차 ↔ 전압, 물의 흐름 ↔ 전류, 물레방아 ↔ 전구, 수도관 ↔ 전선, 수도꼭지 ↔ 스위치예요.'},
+  {type:'자료 해석 · 탐구',q:'그림은 길이만 다른 니크롬선 A, B에 걸리는 전압과 전류의 관계를 나타낸 것이다. 옳은 것은?',fig:'',opts:['B가 A보다 길이가 짧아 저항이 작다.','A가 B보다 저항이 작다.','B가 A보다 길이가 길다.','같은 전압에서 A와 B에 흐르는 전류의 세기는 같다.'],exp:'같은 전압에서 B에 흐르는 전류가 더 커요(5 V일 때 B 1.0 A, A 0.5 A). 전류가 클수록 저항이 작고, 길이가 짧을수록 저항이 작으므로 <b>B가 더 짧은 니크롬선</b>이에요. (탐구 ③)'},
+  {type:'가상실험 결과 · 계산',q:'탐구 ③에서 길이가 긴 니크롬선에 5 V의 전압을 걸었더니 0.5 A의 전류가 흘렀다. 이 니크롬선의 저항은?',opts:['10 Ω','2.5 Ω','0.1 Ω','5 Ω'],exp:'R = V/I = 5 V ÷ 0.5 A = <b>10 Ω</b>. 표에서 "전압 ÷ 전류" 값이 항상 10이었어요. (짧은 니크롬선은 5 Ω)'},
+  {type:'자료 해석 · 대단원 문제',q:'그림은 어떤 니크롬선에 걸어 준 전압에 따른 전류의 세기를 나타낸 것이다. 이 니크롬선의 저항은?',fig:'',opts:['10 Ω','100 Ω','0.1 Ω','900 Ω'],exp:'300 mA = 0.3 A이므로 R = 3 V ÷ 0.3 A = <b>10 Ω</b>이에요. mA를 A로 바꾸는 것(1 mA = 1/1000 A)을 잊지 마세요!'},
+  {type:'적용 · 교과서 예제',q:'저항이 2 Ω인 물체에 6 V의 전압이 걸릴 때 흐르는 전류의 세기는?',opts:['3 A','12 A','4 A','8 A'],exp:'I = V/R = 6 V ÷ 2 Ω = <b>3 A</b>'},
+  {type:'자료 해석 · 그래프',q:'전압이 일정할 때 <b>저항과 전류의 세기</b>의 관계를 옳게 나타낸 그래프는?',fig:'',opts:['(다)','(가)','(나)','(라)'],exp:'전압이 일정하면 전류의 세기는 저항에 <b>반비례</b>해요. 저항이 2배가 되면 전류는 1/2배가 되는 곡선 <b>(다)</b>예요. (라)처럼 직선으로 줄어드는 것은 반비례가 아니에요.'},
+  {type:'통합 · 도체와 부도체',q:'물질의 저항과 그 활용에 대한 설명으로 옳은 것은?',opts:['절연 장갑은 저항이 커서 전류가 잘 흐르지 않는 부도체로 만든다.','구리는 저항이 커서 전선의 피복으로 쓰인다.','반도체는 어떤 조건에서도 전류가 흐르지 않는다.','유리와 플라스틱은 저항이 작은 도체이다.'],exp:'절연 장갑은 <b>부도체</b>로 만들어요. 구리는 저항이 작은 도체라 전선의 심으로, 플라스틱(부도체)은 피복으로 써요. 반도체는 <b>특정 조건</b>이 되면 전류가 흘러요.'}
+];
+QUIZ[1].fig=QF(quizCirc());
+QUIZ[4].fig=QF(graphSVG({xmax:5,ymax:1,xticks:[1,2,3,4,5],yticks:[.5,1.0],ytf:v=>v.toFixed(1),xlabel:'전압(V)',ylabel:'전류(A)',series:[{pts:[[5,.5]],color:C_CUR,line:true,origin:true,noDots:true,label:'A',lx:6,ly:-4},{pts:[[5,1]],color:'#7048e8',line:true,origin:true,noDots:true,label:'B',lx:6,ly:8}],aria:'니크롬선 A, B 그래프'}));
+QUIZ[6].fig=QF(msFig('mA'));
+QUIZ[8].fig=fourGraphs();
+let qz=null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(list,retry){ qz={list:shuffle(list||QUIZ.map((_,i)=>i)),i:0,score:0,wrong:[],t0:Date.now(),answered:false,streak:0,retry:!!retry,done:false}; if(cur!==5) goTo(5); renderQuestion(); }
+function renderQuestion(){
+  const qi=qz.list[qz.i], q=QUIZ[qi]; qz.answered=false; qz.order=shuffle(q.opts.map((_,i)=>i));
+  $('qNum').textContent=(qz.i+1)+' / '+qz.list.length; $('qBar').style.width=(qz.i/qz.list.length*100)+'%';
+  const card=$('qCard'); card.classList.remove('q-card'); void card.offsetWidth; card.classList.add('q-card');
+  card.innerHTML=`<span class="q-type">${q.type}</span>${qz.retry?' <span class="q-type" style="background:#fff0e2;color:#b35300">다시 풀기</span>':''}<div class="q-text">Q${qz.i+1}. ${q.q}</div>${q.fig?`<div class="q-fig">${q.fig}</div>`:''}
+    <div id="opts">${qz.order.map((oi,k)=>`<button class="opt" data-oi="${oi}"><span class="n">${'①②③④'[k]}</span><span>${q.opts[oi]}</span></button>`).join('')}</div><div id="fb"></div>`;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  $('qNext').classList.add('hidden');
+}
+function answer(btn){
+  if(qz.answered) return; qz.answered=true;
+  const qi=qz.list[qz.i], q=QUIZ[qi], ok=+btn.dataset.oi===0;
+  $('qCard').querySelectorAll('.opt').forEach(b=>{ if(+b.dataset.oi===0) b.classList.add('correct'); });
+  if(ok){ qz.score++; qz.streak++; sfx(qz.streak>=3?'combo':'correct'); burstAt(btn,{count:qz.streak>=3?60:34,speed:qz.streak>=3?11:8});
+    const r=btn.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,qz.streak>=3?`🔥 ${qz.streak}연속!`:'정답! +1',qz.streak>=3?'#ff6a00':'#12a874');
+    const cb=$('combo'); cb.textContent=qz.streak>=2?`🔥 ${qz.streak}연속`:''; cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump');
+  } else { qz.streak=0; btn.classList.add('wrong'); sfx('wrong'); qz.wrong.push(qi); $('combo').textContent=''; if(navigator.vibrate) try{navigator.vibrate(80);}catch(e){} }
+  $('fb').innerHTML=`<div class="feedback ${ok?'ok':'no'}"><b class="big">${ok?'⭕ 정답이에요!':'❌ 아쉬워요! 정답은 초록색 보기예요.'}</b><br>${q.exp}</div>`;
+  $('qBar').style.width=((qz.i+1)/qz.list.length*100)+'%';
+  const nb=$('qNext'); nb.textContent=qz.i===qz.list.length-1?'결과 보기 🏁':'다음 문제 →'; nb.classList.remove('hidden');
+  setTimeout(()=>{ const r=$('fb').getBoundingClientRect(); if(r.bottom>innerHeight) window.scrollBy({top:r.bottom-innerHeight+90,behavior:'smooth'}); },60);
+}
+function nextQ(){ sfx('tap'); if(qz.i<qz.list.length-1){ qz.i++; renderQuestion(); window.scrollTo(0,0); } else showResult(); }
+function showResult(){
+  qz.done=true; const total=qz.list.length, sc=qz.score, rate=sc/total, sec=Math.round((Date.now()-qz.t0)/1000);
+  goTo(6);
+  const stars=rate>=.9?3:rate>=.7?2:rate>=.4?1:0;
+  $('trophy').textContent=rate>=.9?'🏆':rate>=.7?'🥈':'💪';
+  $('trophy').style.animation='none'; void $('trophy').offsetWidth; $('trophy').style.animation='';
+  [...$('stars').children].forEach((s,i)=>{ s.classList.remove('on'); if(i<stars) setTimeout(()=>{ s.classList.add('on'); sfx('pop'); burstAt(s,{count:14,speed:6,shapes:['s'],colors:['#ffd43b','#ffb238']}); },500+i*320); });
+  $('scoreBig').parentElement.nextElementSibling; $('scoreBig').nextElementSibling.textContent=' / '+total;
+  let n=0; const el=$('scoreBig'); el.textContent='0'; const tm=setInterval(()=>{ if(n>=sc){ clearInterval(tm); return; } n++; el.textContent=n; sfx('tick'); },110);
+  $('resultMsg').textContent=qz.retry?`틀렸던 ${total}문제 중 ${sc}문제를 맞혔어요!`:rate===1?'완벽해요! 옴의 법칙 박사 인정! 🎉':rate>=.8?'아주 잘했어요! 전류, 전압, 저항의 관계를 잘 이해했어요.':rate>=.5?'좋아요! 틀린 문제를 다시 풀어 보면 완벽해질 거예요.':'괜찮아요! 개념과 가상실험을 다시 보고 도전해 봐요.';
+  $('resultTime').textContent=`⏱ 걸린 시간 ${Math.floor(sec/60)}분 ${sec%60}초`;
+  $('wrongBox').innerHTML=qz.wrong.length?'<h3>📌 틀린 문제</h3>'+qz.wrong.map(qi=>`<p style="color:var(--color-text)">• ${QUIZ[qi].q}<br><span class="muted">정답: ${QUIZ[qi].opts[0]}</span></p>`).join(''):'<h3>🎯 틀린 문제가 없어요!</h3><p>모든 문제를 맞혔어요.</p>';
+  $('retryWrong').classList.toggle('hidden',!qz.wrong.length);
+  setTimeout(()=>{ if(rate>=.8){ sfx('fanfare'); fireworks(); } else { sfx('correct'); confetti(innerWidth/2,innerHeight*.3,{count:50,speed:9}); } },350);
+}
+
+/* ============ 시작 ============ */
+function init(){
+  const bb=$('bgBubbles'); for(let i=0;i<14;i++){ const s=document.createElement('span'); const z=14+Math.random()*36; s.style.width=s.style.height=z+'px'; s.style.left=Math.random()*100+'%'; s.style.animationDuration=(14+Math.random()*16)+'s'; s.style.animationDelay=(-Math.random()*20)+'s'; s.style.opacity=.35+Math.random()*.4; bb.appendChild(s); }
+  FX.cv=$('fx'); FX.ctx=FX.cv.getContext('2d'); fxResize(); addEventListener('resize',()=>{ fxResize(); kick(); });
+  const sb=$('soundBtn'); const upd=()=>{ sb.textContent=SND.on?'🔊':'🔇'; }; upd();
+  sb.addEventListener('click',()=>{ SND.on=!SND.on; lsSet('sound',SND.on); upd(); if(SND.on) sfx('correct'); toast(SND.on?'🔊 효과음 켜짐':'🔇 효과음 꺼짐'); });
+  document.addEventListener('pointerdown',e=>{ const b=e.target.closest('.btn'); if(!b||b.disabled) return; const r=b.getBoundingClientRect(), z=Math.max(r.width,r.height); const s=document.createElement('span'); s.className='ripple'; s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px'; b.appendChild(s); setTimeout(()=>s.remove(),650); });
+  document.addEventListener('pointerdown',e=>{ if(e.target.closest('.chip,.tab,.step-dot,.icon-btn,.board-tab,.btn,.myth,.life-card,.part,.mt,.bin,.tri-part')) confetti(e.clientX,e.clientY,{count:7,speed:3.5,size:5,g:.1,decay:.045,shapes:['c','s'],colors:['#ffd43b','#f2a900','#2f6fdb','#e8590c','#7048e8']}); });
+  document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ goTo(+g.dataset.go); return; } const t=e.target.closest('[data-tabgo]'); if(t){ setTab(t.dataset.tabgo); } });
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+  document.querySelectorAll('[data-save]').forEach(t=>{ const k=t.dataset.save; t.value=lsGet('note-'+k,''); let tm=null;
+    t.addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(()=>{ lsSet('note-'+k,t.value); const s=$('saved-'+k); if(s){ s.textContent='저장됨 ✓'; setTimeout(()=>s.textContent='',1500); } },400); }); });
+  document.querySelectorAll('[data-save-check]').forEach(c=>{ const k='chk-'+c.dataset.saveCheck; c.checked=!!lsGet(k,false); c.addEventListener('change',()=>{ lsSet(k,c.checked); if(c.checked){ sfx('pop'); burstAt(c,{count:12,speed:5,size:6}); if([...document.querySelectorAll('[data-save-check]')].every(x=>x.checked)){ sfx('combo'); toast('✅ 학습목표를 모두 달성했어요!'); } } }); });
+  // 도입
+  $('heroBox').innerHTML=heroSVG(); thinkDraw();
+  $('startBtn').addEventListener('click',()=>{ goTo(1); });
+  const pg=lsGet('progress',0); if(pg>0){ $('resumeBtn').classList.remove('hidden'); $('resumeBtn').addEventListener('click',()=>goTo(pg)); }
+  $('thinkAnsBtn').addEventListener('click',()=>{ const a=$('thinkAns'); const h=a.classList.toggle('hidden'); sfx('tap'); $('thinkAnsBtn').textContent=h?'예시 답안 보기':'예시 답안 숨기기'; });
+  $('tbAdd').addEventListener('click',()=>{ if(TB.n>=3){ toast('건전지는 3개까지 넣을 수 있어요'); sfx('tap'); return; } TB.n++; sfx('connect'); setTimeout(()=>sfx('bulb'),120); thinkDraw(); burstAt($('thinkBox'),{count:10+TB.n*6,speed:5,colors:['#ffd43b','#f2a900','#fff']}); });
+  $('tbSub').addEventListener('click',()=>{ if(TB.n<=0){ sfx('tap'); return; } TB.n--; sfx('thunk'); thinkDraw(); });
+  // 모듈
+  buildConcepts(); buildExperiments(); buildLife(); stkLoad();
+  $('stkCheck').addEventListener('click',checkStickers);
+  $('stkReset').addEventListener('click',()=>{ const st=STK.boards[STK.cur]; Object.assign(st,{placed:{},ok:{},tries:0,done:false,hint:{}}); picked=null; stkSave(); sfx('peel'); renderBoardFrame(); });
+  $('stkNext').addEventListener('click',()=>{ if(STK.cur<BOARDS.length-1){ STK.cur++; picked=null; stkSave(); sfx('unlock'); renderBoardFrame(); window.scrollTo(0,0); } });
+  $('toQuiz').addEventListener('click',()=>{ startQuiz(); });
+  $('qNext').addEventListener('click',nextQ);
+  $('retryWrong').addEventListener('click',()=>startQuiz(qz.wrong.slice(),true));
+  $('retryAll').addEventListener('click',()=>startQuiz());
+  enterHooks[0]=()=>{ thinkDraw(); };
+  enterHooks[1]=()=>{ kick(); };
+  enterHooks[2]=()=>{ setTab(curTab); };
+  enterHooks[3]=()=>{ renderBoardFrame(); };
+  enterHooks[5]=()=>{ if(!qz||qz.done) startQuiz(); };
+  curTab=lsGet('tab','plan');
+  goTo(0);
+}
+init();
+
+</script>
+</body>
+</html>
