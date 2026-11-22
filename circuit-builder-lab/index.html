@@ -210,6 +210,66 @@ footer b{color:var(--muted);font-weight:800}
 .selfcheck label{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:#0d1834;border:1px solid var(--line);margin-bottom:6px;font-size:15px;font-weight:700;min-height:48px}
 .selfcheck input{width:22px;height:22px;accent-color:#10b981}
 
+/* ---------- sticker ---------- */
+.stk-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 10px}
+.stk-tabs{display:flex;gap:6px}
+.stk-tabs button{min-height:44px;padding:0 14px;border-radius:12px;background:#111d3d;border:1px solid var(--line2);font-weight:800;font-size:14px}
+.stk-tabs button.on{background:linear-gradient(135deg,#7c3aed,#2563eb);border-color:#a78bfa}
+.stk-tabs button.lock{opacity:.5}
+.stk-stat{margin-left:auto;font-size:13.5px;font-weight:800;color:var(--muted)}
+.stk-board{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px;position:relative;overflow:hidden}
+.stk-board h3{font-size:18px;font-weight:900;margin-bottom:2px}
+.stk-board .desc{font-size:13.5px;color:var(--muted);margin-bottom:12px}
+.stk-table{display:grid;grid-template-columns:90px repeat(3,1fr);gap:8px}
+.stk-table .th{font-size:13px;font-weight:900;color:#c4b5fd;text-align:center;padding:6px 2px;align-self:end}
+.stk-table .rh{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:14px;font-weight:900;font-size:16px;padding:6px}
+.rh.i{background:#0c4a6e;color:#7dd3fc}.rh.v{background:#701a4e;color:#f9a8d4}.rh.r{background:#7c2d12;color:#fdba74}
+.slot{min-height:62px;border-radius:14px;border:2.5px dashed #3b5590;background:#0b1430;display:flex;align-items:center;justify-content:center;padding:6px;position:relative;transition:.2s;cursor:pointer}
+.slot.target{border-color:#fde047;box-shadow:0 0 0 4px #fde04722,inset 0 0 14px #fde04722;animation:slotGlow 1s ease-in-out infinite}
+@keyframes slotGlow{50%{box-shadow:0 0 0 7px #fde04711,inset 0 0 20px #fde04733}}
+.slot.ok{border-style:solid;border-color:#10b981;background:#052e2b}
+.slot.ok::after{content:"✔";position:absolute;top:-9px;right:-7px;width:22px;height:22px;border-radius:50%;background:#10b981;color:#04201a;font-size:13px;font-weight:900;display:grid;place-items:center}
+.slot.no{border-color:#ef4444;animation:shakeX .4s}
+.slot.no::after{content:"✖";position:absolute;top:-9px;right:-7px;width:22px;height:22px;border-radius:50%;background:#ef4444;color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center}
+.sentence{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:16.5px;font-weight:800;line-height:1.6;padding:12px;border-radius:14px;background:#0d1834;border:1px solid var(--line);margin-bottom:8px}
+.sentence .slot{min-width:118px;min-height:52px}
+.sentence .num{width:28px;height:28px;border-radius:9px;background:#4c1d95;color:#ddd6fe;display:grid;place-items:center;font-size:14px;flex:none}
+.tray{margin-top:14px;padding:12px;border-radius:16px;background:#0a1226;border:1px solid var(--line2)}
+.tray h4{font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:800}
+.tray .chips2{display:flex;flex-wrap:wrap;gap:9px;min-height:52px}
+.stk{display:inline-flex;align-items:center;gap:5px;min-height:46px;padding:8px 14px;border-radius:12px;font-weight:900;font-size:15px;color:#1c1917;background:linear-gradient(160deg,#fef3c7,#fcd34d);box-shadow:0 4px 0 #b45309,0 8px 16px #0006;transform:rotate(var(--rt,0deg));cursor:pointer;user-select:none;transition:transform .15s,box-shadow .15s;line-height:1.25;text-align:center}
+.stk.c2{background:linear-gradient(160deg,#e0f2fe,#7dd3fc);box-shadow:0 4px 0 #0369a1,0 8px 16px #0006}
+.stk.picked{transform:translateY(-6px) scale(1.08) rotate(0deg);box-shadow:0 0 0 3px #fde047,0 10px 0 #b45309,0 18px 26px #000a;animation:wiggle .5s ease-in-out infinite}
+@keyframes wiggle{25%{transform:translateY(-6px) scale(1.08) rotate(-2deg)}75%{transform:translateY(-6px) scale(1.08) rotate(2deg)}}
+.slot .stk{box-shadow:0 2px 0 #b45309;font-size:14px;padding:6px 10px;min-height:38px}
+.slot .stk.c2{box-shadow:0 2px 0 #0369a1}
+.stk-msg{margin-top:12px;font-size:14px;line-height:1.6;min-height:22px}
+.stk-msg .h{display:block;padding:8px 12px;border-radius:10px;background:#3b0d14;border:1px solid #9f1239;margin-top:6px;color:#fecdd3}
+.stk-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.stamp{position:absolute;right:18px;top:14px;font-size:30px;font-weight:900;color:#ef4444;border:5px solid #ef4444;border-radius:14px;padding:2px 14px;transform:rotate(-14deg);animation:stampIn .5s cubic-bezier(.2,1.6,.4,1) both;background:#fff1;pointer-events:none}
+@keyframes stampIn{from{transform:rotate(-14deg) scale(3);opacity:0}}
+.summary{margin-top:12px;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,#052e2b,#064e3b);border:1px solid #10b981;font-weight:800;line-height:1.6}
+.locked{text-align:center;padding:40px 10px;color:var(--muted);font-weight:800;font-size:16px}
+.locked div{font-size:54px;margin-bottom:8px}
+/* ---------- life ---------- */
+.life-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.lcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;transition:.25s;animation:rise .5s both;position:relative;overflow:hidden}
+.lcard:active{transform:scale(.98)}
+.lcard .li{font-size:44px;display:inline-block;transition:transform .4s cubic-bezier(.2,1.8,.4,1)}
+.lcard.open .li{transform:scale(1.25) rotate(-8deg)}
+.lcard h3{font-size:16.5px;font-weight:900;margin:6px 0 4px;line-height:1.4}
+.lcard .tap{font-size:12.5px;color:var(--cyan);font-weight:800}
+.lcard .ans{display:none;font-size:14.5px;line-height:1.65;color:#d5def5;margin-top:8px}
+.lcard.open{border-color:#38bdf8;background:linear-gradient(170deg,#0e2447,#0b1430)}
+.lcard.open .ans{display:block;animation:rise .35s both}
+.lcard.open .tap{display:none}
+.lcard .link{display:block;margin-top:8px;padding:7px 10px;border-radius:10px;background:#1e1b4b;color:#c7d2fe;font-size:13px;font-weight:800}
+.lcard .ext{font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:6px;background:#713f12;color:#fde68a;margin-left:6px;vertical-align:2px}
+.life-prog{display:flex;align-items:center;gap:10px;margin-top:12px;font-weight:800;color:var(--muted);font-size:14px}
+.life-prog .qprog{max-width:320px}
+@media (max-width:900px), (orientation:portrait) and (max-width:1024px){.life-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.life-grid{grid-template-columns:1fr}.stk-table{grid-template-columns:64px repeat(3,1fr);gap:5px}.slot{min-height:56px}.stk{font-size:13px;padding:6px 9px}.nav button{font-size:13px;padding:8px 2px}}
+
 /* ---------- modal / toast / fx ---------- */
 .modal{position:fixed;inset:0;z-index:100;background:rgba(3,6,16,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
 .mbox{width:min(640px,100%);max-height:92dvh;overflow:auto;border-radius:24px;background:linear-gradient(170deg,#132250,#0b1430);border:1px solid #3b5590;padding:24px;box-shadow:0 30px 80px #000c;animation:rise .4s both}
@@ -271,6 +331,8 @@ footer b{color:var(--muted);font-weight:800}
   <nav class="nav" id="nav">
     <button data-v="lab" class="on">🔬 실험실</button>
     <button data-v="concept">💡 개념</button>
+    <button data-v="sticker">🧩 정리</button>
+    <button data-v="life">🌏 실생활</button>
     <button data-v="quiz">✅ 퀴즈</button>
   </nav>
   <button class="icon-btn" id="sndBtn" title="소리 켜기/끄기">🔊</button>
@@ -407,6 +469,30 @@ footer b{color:var(--muted);font-weight:800}
   </div>
 </section>
 
+<!-- ================= STICKER ================= -->
+<section class="view" id="view-sticker">
+  <div class="page">
+    <div class="hero-idea" style="background:linear-gradient(135deg,#4c1d95,#1e40af 70%)">
+      <h2>🧩 스티커로 개념 정리하기</h2>
+      <p>스티커를 <em>눌러서 고르고</em> → 빈칸을 <em>눌러서 붙여요</em>. 다 붙이면 <em>확인하기</em>! <br><small style="font-size:14px;font-weight:600;color:#c7d2fe">붙인 스티커를 다시 누르면 떼어져요. 어디에도 안 맞는 함정 스티커도 숨어 있어요.</small></p>
+    </div>
+    <div class="stk-head"><div class="stk-tabs" id="stkTabs"></div><span class="stk-stat" id="stkStat"></span></div>
+    <div id="stkBoard"></div>
+  </div>
+</section>
+
+<!-- ================= LIFE ================= -->
+<section class="view" id="view-life">
+  <div class="page">
+    <div class="hero-idea" style="background:linear-gradient(135deg,#065f46,#0e7490 70%)">
+      <h2>🌏 우리 생활 속 전류 · 전압 · 저항</h2>
+      <p>카드를 눌러 <em>왜 그럴까?</em>를 확인해 보세요. 모두 열면 깜짝 선물이 있어요!</p>
+    </div>
+    <div class="life-prog"><span id="lifeCnt">0 / 6 열어 봄</span><div class="qprog"><i id="lifeBar"></i></div></div>
+    <div class="life-grid" id="lifeGrid"></div>
+  </div>
+</section>
+
 <!-- ================= QUIZ ================= -->
 <section class="view" id="view-quiz">
   <div class="quiz-wrap" id="quizWrap"></div>
@@ -499,6 +585,9 @@ function sfx(n){
     case 'fanfare': [[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.2],[784,.58,.14],[1047,.7,.6]].forEach(a=>tone(a[0],a[2],{type:'triangle',vol:.26,when:a[1]})); noise(1,{vol:.08,f1:3000,f2:9000,type:'highpass',when:.36,attack:.02}); break;
     case 'whoosh': noise(.3,{vol:.08,f1:400,f2:2600,q:.7}); break;
     case 'zap': noise(.14,{vol:.2,f1:7000,f2:2600,type:'highpass',attack:.002}); tone(2200,.07,{type:'square',vol:.05,to:500}); break;
+    case 'pop': tone(380+Math.random()*320,.07,{vol:.22,to:1300}); break;
+    case 'stamp': tone(110,.2,{type:'square',vol:.13,to:55}); noise(.16,{vol:.22,f1:900,f2:200,attack:.003}); break;
+    case 'unlock': tone(660,.1,{type:'triangle',vol:.22}); tone(990,.28,{type:'triangle',vol:.22,when:.09}); break;
     case 'knob': tone(1500+Math.random()*200,.025,{type:'square',vol:.035}); break;
   }}catch(e){}
 }
@@ -1143,7 +1232,7 @@ function checkMissions(){
   newly.forEach(m=>{const el=$('#ms-'+m.id); if(el){el.classList.add('done');}});
   updateMissionBar();
   const all=MISSIONS.every(m=>MDONE[m.id]);
-  if(all){sfx('fanfare'); fireworks(); toast('🏆 모든 미션 완료! 정말 멋져요. 이제 ✅ 퀴즈에 도전해 보세요!',4200);}
+  if(all){sfx('fanfare'); fireworks(); toast('🏆 모든 미션 완료! 이제 🧩 정리 탭에서 스티커로 개념을 정리해 보세요!',4200);}
   else {sfx('correct'); const m=newly[0]; toast('🎯 미션 성공! '+m.t,2600); confetti(innerWidth-200,140,{n:40,speed:6});}
 }
 
@@ -1152,7 +1241,7 @@ function checkMissions(){
    ========================================================= */
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-v]'); if(!b) return; goView(b.dataset.v);});
 function goView(v){$$('#nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v)); $$('.view').forEach(x=>x.classList.toggle('on',x.id==='view-'+v)); sfx('whoosh'); save('view',v);
-  if(v==='lab'){fitBoard(); renderBoard(); drawGraph();} if(v==='concept') initConcept(); if(v==='quiz'&&!QZ.started) quizStart(); scrollTo(0,0);}
+  if(v==='lab'){fitBoard(); renderBoard(); drawGraph();} if(v==='concept') initConcept(); if(v==='sticker') initSticker(); if(v==='life') initLife(); if(v==='quiz'&&!QZ.started) quizStart(); scrollTo(0,0);}
 function fitBoard(){
   const r=$('#boardWrap').getBoundingClientRect(); if(!r.width) return;
   const nw=Math.round(clamp(r.width/.86,820,1500)), nh=Math.round(clamp(nw*r.height/r.width,480,1600));
@@ -1302,6 +1391,148 @@ function quizResult(){
   const r=$('#qRetry'); if(r) r.addEventListener('click',()=>quizStart(QZ.wrong.slice()));
   $('#qAgain').addEventListener('click',()=>quizStart()); $('#qLab').addEventListener('click',()=>goView('lab'));
 }
+
+/* =========================================================
+   스티커 정리
+   ========================================================= */
+const BOARDS=[
+  {title:'판 1 · 전류, 전압, 저항 한눈에 정리',desc:'표 채우기 — 뜻, 단위, 재는 방법을 알맞은 칸에 붙여요. (교과서 249~252쪽)',type:'table',
+   stickers:['전하의 흐름','전류를 흐르게 하는 능력','전류의 흐름을 방해하는 정도','A','V','Ω','전류계를 직렬로','전압계를 병렬로','전압 ÷ 전류로 구해요','W','전류계를 병렬로'],
+   slots:[
+    {id:'i1',answer:'전하의 흐름',name:'전류의 뜻',hints:['물이 흐르듯 무엇인가가 흐르는 것이에요.','전선 속에서 전자(전하)가 한 방향으로 움직이는 것!']},
+    {id:'i2',answer:'A',name:'전류의 단위',hints:['실험실의 전류계 숫자 뒤에 붙은 글자를 보세요.','암페어!']},
+    {id:'i3',answer:'전류계를 직렬로',name:'전류 재기',hints:['전류가 계기를 지나가야 잴 수 있어요.','병렬로 연결하면 합선 경고가 떴죠?']},
+    {id:'v1',answer:'전류를 흐르게 하는 능력',name:'전압의 뜻',hints:['물 흐름 비유에서 펌프가 물을 높이 올리는 능력이에요.','전지가 만드는 것!']},
+    {id:'v2',answer:'V',name:'전압의 단위',hints:['전지에 1.5 ○라고 적혀 있어요.','볼트!']},
+    {id:'v3',answer:'전압계를 병렬로',name:'전압 재기',hints:['잴 부품의 양 끝에 연결해요.','직렬로 연결하면 전구가 꺼졌죠?']},
+    {id:'r1',answer:'전류의 흐름을 방해하는 정도',name:'저항의 뜻',hints:['좁은 관이 물 흐름을 어떻게 하나요?','니크롬선이 길수록 커지는 것!']},
+    {id:'r2',answer:'Ω',name:'저항의 단위',hints:['그래프 범례에 "≈ 10.0 ○" 라고 나왔어요.','옴!']},
+    {id:'r3',answer:'전압 ÷ 전류로 구해요',name:'저항 구하기',hints:['기록표의 마지막 칸을 떠올려 보세요.','R = V ÷ I']}],
+   rows:[['i','전류','I'],['v','전압','V'],['r','저항','R']], cols:['뜻','단위','재는 방법'],
+   summary:'전류(A)는 전류계를 직렬로, 전압(V)은 전압계를 병렬로 재고, 저항(Ω)은 전압 ÷ 전류로 구해요.'},
+  {title:'판 2 · 실험 결과로 관계 찾기',desc:'관계도 — 니크롬선 실험 결과를 떠올리며 빈칸을 채워요. (교과서 250~251쪽 탐구)',type:'seq',
+   stickers:['2배','작다','크다','크다 ','V ÷ R','직선','절반','V × R','곡선'],
+   lines:[
+    ['같은 니크롬선에 걸리는 전압이 2배가 되면 전류의 세기는',{id:'a'},'가 된다.'],
+    ['같은 전압일 때 긴 니크롬선은 저항이',{id:'b'},'서 전류의 세기가',{id:'c'},'.'],
+    ['전압-전류 그래프가 원점을 지나는',{id:'d'},'이므로 니크롬선의 저항은 일정하다.'],
+    ['그래프의 기울기가 완만할수록 저항이',{id:'e'},'.'],
+    ['옴의 법칙: 전류의 세기 I =',{id:'f'}]],
+   slots:[
+    {id:'a',answer:'2배',name:'①',hints:['그래프에서 1.5 V일 때와 3 V일 때 전류를 비교해 보세요.','긴 니크롬선: 0.15 A → 0.30 A']},
+    {id:'b',answer:['크다','크다 '],name:'② 앞 칸',hints:['긴 니크롬선의 전압÷전류 값은 10 Ω, 짧은 것은 5 Ω이었어요.','길수록 방해가 많아요.']},
+    {id:'c',answer:'작다',name:'② 뒤 칸',hints:['같은 3 V에서 긴 것 0.30 A, 짧은 것 0.60 A였어요.','저항이 크면 전류는?']},
+    {id:'d',answer:'직선',name:'③',hints:['기록한 점들을 이으면 어떤 모양이었나요?','원점에서 쭉 뻗은 선!']},
+    {id:'e',answer:['크다','크다 '],name:'④',hints:['긴 니크롬선(보라) 선이 더 완만했어요.','같은 전압에서 전류가 적게 흐르면 저항이?']},
+    {id:'f',answer:'V ÷ R',name:'⑤',hints:['전류는 전압에 비례, 저항에 반비례해요.','3 V ÷ 5 Ω = 0.6 A']}],
+   summary:'전류의 세기는 전압에 비례하고 저항에 반비례해요 → 옴의 법칙 I = V ÷ R'}
+];
+let STK=load('stk',null);
+if(!STK||!STK.boards||STK.boards.length!==BOARDS.length) STK={cur:0,boards:BOARDS.map(()=>({placed:{},ok:{},tries:0,done:false,hint:{}}))};
+let PICK=null, stkInit=false;
+function stkSave(){save('stk',STK);}
+function rot(i){return ((i*37)%7-3)+'deg';}
+function stkUsed(b){return Object.values(STK.boards[b].placed);}
+function stkLabel(t){return t.trim();}
+function stickerEl(t,i,inSlot){return `<span class="stk${i%2?' c2':''}" style="--rt:${inSlot?'0deg':rot(i)}" data-st="${i}">${stkLabel(t)}</span>`;}
+function slotHtml(b,sl){const st=STK.boards[b], i=st.placed[sl.id], cls=st.ok[sl.id]?' ok':'';
+  return `<div class="slot${cls}" data-slot="${sl.id}">${i!=null?stickerEl(BOARDS[b].stickers[i],i,true):''}</div>`;}
+function renderSticker(){
+  const cur=STK.cur, B=BOARDS[cur], st=STK.boards[cur];
+  $('#stkTabs').innerHTML=BOARDS.map((x,i)=>{const lock=i>0&&!STK.boards[i-1].done; return `<button data-b="${i}" class="${i===cur?'on':''}${lock?' lock':''}">${lock?'🔒':(STK.boards[i].done?'✅':'🧩')} 판 ${i+1}</button>`;}).join('');
+  if(cur>0&&!STK.boards[cur-1].done){$('#stkBoard').innerHTML='<div class="stk-board locked"><div>🔒</div>앞 판을 완성하면 열려요!</div>'; $('#stkStat').textContent=''; return;}
+  let body='';
+  if(B.type==='table'){
+    body='<div class="stk-table"><div></div>'+B.cols.map(c=>`<div class="th">${c}</div>`).join('');
+    B.rows.forEach(r=>{body+=`<div class="rh ${r[0]}">${r[1]}<small style="font-size:12px;opacity:.8">${r[2]}</small></div>`; [1,2,3].forEach(k=>{body+=slotHtml(cur,B.slots.find(s=>s.id===r[0]+k));});});
+    body+='</div>';
+  } else {
+    body=B.lines.map((ln,n)=>`<div class="sentence"><span class="num">${n+1}</span>${ln.map(p=>typeof p==='string'?`<span>${p}</span>`:slotHtml(cur,B.slots.find(s=>s.id===p.id))).join('')}</div>`).join('');
+  }
+  const used=stkUsed(cur);
+  const tray=B.stickers.map((t,i)=>used.includes(i)?'':stickerEl(t,i,false)).join('');
+  const msgs=Object.keys(st.hint).filter(k=>!st.ok[k]).map(k=>{const sl=B.slots.find(s=>s.id===k); return `<span class="h">💡 <b>${sl.name}</b>: ${sl.hints[Math.min(st.hint[k],sl.hints.length)-1]}</span>`;}).join('');
+  $('#stkBoard').innerHTML=`<div class="stk-board">${st.done?'<div class="stamp">완성!</div>':''}<h3>${B.title}</h3><p class="desc">${B.desc}</p>${body}
+    ${st.done?`<div class="summary">📌 ${B.summary}</div>`:`<div class="tray"><h4>🗂 스티커 보관함 — 하나를 눌러 고른 뒤 빈칸을 누르세요</h4><div class="chips2">${tray||'<span style="color:var(--muted);font-size:13px">남은 스티커가 없어요</span>'}</div></div>`}
+    <div class="stk-msg">${msgs}</div>
+    <div class="stk-actions">${st.done?(cur<BOARDS.length-1?'<button class="btn main" id="stkNext">다음 판 ▶</button>':'<button class="btn main" id="stkLife">🌏 실생활로 ▶</button>'):'<button class="btn main" id="stkCheck">✅ 확인하기</button>'}<button class="btn" id="stkReset">↺ 이 판 처음부터</button></div></div>`;
+  const n=B.slots.length, placed=Object.keys(st.placed).length;
+  $('#stkStat').textContent=`붙인 스티커 ${placed} / ${n} · 시도 ${st.tries}회`;
+  if(PICK!=null){const el=$(`#stkBoard .tray [data-st="${PICK}"]`); if(el){el.classList.add('picked'); $$('#stkBoard .slot:not(.ok)').forEach(s=>s.classList.add('target'));} else PICK=null;}
+}
+function initSticker(){
+  if(!stkInit){stkInit=true;
+    $('#stkTabs').addEventListener('click',e=>{const b=e.target.closest('[data-b]'); if(!b) return; STK.cur=+b.dataset.b; PICK=null; stkSave(); sfx('tap'); renderSticker();});
+    $('#stkBoard').addEventListener('click',stkClick);
+  }
+  renderSticker();
+}
+function flyTo(fromEl,toEl,txt,cb){
+  if(!fromEl||!toEl||REDUCED){cb();return;}
+  const a=fromEl.getBoundingClientRect(), b=toEl.getBoundingClientRect(); const g=fromEl.cloneNode(true);
+  g.classList.remove('picked'); Object.assign(g.style,{position:'fixed',left:a.left+'px',top:a.top+'px',margin:0,zIndex:130,transition:'all .32s cubic-bezier(.3,.8,.4,1)',pointerEvents:'none'});
+  document.body.appendChild(g);
+  requestAnimationFrame(()=>{g.style.left=(b.left+b.width/2-a.width/2)+'px'; g.style.top=(b.top+b.height/2-a.height/2)+'px'; g.style.transform='rotate(0) scale(.95)';});
+  setTimeout(()=>{g.remove(); cb();},330);
+}
+function stkClick(e){
+  const cur=STK.cur, B=BOARDS[cur], st=STK.boards[cur];
+  if(e.target.closest('#stkCheck')) return stkCheck();
+  if(e.target.closest('#stkReset')){STK.boards[cur]={placed:{},ok:{},tries:0,done:false,hint:{}}; PICK=null; stkSave(); sfx('whoosh'); renderSticker(); return;}
+  if(e.target.closest('#stkNext')){STK.cur++; stkSave(); sfx('unlock'); renderSticker(); burstAt($('#stkTabs'),{n:30}); return;}
+  if(e.target.closest('#stkLife')){goView('life'); return;}
+  if(st.done) return;
+  const trayS=e.target.closest('.tray [data-st]');
+  if(trayS){const i=+trayS.dataset.st; PICK=PICK===i?null:i; sfx('pick'); renderSticker(); return;}
+  const slot=e.target.closest('.slot');
+  if(slot){const id=slot.dataset.slot; if(st.ok[id]) return;
+    if(PICK!=null){const i=PICK, from=$(`#stkBoard .tray [data-st="${i}"]`); PICK=null;
+      flyTo(from,slot,null,()=>{st.placed[id]=i; stkSave(); sfx('place'); renderSticker(); const ns=$(`#stkBoard [data-slot="${id}"]`); if(ns) burstAt(ns,{n:10,speed:3,small:true});});}
+    else if(st.placed[id]!=null){delete st.placed[id]; stkSave(); sfx('del'); renderSticker();}
+    else {toast('먼저 아래 보관함에서 스티커를 골라요 👇'); }
+  }
+}
+function stkCheck(){
+  const cur=STK.cur, B=BOARDS[cur], st=STK.boards[cur];
+  if(!Object.keys(st.placed).length){toast('스티커를 먼저 붙여 보세요'); return;}
+  st.tries++; let wrong=[];
+  B.slots.forEach(sl=>{const i=st.placed[sl.id]; if(i==null||st.ok[sl.id]) return; const lab=B.stickers[i];
+    const ok=Array.isArray(sl.answer)?sl.answer.includes(lab):lab===sl.answer;
+    if(ok){st.ok[sl.id]=true; delete st.hint[sl.id];} else {wrong.push(sl.id); st.hint[sl.id]=(st.hint[sl.id]||0)+1;}});
+  const empty=B.slots.filter(sl=>st.placed[sl.id]==null).length;
+  stkSave(); renderSticker();
+  B.slots.forEach(sl=>{const el=$(`#stkBoard [data-slot="${sl.id}"]`); if(st.ok[sl.id]&&!wrong.includes(sl.id)&&el) burstAt(el,{n:8,speed:3,small:true});});
+  if(wrong.length){sfx('wrong'); wrong.forEach(id=>{const el=$(`#stkBoard [data-slot="${id}"]`); if(el) el.classList.add('no');});
+    setTimeout(()=>{wrong.forEach(id=>delete st.placed[id]); stkSave(); renderSticker();},800);
+    toast(`✖ ${wrong.length}칸이 달라요. 아래 힌트를 보고 다시 붙여 보세요!`);}
+  else if(empty){sfx('correct'); toast(`✔ 붙인 칸은 모두 맞아요! 빈칸 ${empty}개가 남았어요`);}
+  if(B.slots.every(sl=>st.ok[sl.id])){st.done=true; stkSave(); renderSticker(); sfx('stamp'); setTimeout(()=>{sfx('fanfare'); fireworks();},300); toast('🏅 판 '+(cur+1)+' 완성!');}
+}
+
+/* =========================================================
+   실생활
+   ========================================================= */
+const LIFE=[
+  {i:'🔦',t:'손전등에 건전지를 하나 더 넣으면 왜 더 밝아질까?',a:'건전지를 직렬로 이으면 <b>전압이 커져요</b>. 전구의 저항이 그대로일 때 전압이 커지면 전류의 세기도 커져서 전구가 더 밝아져요.',k:'전압 ↑ → 전류 ↑ (전압과 전류는 비례)'},
+  {i:'🍞',t:'토스터와 헤어드라이어 속 빨간 열선의 정체는?',a:'열선은 바로 <b>니크롬선</b>이에요. 니크롬선은 저항이 커서 전류가 흐를 때 뜨거워져요. 실험실에서 전압을 높이면 니크롬선이 주황색으로 달아오르는 것도 확인해 보세요!',k:'니크롬선 · 저항'},
+  {i:'🧤',t:'전기 공사를 할 때 고무로 된 절연 장갑을 끼는 까닭은?',a:'고무 같은 <b>부도체</b>는 전기 저항이 매우 커서 전류가 거의 흐르지 않아요. 그래서 몸으로 전류가 흐르는 것을 막아 줘요. 전선 겉의 피복도 같은 원리예요.',k:'저항이 크면 전류가 잘 흐르지 않는다'},
+  {i:'💧',t:'젖은 손으로 플러그를 만지면 왜 위험할까?',a:'물에 젖은 피부는 마른 피부보다 <b>저항이 작아져요</b>. 같은 전압이라도 저항이 작으면 <b>더 센 전류</b>가 몸으로 흐를 수 있어 위험해요. 교과서 탐구의 안전 수칙에도 나와요.',k:'저항 ↓ → 전류 ↑ (저항과 전류는 반비례)'},
+  {i:'🚗',t:'자동차 배터리(12 V)와 건전지(1.5 V)는 무엇이 다를까?',a:'12 V 배터리는 건전지보다 <b>전압이 8배</b>나 커요. 그래서 시동 모터처럼 센 전류가 필요한 장치를 움직일 수 있어요. 전압이 클수록 전류를 흐르게 하는 능력이 커요.',k:'전압 — 전류를 흐르게 하는 능력'},
+  {i:'🔌',t:'긴 멀티탭 전선을 여러 개 이어 쓰지 말라고 하는 까닭은?',a:'전선도 <b>길수록 저항이 커져요</b>. 긴 니크롬선이 짧은 니크롬선보다 저항이 컸던 것처럼요. 전선을 길게 여러 번 이어 센 전류를 흘리면 전선이 뜨거워질 수 있어 위험해요.',k:'길이가 길수록 저항이 크다',ext:true}
+];
+let LOPEN=load('life',{}), lifeInit=false;
+function initLife(){
+  if(!lifeInit){lifeInit=true;
+    $('#lifeGrid').innerHTML=LIFE.map((c,n)=>`<div class="lcard${LOPEN[n]?' open':''}" data-l="${n}" style="animation-delay:${n*.06}s"><span class="li">${c.i}</span><h3>${c.t}${c.ext?'<span class="ext">확장</span>':''}</h3><span class="tap">👆 눌러서 왜 그런지 보기</span><div class="ans">${c.a}<span class="link">🔗 이 단원의 개념: ${c.k}</span></div></div>`).join('');
+    $('#lifeGrid').addEventListener('click',e=>{const c=e.target.closest('.lcard'); if(!c) return; const n=+c.dataset.l;
+      if(c.classList.contains('open')){c.classList.remove('open'); sfx('tap'); return;}
+      c.classList.add('open'); sfx('pop'); burstAt(c.querySelector('.li'),{n:16,speed:4});
+      if(!LOPEN[n]){LOPEN[n]=1; save('life',LOPEN); lifeProg(true);}});
+  }
+  lifeProg(false);
+}
+function lifeProg(fresh){const n=Object.keys(LOPEN).length; $('#lifeCnt').textContent=n+' / '+LIFE.length+' 열어 봄'; $('#lifeBar').style.width=(n/LIFE.length*100)+'%';
+  if(fresh&&n===LIFE.length){sfx('fanfare'); fireworks(); toast('🎁 모두 열었어요! 이제 ✅ 퀴즈로 실력을 확인해 볼까요?',3500);}}
 
 /* =========================================================
    시작
