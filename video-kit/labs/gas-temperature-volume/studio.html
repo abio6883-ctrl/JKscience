@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><title>기체의 온도와 부피 영상 스튜디오</title>
+<style>
+body{margin:0;background:#111;color:#ddd;font-family:"Malgun Gothic",sans-serif}
+#cv{width:960px;height:540px;display:block;background:#000}
+#bar{padding:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{padding:6px 12px}
+#log{font-size:13px;color:#9f9}
+#lab{position:absolute;left:-4000px;top:0;width:1400px;height:1000px;border:0}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<div id="bar"><input id="tt" type="number" step="0.5" value="0" style="width:80px"><button onclick="snapTo(+tt.value)">그리기</button><span id="log">불러오는 중…</span></div>
+<iframe id="lab" src="/index.html"></iframe>
+<script src="mp4-muxer.js"></script>
+<script>
+'use strict';
+const W = 1920, H = 1080, FPS = 30;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const FONT = '"Noto Sans KR","Malgun Gothic","맑은 고딕",sans-serif';
+const EMO = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+const log = m => document.getElementById('log').textContent = m;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = x => { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 3); };
+const back = x => { x = clamp(x, 0, 1); const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+let LW = null; const L = code => LW.eval(code);
+const URL_LAB = 'abio6883-ctrl.github.io/JKscience/gas-temperature-volume';
+const C_HOT = '#fb923c', C_COLD = '#60a5fa', C_GAS = '#a78bfa', ACC = '#fb923c';
+const VR = t => (273 + t) / 293, vAt = t => 27.2 * VR(t);
+function tcol(t, a = 1) { const s = [[-10, [96, 165, 250]], [20, [203, 213, 225]], [50, [253, 186, 116]], [100, [239, 68, 68]]]; t = clamp(t, -10, 100);
+  for (let i = 1; i < s.length; i++) if (t <= s[i][0]) { const p = s[i - 1], q = s[i], k = (t - p[0]) / (q[0] - p[0]); const c = p[1].map((v, j) => Math.round(v + (q[1][j] - v) * k)); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; } return `rgba(239,68,68,${a})`; }
+
+// ───────── 화면 배치 ─────────
+const PX = 40, PY = 118, PW = 1200, PH = 752;
+const SX = 1262, SW = 620;
+const FIG = {
+  hw: { kind: 'cv', id: 'cvHW', LW: 760, LH: 420, step: dt => L(`hwStep(${dt});hwDraw()`) },
+  wb: { kind: 'cv', id: 'cvWB', LW: 760, LH: 420, step: dt => L(`{const d=WB.T-WB.Td; WB.heating=d>.05; if(Math.abs(d)>.05) WB.Td+=Math.sign(d)*Math.min(Math.abs(d),${dt}*7); else WB.Td=WB.T; gasStep(WB.g,syrBox(wbV()),150*VS(WB.Td),${dt},6); markHits(WB.g,VS(WB.Td)); wbDraw(); dGraph();}`) },
+  sim: { kind: 'cv', id: 'cvSM', LW: 760, LH: 440, step: dt => L(`SM.Td+=(SM.T-SM.Td)*Math.min(1,${dt}*1.8); gasStep(SM.g,smBox(),240*VS(SM.Td),${dt},10); markHits(SM.g,VS(SM.Td)); smDraw();`) },
+  pp: { kind: 'svg', fn: 'ppSVG()', LW: 640, LH: 260, step: dt => { ST.k += (ST.kt - ST.k) * Math.min(1, dt * 1.3); L(`LP.k=${ST.k.toFixed(3)}`); } },
+  egg: { kind: 'svg', fn: 'eggSVG()', LW: 640, LH: 260, step: dt => { ST.k += (ST.kt - ST.k) * Math.min(1, dt * ST.rate); L(`LP.k=${ST.k.toFixed(3)};if(LP.egg==='A'&&LP.k>.75)LP.cracked=true;`); } },
+  tire: { kind: 'svg', fn: 'tireSVG()', LW: 520, LH: 250, step: dt => { ST.T += (ST.Tt - ST.T) * Math.min(1, dt * 1.2); L(`TR.T=${ST.T.toFixed(2)}`); } }
+};
+const ST = { k: 0, kt: 0, rate: 1, T: 20, Tt: 20 };
+function figRect(f) {
+  const [ax, ay, aw, ah] = f.area || [PX + 30, PY + 30, PW - 60, PH - 60];
+  const s = Math.min(aw / f.LW, ah / f.LH), w = f.LW * s, h = f.LH * s;
+  return { x: ax + (aw - w) / 2, y: ay + (ah - h) / 2, w, h, s };
+}
+
+// ───────── 장면 정의 ─────────
+const DEF = {
+  title: { full: 'title' },
+  question: { full: 'question' },
+  hw1: { fig: 'hw', side: 'hw', ev(s) {
+    s.ev(0, () => L(`HW.mode='room';HW.Tw=20;HW.Tg=20;HW.eq=true;HW.rec={}`));
+    s.callF(s.v(.55), 3.4, '처음 위치 (25 mL)', 380, 180, '#fca5a5');
+    s.callF(s.v(.2), 2.8, '마개로 막았어요', 380, 400, '#e2e8f0');
+  } },
+  hw2: { fig: 'hw', side: 'hw', ev(s) {
+    s.ev(s.v(.12), () => L(`hwSetMode('hot');HW.t0=performance.now()/1000`), 'splash'); s.tapF(s.v(.12), 300, 22);
+    s.callF(s.v(.2), 3, '🔥 뜨거운 물 80 ℃', 380, 120, '#fdba74');
+    s.callF(s.v(.78), 3.6, '▲ 피스톤이 올라가요!', 650, 150, '#fde047');
+  } },
+  hw3: { fig: 'hw', side: 'hw', ev(s) {
+    s.ev(s.v(.05), () => L(`hwSetMode('ice');HW.t0=performance.now()/1000`), 'splash'); s.tapF(s.v(.05), 300, 22);
+    s.callF(s.v(.15), 3, '🧊 얼음물 0 ℃', 380, 120, '#93c5fd');
+    s.callF(s.v(.6), 4, '▼ 처음보다 아래로!', 650, 260, '#93c5fd');
+  } },
+  wb1: { fig: 'wb', side: 'wb', ev(s) {
+    s.ev(0, () => L(`WB.series=[{v0:27.2,pts:{}}];WB.T=20;WB.Td=20;WB.diff=false`));
+    s.ev(s.v(.7), () => L(`dRecord(true)`), 'ding'); s.tapR(s.v(.7), 'table');
+    s.callF(s.v(.72), 3, '20 ℃ → 27.2 mL', 650, 160, '#fde047');
+  } },
+  wb2: { fig: 'wb', side: 'wb', ev(s) {
+    let t = s.v(.08); const step = (s.v(.82) - t) / 6;
+    for (let T = 30; T <= 80; T += 10) { const tt = t; s.ev(tt, () => L(`dSetT(${T},true)`), 'flame'); s.ev(tt + Math.min(step - .1, 1.75), () => L(`if(Math.abs(WB.Td-WB.T)>.05)WB.Td=WB.T;dRecord(true)`), 'ding'); t += step; }
+    s.callR(s.v(.86), 3.4, '80 ℃ → 32.8 mL', 'graph', '#fde047');
+  } },
+  wb3: { fig: 'wb', side: 'wb', diff: true, ev(s) {
+    s.spot(s.v(.1), s.v(.6), [SX, PY + 418, SW, PH - 418]);
+    s.callR(s.v(.15), 3.6, '거의 같아요: +0.9 · +1.0', 'table', '#fde047');
+    s.spot(s.v(.68), s.dur - s.v(.68) - .2, [SX, PY, SW, 400]);
+    s.callR(s.v(.7), 3.4, '쭉 뻗은 직선!', 'graph', '#86efac');
+  } },
+  charles1: { full: 'charles1' },
+  charles2: { full: 'charles2' },
+  sim1: { fig: 'sim', side: 'chain', ev(s) {
+    s.ev(0, () => L(`SM.T=20;SM.Td=20`));
+    s.callF(s.v(.3), 3.4, '추 = 압력 일정', 380, 150, '#e2e8f0');
+    s.ev(s.v(.78), () => L(`SM.T=100`), 'flame'); s.tapF(s.v(.78), 380, 420);
+  } },
+  sim2: { fig: 'sim', side: 'chain', chain: 'up', ev(s) {
+    s.callF(s.v(.15), 3.2, '입자 운동 빨라짐', 300, 300, '#fdba74');
+    s.callF(s.v(.55), 3.6, '피스톤이 밀려 올라가요', 380, 150, '#fde047');
+  } },
+  sim3: { fig: 'sim', side: 'chain', chain: 'down', ev(s) {
+    s.ev(s.v(.04), () => L(`SM.T=0`), 'cool'); s.tapF(s.v(.04), 380, 420);
+    s.callF(s.v(.4), 3.4, '부피 ↓', 650, 260, '#93c5fd');
+    s.callF(s.v(.72), 3.2, '그래도 계속 움직여요', 380, 320, '#c4b5fd');
+  } },
+  keep: { full: 'keep' },
+  pp: { fig: 'pp', side: { t: '🏓 찌그러진 탁구공', l: ['뜨거운 물 위에 올리면', '공 속 기체의 온도 ↑', '기체의 부피 ↑ → 퐁! 펴져요'] }, ev(s) {
+    s.ev(0, () => { ST.k = 0; ST.kt = 0; L(`LP.mode='pp';LP.water=null;LP.k=0`); });
+    s.ev(s.v(.32), () => { ST.kt = 1; L(`LP.water='hot'`); }, 'splash'); s.tapF(s.v(.32), 320, 200);
+    s.ev(s.v(.72), () => { }, 'ping');
+    s.callF(s.v(.74), 3, '퐁! 펴졌어요', 320, 70, '#fde047');
+  } },
+  egg: { fig: 'egg', side: { t: '🥚 달걀 삶기', l: ['A. 바로 끓는 물 → 쩍!', '공기의 부피가 갑자기 ↑', 'B. 찬물부터 서서히 → OK'] }, ev(s) {
+    s.ev(0, () => { ST.k = 0; ST.kt = 1; ST.rate = 2.4; L(`LP.mode='egg';LP.egg='A';LP.cracked=false;LP.k=0`); }, 'boil');
+    s.ev(s.v(.25), () => { }, 'crack');
+    s.callF(s.v(.28), 3, '쩍! 터졌어요', 320, 110, '#fca5a5');
+    s.ev(s.v(.62), () => { ST.k = 0; ST.kt = 1; ST.rate = .45; L(`LP.egg='B';LP.cracked=false;LP.k=0`); }, 'pop');
+    s.callF(s.v(.7), 3.4, '서서히 → 괜찮아요', 320, 110, '#86efac');
+  } },
+  answer: { fig: 'tire', side: { t: '⚽ 정답!', l: ['공기가 빠진 게 아니에요', '온도 ↓ → 부피 ↓', '따뜻해지면 다시 팽팽'] }, ev(s) {
+    s.ev(0, () => { ST.T = 20; ST.Tt = -5; });
+    s.ev(s.v(.7), () => { ST.Tt = 30; }, 'rise');
+    s.callF(s.v(.3), 3.4, '추우면 물렁', 260, 40, '#93c5fd');
+    s.callF(s.v(.78), 3, '다시 팽팽!', 260, 40, '#fdba74');
+  } },
+  summary: { full: 'summary' },
+  more: { full: 'more' },
+  outro: { full: 'outro' }
+};
+
+// ───────── 타임라인 ─────────
+let SCN = null, ITEMS = [], TOTAL = 0, EV = [], OV = [], AUD = {};
+const CARD = 2.6, PAD0 = 0.35, PAD1 = 0.6;
+function buildTimeline() {
+  let t = 0; ITEMS = []; EV = []; OV = [];
+  let chap = null;
+  for (const sc of SCN.scenes) {
+    if (sc.chapter) { chap = sc.chapter; ITEMS.push({ type: 'card', t, dur: CARD, chap }); EV.push({ t, fn: () => { }, sfx: 'whoosh' }); t += CARD; }
+    const lead = sc.key === 'title' ? 0.9 : PAD0;
+    const vd = AUD[sc.key].duration;
+    const dur = lead + vd + (sc.key === 'outro' ? 2.6 : PAD1);
+    const def = DEF[sc.key] || {};
+    const it = { type: 'scene', t, dur, sc, def, chap, vt: t + lead, vd };
+    ITEMS.push(it);
+    const fr = def.fig ? figRect(FIG[def.fig]) : null;
+    const fx = x => fr.x + x * fr.s, fy = y => fr.y + y * fr.s;
+    const S = {
+      dur, v: f => lead + f * vd,
+      ev: (r, fn, sfx) => EV.push({ t: t + r, fn, sfx }),
+      tapF: (r, x, y) => { OV.push({ type: 'tap', t0: t + r, d: .7, x: fx(x), y: fy(y) }); },
+      tapR: (r, k) => { const p = RP[k]; OV.push({ type: 'tap', t0: t + r, d: .7, x: p[0], y: p[1] }); },
+      call: (r, d, text, x, y, color) => OV.push({ type: 'call', t0: t + r, d, text, x, y, color }),
+      callF: (r, d, text, x, y, color) => OV.push({ type: 'call', t0: t + r, d, text, x: fx(x), y: fy(y), color }),
+      callR: (r, d, text, k, color) => OV.push({ type: 'call', t0: t + r, d, text, x: RP[k][0], y: RP[k][1], color }),
+      spot: (r, d, rect) => OV.push({ type: 'spot', t0: t + r, d, rect })
+    };
+    if (def.ev) def.ev(S);
+    t += dur;
+  }
+  TOTAL = t + 0.4;
+  EV.sort((a, b) => a.t - b.t);
+}
+const RP = { graph: [SX + SW / 2, PY + 200], table: [SX + SW / 2, PY + 560] };
+
+// ───────── 실험실 상태 재생 ─────────
+let evI = 0, lastT = -1;
+function resetLab() {
+  L(`HW.mode='room';HW.Tw=20;HW.Tg=20;HW.eq=true;HW.rec={};HW.pred={hot:null,ice:null};HW.done={hot:false,ice:false};HW._both=false;HW.follow=false;
+     WB.series=[{v0:27.2,pts:{}}];WB.T=20;WB.Td=20;WB.diff=false;WB.pred=null;WB.predDone=false;WB.follow=false;
+     SM.T=20;SM.Td=20;SM.follow=false;LP.mode='pp';LP.water=null;LP.k=0;LP.egg=null;LP.cracked=false;TR.T=20;TR.run=false;`);
+  ST.k = ST.kt = 0; ST.rate = 1; ST.T = ST.Tt = 20;
+  evI = 0;
+}
+function advance(t, it) {
+  if (t < lastT) { resetLab(); lastT = -1; }
+  L(`__VT=${t}`);
+  while (evI < EV.length && EV[evI].t <= t) { try { EV[evI].fn(); } catch (e) { console.error(e); } evI++; }
+  const dt = lastT < 0 ? 1 / FPS : clamp(t - lastT, 0, .1);
+  lastT = t;
+  if (it.type === 'scene' && it.def.fig) { const f = FIG[it.def.fig]; if (f.step && dt > 0) f.step(dt); }
+}
+
+// ───────── 이미지 ─────────
+const SVGC = new Map();
+async function svgImg(markup, w, h) {
+  if (SVGC.has(markup)) return SVGC.get(markup);
+  let m = markup.replace(/^<svg /, `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" font-family="Malgun Gothic, sans-serif" `);
+  m = m.replace(/(<svg[^>]*?)\sxmlns="http:\/\/www.w3.org\/2000\/svg"([^>]*?)\sxmlns="http:\/\/www.w3.org\/2000\/svg"/, '$1 xmlns="http://www.w3.org/2000/svg"$2');
+  const url = URL.createObjectURL(new Blob([m], { type: 'image/svg+xml' }));
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  URL.revokeObjectURL(url);
+  if (SVGC.size > 40) SVGC.delete(SVGC.keys().next().value);
+  SVGC.set(markup, img); return img;
+}
+async function figImage(f) {
+  if (f.kind === 'cv') return LW.document.getElementById(f.id);
+  return svgImg(L(f.fn).trim(), f.LW * 2, f.LH * 2);
+}
+
+// ───────── 그리기 도우미 ─────────
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function txt(s, x, y, size, color = '#fff', weight = 900, align = 'left', font = FONT) { ctx.font = `${weight} ${size}px ${font}`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(s, x, y); }
+function stroked(s, x, y, size, color, align = 'left', sw = 12) { ctx.font = `900 ${size}px ${FONT}`; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round'; if (sw) { ctx.lineWidth = sw; ctx.strokeStyle = '#0b1020'; ctx.strokeText(s, x, y); } ctx.fillStyle = color; ctx.fillText(s, x, y); }
+function emo(s, x, y, size) { ctx.font = `${size}px ${EMO}`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#fff'; ctx.fillText(s, x, y); }
+function bg(t) {
+  const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#0f1a38'); g.addColorStop(1, '#2a1230'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = ctx.createRadialGradient(240, -80, 50, 240, -80, 1100); r.addColorStop(0, 'rgba(56,189,248,.26)'); r.addColorStop(1, 'rgba(56,189,248,0)'); ctx.fillStyle = r; ctx.fillRect(0, 0, W, H);
+  const r2 = ctx.createRadialGradient(1800, 1100, 50, 1800, 1100, 950); r2.addColorStop(0, 'rgba(251,146,60,.24)'); r2.addColorStop(1, 'rgba(251,146,60,0)'); ctx.fillStyle = r2; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 24; i++) { const sp = 22 + (i % 5) * 9, y = H + 40 - ((i * 211 + t * sp) % (H + 80)), x = (i * 283) % W + Math.sin(t * .7 + i) * 18, r0 = 4 + (i % 4) * 3;
+    ctx.strokeStyle = i % 2 ? 'rgba(253,186,116,.16)' : 'rgba(147,197,253,.16)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r0, 0, 7); ctx.stroke(); }
+}
+function topBar(it, t) {
+  ctx.fillStyle = 'rgba(8,10,30,.75)'; ctx.fillRect(0, 0, W, 92);
+  rr(28, 18, 56, 56, 16); const g = ctx.createLinearGradient(28, 18, 84, 74); g.addColorStop(0, '#38bdf8'); g.addColorStop(1, '#fb923c'); ctx.fillStyle = g; ctx.fill();
+  emo('🎈', 56, 60, 32);
+  txt('기체의 온도와 부피 가상실험실', 100, 56, 30, '#fff', 900);
+  txt('중1 과학 · Ⅵ. 기체의 성질', 100, 80, 17, '#a5b4d8', 700);
+  if (it.chap) { ctx.font = `900 26px ${FONT}`; const s = `${it.chap.num}  ${it.chap.title}`; const w = ctx.measureText(s).width + 50; rr(W - 40 - w, 22, w, 50, 25); ctx.fillStyle = '#7c2d12'; ctx.fill(); ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 2; ctx.stroke(); txt(s, W - 40 - w / 2, 56, 26, '#fff', 900, 'center'); }
+  ctx.fillStyle = '#1e2448'; ctx.fillRect(0, 92, W, 6); const pg = ctx.createLinearGradient(0, 0, W, 0); pg.addColorStop(0, '#38bdf8'); pg.addColorStop(1, '#fb923c'); ctx.fillStyle = pg; ctx.fillRect(0, 92, W * clamp(t / TOTAL, 0, 1), 6);
+}
+function subtitle(it, t) {
+  const sc = it.sc; if (!sc) return;
+  const lt = t - it.vt; if (lt < -0.2 || lt > it.vd + 0.3) return;
+  const chunks = it.chunks || (it.chunks = splitChunks(sc.text));
+  const tot = chunks.reduce((a, c) => a + c.length, 0); let acc = 0, cur = chunks[chunks.length - 1];
+  for (const c of chunks) { const end = (acc + c.length) / tot * it.vd; if (lt <= end) { cur = c; break; } acc += c.length; }
+  ctx.font = `800 44px ${FONT}`;
+  const lines = wrap(cur, 1500);
+  const h = lines.length * 58 + 34, w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 80;
+  const y0 = H - 34 - h;
+  rr(W / 2 - w / 2, y0, w, h, 26); ctx.fillStyle = 'rgba(6,8,24,.88)'; ctx.fill(); ctx.strokeStyle = 'rgba(251,146,60,.6)'; ctx.lineWidth = 2; ctx.stroke();
+  lines.forEach((l, i) => { txt(l, W / 2, y0 + 58 + i * 58, 44, '#fff', 800, 'center'); });
+}
+function splitChunks(s) {
+  const parts = s.replace(/(\d)\.(\d)/g, '$1․$2').replace(/…/g, '…|').split('|').join(' ').match(/[^.!?]+[.!?]?/g).map(x => x.trim().replace(/․/g, '.')).filter(Boolean);
+  const out = []; let cur = '';
+  for (const p of parts) { if ((cur + ' ' + p).trim().length <= 44) cur = (cur + ' ' + p).trim(); else { if (cur) out.push(cur); cur = p; } }
+  if (cur) out.push(cur); return out;
+}
+function wrap(s, maxW) {
+  const words = s.split(' '); const lines = []; let cur = '';
+  for (const w of words) { const n = cur ? cur + ' ' + w : w; if (ctx.measureText(n).width > maxW && cur) { lines.push(cur); cur = w; } else cur = n; }
+  if (cur) lines.push(cur); return lines;
+}
+function credit() { txt('Made by Lee Jae Kwang', W - 36, H - 12, 18, 'rgba(200,210,240,.5)', 700, 'right'); }
+function panel(x, y, w, h, fill = 'rgba(16,20,52,.92)') { rr(x, y, w, h, 24); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = '#2c3166'; ctx.lineWidth = 2; ctx.stroke(); }
+function readout(x, y, w, label, val, col, hh = 136) {
+  rr(x, y, w, hh, 20); ctx.fillStyle = '#1b2050'; ctx.fill(); ctx.strokeStyle = '#2f3675'; ctx.lineWidth = 2; ctx.stroke();
+  txt(label, x + 26, y + 42, 26, '#a5b4d8', 800); txt(val, x + 26, y + hh - 26, 50, col, 900);
+}
+
+// ───────── 실험실 패널 ─────────
+async function drawLabPanel(it, t) {
+  const f = FIG[it.def.fig];
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 30; rr(PX - 8, PY - 8, PW + 16, PH + 16, 30); ctx.fillStyle = '#0a0d24'; ctx.fill(); ctx.restore();
+  rr(PX, PY, PW, PH, 24); ctx.fillStyle = '#fffaf5'; ctx.fill();
+  const img = await figImage(f), r = figRect(f);
+  ctx.drawImage(img, r.x, r.y, r.w, r.h);
+}
+
+// ───────── 오른쪽 패널 ─────────
+function drawSide(it, t) {
+  const side = it.def.side, x = SX, w = SW, lt = t - it.t;
+  if (side === 'wb') return drawGraphSide(it, t);
+  panel(x, PY, w, PH);
+  if (side === 'hw') {
+    const st = JSON.parse(L(`JSON.stringify({Tw:HW.Tw,Tg:HW.Tg,V:hwV(),m:HW.mode})`)), d = st.V - 25;
+    txt('🌡️ 주사기 속 기체', x + 36, PY + 72, 38, '#fde047', 900);
+    readout(x + 30, PY + 104, w - 60, '비커 속 물의 온도', st.Tw + ' ℃', st.m === 'hot' ? C_HOT : st.m === 'ice' ? C_COLD : '#e2e8f0', 128);
+    readout(x + 30, PY + 248, w - 60, '주사기 속 기체의 온도', st.Tg.toFixed(1) + ' ℃', tcol(st.Tg), 128);
+    readout(x + 30, PY + 392, w - 60, '기체의 부피', st.V.toFixed(1) + ' mL', '#86efac', 128);
+    readout(x + 30, PY + 536, w - 60, '피스톤 (처음 위치와 비교)', Math.abs(d) < .05 ? '처음 위치' : (d > 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(1) + ' mL', d > .05 ? C_HOT : d < -.05 ? C_COLD : '#e2e8f0', 128);
+    txt('온도 ↑ 부피 ↑ · 온도 ↓ 부피 ↓', x + w / 2, PY + 718, 28, '#fed7aa', 800, 'center');
+    return;
+  }
+  if (side === 'chain') {
+    const T = +L('SM.Td'), cool = it.def.chain === 'down';
+    txt(cool ? '🧊 냉각하면' : '🔥 가열하면', x + 36, PY + 76, 40, '#fde047', 900);
+    txt(`${Math.round(T)} ℃ · 입자 16개 그대로 · 압력 일정`, x + 36, PY + 128, 25, '#c7d2fe', 700);
+    const ar = cool ? '↓' : '↑', col = cool ? C_COLD : C_HOT;
+    const CH = ['기체의 온도', '입자 운동의 빠르기', '입자의 충돌 세기', '기체의 부피', '입자 사이의 거리'];
+    CH.forEach((c, i) => {
+      let a;
+      if (it.def.chain) { const at = it.vt - it.t + it.vd * [0, .08, .3, .52, .7][i]; a = ease((lt - at) / .45); }
+      else a = (T > 25 && i === 0) ? 1 : .18;
+      const y = PY + 170 + i * 112; ctx.globalAlpha = Math.max(.18, a);
+      rr(x + 30, y, w - 60, 86, 18); ctx.fillStyle = a > .5 ? '#22285a' : '#191d42'; ctx.fill(); ctx.strokeStyle = a > .5 ? col : '#2c3166'; ctx.lineWidth = 3; ctx.stroke();
+      txt(c, x + 60, y + 56, 32, '#fff', 800); txt(ar, x + w - 70, y + 62, 54, col, 900, 'center');
+      if (i < 4) { ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.moveTo(x + w / 2 - 12, y + 92); ctx.lineTo(x + w / 2 + 12, y + 92); ctx.lineTo(x + w / 2, y + 106); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    });
+    return;
+  }
+  if (side && side.t) {
+    const a = ease(lt / .6); ctx.globalAlpha = a;
+    txt(side.t, x + 36, PY + 100, 50, '#fde047', 900);
+    ctx.fillStyle = ACC; ctx.fillRect(x + 36, PY + 128, 90 * a, 6);
+    side.l.forEach((l, i) => { const b = ease((lt - .5 - i * .6) / .5); ctx.globalAlpha = b; txt(l, x + 36 + (1 - b) * 30, PY + 230 + i * 90, 36, '#eef2ff', 800); });
+    ctx.globalAlpha = 1;
+  }
+}
+function drawGraphSide(it, t) {
+  const x = SX, w = SW;
+  panel(x, PY, w, 400, '#fffaf5');
+  txt('📈 온도에 따른 기체의 부피', x + 26, PY + 44, 28, '#7c2d12', 900);
+  const gc = LW.document.getElementById('cvWG');
+  if (gc && gc.width) ctx.drawImage(gc, x + 10, PY + 56, w - 20, (w - 20) * 430 / 760);
+  const pts = JSON.parse(L(`JSON.stringify(WB.series[0].pts)`));
+  const y = PY + 418, h = PH - 418;
+  panel(x, y, w, h);
+  txt('📋 기록표', x + 26, y + 46, 28, '#c7d2fe', 900);
+  const Ts = [20, 30, 40, 50, 60, 70, 80], lx = x + 18, cw = (w - 36 - 112) / 7;
+  const rows = [['온도(℃)', T => T + ''], ['부피(mL)', T => pts[T] != null ? pts[T].toFixed(1) : '?']];
+  if (it.def.diff) rows.push(['증가량', T => T === 20 ? '—' : (pts[T] != null && pts[T - 10] != null) ? '+' + (pts[T] - pts[T - 10]).toFixed(1) : '?']);
+  rows.forEach((r, ri) => {
+    const yy = y + 70 + ri * 78;
+    rr(lx, yy, w - 36, 66, 12); ctx.fillStyle = ri === 0 ? '#5b2a12' : ri === 2 ? '#3f2a12' : '#1b2050'; ctx.fill();
+    txt(r[0], lx + 12, yy + 42, 20, ri === 2 ? '#fde047' : '#fed7aa', 800);
+    Ts.forEach((T, i) => { const s = r[1](T); txt(s, lx + 112 + cw * i + cw / 2, yy + 43, ri === 0 ? 24 : 21, ri === 0 ? '#fff' : s === '?' ? '#64748b' : ri === 2 ? '#fde047' : '#86efac', 800, 'center'); });
+  });
+  if (!it.def.diff) txt('📍 기록할 때마다 그래프에 점이 찍혀요', x + w / 2, y + h - 26, 24, '#a5b4d8', 700, 'center');
+}
+
+// ───────── 겹쳐 그리기 ─────────
+function drawOverlays(t) {
+  for (const o of OV) {
+    const lt = t - o.t0; if (lt < 0 || lt > o.d) continue; const k = lt / o.d;
+    if (o.type === 'tap') {
+      const r = 20 + 60 * ease(k); ctx.strokeStyle = `rgba(253,224,71,${1 - k})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, 7); ctx.stroke();
+      hand(o.x + 10, o.y + 14 - 8 * Math.sin(Math.min(1, k * 2) * Math.PI));
+    } else if (o.type === 'call') {
+      const a = Math.min(back(lt / .35), lt > o.d - .3 ? (o.d - lt) / .3 : 1);
+      ctx.font = `900 34px ${FONT}`; const w = ctx.measureText(o.text).width + 44, h = 62;
+      let x = clamp(o.x - w / 2, 20, W - w - 20), y = o.y - h - 30;
+      if (y < 104) y = o.y + 34;
+      ctx.save(); ctx.globalAlpha = clamp(a, 0, 1); ctx.translate(x + w / 2, y + h / 2); ctx.scale(clamp(a, 0, 1.2), clamp(a, 0, 1.2)); ctx.translate(-(x + w / 2), -(y + h / 2));
+      ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 16; rr(x, y, w, h, 18); ctx.fillStyle = o.color; ctx.fill(); ctx.shadowBlur = 0;
+      ctx.beginPath(); const tx = clamp(o.x, x + 24, x + w - 24); if (y < o.y) { ctx.moveTo(tx - 14, y + h - 1); ctx.lineTo(tx + 14, y + h - 1); ctx.lineTo(tx, y + h + 20); } else { ctx.moveTo(tx - 14, y + 1); ctx.lineTo(tx + 14, y + 1); ctx.lineTo(tx, y - 20); } ctx.fill();
+      txt(o.text, x + w / 2, y + 43, 34, '#0b1020', 900, 'center');
+      ctx.restore();
+    } else if (o.type === 'spot') {
+      const a = Math.min(ease(lt / .4), lt > o.d - .4 ? (o.d - lt) / .4 : 1); const [x, y, w, h] = o.rect;
+      ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = '#fde047'; ctx.lineWidth = 6; ctx.setLineDash([18, 10]); ctx.lineDashOffset = -lt * 60; rr(x - 8, y - 8, w + 16, h + 16, 26); ctx.stroke(); ctx.restore(); ctx.setLineDash([]);
+    }
+  }
+}
+function hand(x, y) { ctx.save(); ctx.font = `64px ${EMO}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 10; ctx.fillText('👆', x - 18, y + 58); ctx.restore(); }
+
+// ───────── 직접 그린 주사기 (모션그래픽) ─────────
+function syringeFX(x, y, len, hgt, frac, t, n = 12, opt = {}) {
+  const ge = x + len * frac, sp = opt.sp || 1, T = opt.T == null ? 20 : opt.T;
+  rr(x - 12, y, len + 40, hgt, 14); ctx.fillStyle = 'rgba(241,245,255,.95)'; ctx.fill(); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = tcol(T, .3); ctx.fillRect(x, y + 4, ge - x, hgt - 8);
+  ctx.fillStyle = '#1e293b'; rr(x - 34, y + hgt / 2 - 16, 24, 32, 6); ctx.fill();
+  const pr = opt.r || 10;
+  for (let i = 0; i < n; i++) {
+    const sx = 150 + (i * 97) % 130, sy = 110 + (i * 61) % 90, px0 = (i * 0.37) % 1, py0 = (i * 0.61) % 1;
+    const tri = u => { u = ((u % 2) + 2) % 2; return u < 1 ? u : 2 - u; };
+    const fx = tri(px0 * 2 + t * sp * sx / 400), fy = tri(py0 * 2 + t * sp * sy / 300);
+    const px = x + pr + 4 + fx * Math.max(0, ge - x - 2 * pr - 8), py = y + pr + 8 + fy * (hgt - 2 * pr - 16);
+    const g = ctx.createRadialGradient(px - pr * .35, py - pr * .35, pr * .2, px, py, pr); g.addColorStop(0, '#ede9fe'); g.addColorStop(1, '#7c3aed');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, pr, 0, 7); ctx.fill();
+  }
+  ctx.fillStyle = '#334155'; rr(ge, y + 4, 18, hgt - 8, 4); ctx.fill();
+  ctx.fillStyle = '#94a3b8'; ctx.fillRect(ge + 18, y + hgt / 2 - 9, x + len + 140 - ge, 18);
+  ctx.fillStyle = '#475569'; rr(x + len + 140, y - 10, 18, hgt + 20, 6); ctx.fill();
+}
+function thermoFX(x, y0, y1, T) {
+  const yy = y1 - (clamp(T, -10, 100) + 10) / 110 * (y1 - y0);
+  rr(x - 16, y0 - 16, 32, y1 - y0 + 32, 16); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill();
+  ctx.fillStyle = tcol(T); ctx.fillRect(x - 8, yy, 16, y1 - yy + 10); ctx.beginPath(); ctx.arc(x, y1 + 26, 26, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); ctx.beginPath(); ctx.arc(x, y1 + 26, 19, 0, 7); ctx.fillStyle = tcol(T); ctx.fill();
+}
+
+// ───────── 전체 화면 장면 ─────────
+function cardScene(it, t) {
+  bg(t); const lt = t - it.t, c = it.chap;
+  const a = ease(lt / .5), out = lt > it.dur - .35 ? (it.dur - lt) / .35 : 1;
+  ctx.save(); ctx.globalAlpha = clamp(out, 0, 1);
+  const g = ctx.createLinearGradient(0, 0, W, 0); g.addColorStop(0, '#1e3a8a'); g.addColorStop(1, '#c2410c');
+  ctx.fillStyle = g; ctx.fillRect(0, 330, W * a, 420);
+  txt(c.num, 200, 650, 270, 'rgba(255,255,255,.13)', 900);
+  txt('CHAPTER ' + c.num, 300 + (1 - a) * -80, 470, 40, '#fed7aa', 900);
+  stroked(c.title, 300 + (1 - back(lt / .6)) * 120, 590, 104, '#fff', 'left', 0);
+  if (c.sub) txt(c.sub, 304, 672, 38, '#fde68a', 800);
+  ctx.restore(); topBar(it, t); credit();
+}
+async function fullScene(it, t) {
+  const k = it.def.full, lt = t - it.t, vt = it.vt - it.t, vd = it.vd, V = f => vt + f * vd; bg(t); topBar(it, t);
+  if (k === 'title') drawTitle(lt);
+  else if (k === 'question') drawQuestion(lt);
+  else if (k === 'charles1') drawCharles1(lt, V);
+  else if (k === 'charles2') drawCharles2(lt, V);
+  else if (k === 'keep') drawKeep(lt, V);
+  else if (k === 'summary') drawSummary(lt, V);
+  else if (k === 'more') drawMore(lt);
+  else if (k === 'outro') drawOutro(t, lt);
+  credit();
+}
+function drawTitle(lt) {
+  const a = back(lt / .8), warm = .5 - .5 * Math.cos(lt * 1.1), T = -5 + 90 * warm;
+  ctx.save(); ctx.translate(1340, 520); ctx.rotate(-.04); ctx.scale(a, a); ctx.translate(-1340, -520);
+  panel(880, 280, 920, 470, tcol(T, .14));
+  syringeFX(990, 440, 520, 140, .5 + .38 * warm, lt, 12, { sp: .6 + warm, T });
+  thermoFX(940, 330, 640, T);
+  txt(Math.round(T) + ' ℃', 1350, 360, 54, tcol(T), 900, 'center');
+  txt(warm > .5 ? '따뜻하면 부피 ↑' : '차가우면 부피 ↓', 1350, 700, 42, warm > .5 ? C_HOT : C_COLD, 900, 'center');
+  ctx.restore();
+  const b = ease((lt - .2) / .7); ctx.globalAlpha = b;
+  txt('중1 과학 · Ⅵ. 기체의 성질', 110, 330, 38, '#fed7aa', 800);
+  stroked('기체의 온도와', 104 - (1 - b) * 60, 450, 100, '#fff', 'left', 0);
+  stroked('부피의 관계', 104 - (1 - b) * 60, 570, 110, '#fde047', 'left', 0);
+  ctx.globalAlpha = ease((lt - .9) / .6);
+  rr(110, 630, 560, 78, 39); ctx.fillStyle = '#16a34a'; ctx.fill(); txt('🧪 가상실험실로 직접 실험!', 390, 682, 34, '#fff', 900, 'center');
+  ctx.globalAlpha = 1;
+}
+function drawQuestion(lt) {
+  const a = back(lt / .7);
+  ctx.save(); ctx.translate(520, 520); ctx.scale(a, a);
+  rr(-380, -300, 760, 600, 40); ctx.fillStyle = 'rgba(147,197,253,.12)'; ctx.fill();
+  for (let i = 0; i < 14; i++) { const x = -340 + (i * 53) % 680, y = -280 + ((i * 97 + lt * 70) % 560); txt('❄', x, y, 30, 'rgba(219,234,254,.8)', 400, 'center', EMO); }
+  const sq = .5 + .5 * Math.sin(lt * 1.6);
+  ctx.save(); ctx.translate(0, 60); ctx.scale(1 + .06 * sq, 1 - .12 * sq); emo('⚽', 0, 110, 300); ctx.restore();
+  ctx.restore();
+  const qa = ease((lt - 1) / .5); ctx.globalAlpha = qa; stroked('?', 820, 300 + Math.sin(lt * 3) * 10, 140, '#fde047', 'center', 10); ctx.globalAlpha = 1;
+  const b = ease((lt - .3) / .6); ctx.globalAlpha = b;
+  txt('🤔 생각 열기', 1000, 300, 44, '#fed7aa', 900, 'left');
+  stroked('겨울에 축구공이', 1000, 420, 70, '#fff', 'left', 0);
+  stroked('찌그러지는 건', 1000, 515, 70, '#fff', 'left', 0);
+  stroked('공기가 빠져서?', 1000, 615, 76, '#93c5fd', 'left', 0);
+  ctx.globalAlpha = ease((lt - 1.4) / .6); txt('영상 끝에서 답을 확인해요!', 1004, 700, 36, '#a7f3d0', 800); ctx.globalAlpha = 1;
+}
+function drawCharles1(lt, V) {
+  panel(60, 130, 1800, 730);
+  // 그래프: 진행에 맞춰 직선 그리기
+  const X0 = 180, Y0 = 760, GW = 760, GH = 520, lo = 24, hi = 34, px = T => X0 + T / 80 * GW, py = v => Y0 - (v - lo) / (hi - lo) * GH;
+  ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; for (let T = 20; T <= 80; T += 20) { ctx.beginPath(); ctx.moveTo(px(T), Y0); ctx.lineTo(px(T), Y0 - GH); ctx.stroke(); } for (let v = 26; v <= 34; v += 2) { ctx.beginPath(); ctx.moveTo(X0, py(v)); ctx.lineTo(X0 + GW, py(v)); ctx.stroke(); }
+  ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(X0, Y0 - GH - 20); ctx.lineTo(X0, Y0); ctx.lineTo(X0 + GW + 20, Y0); ctx.stroke();
+  for (let T = 0; T <= 80; T += 20) txt(String(T), px(T), Y0 + 40, 28, '#cbd5e1', 800, 'center'); for (let v = 26; v <= 34; v += 2) txt(String(v), X0 - 18, py(v) + 10, 28, '#cbd5e1', 800, 'right');
+  txt('온도(℃)', X0 + GW / 2, Y0 + 84, 32, C_HOT, 900, 'center'); ctx.save(); ctx.translate(X0 - 90, Y0 - GH / 2); ctx.rotate(-Math.PI / 2); txt('부피(mL)', 0, 0, 32, C_COLD, 900, 'center'); ctx.restore();
+  const prog = clamp((lt - .3) / (V(.6)), 0, 1), Te = 80 * prog;
+  ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(px(0), py(vAt(0))); ctx.lineTo(px(Te), py(vAt(Te))); ctx.stroke();
+  for (let T = 20; T <= Te + .01; T += 10) { ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(px(T), py(vAt(T)), 11, 0, 7); ctx.fill(); }
+  const b = back((lt - V(.45)) / .6); if (b > 0) {
+    ctx.save(); ctx.globalAlpha = clamp(b, 0, 1); ctx.translate(1420, 480); ctx.scale(clamp(b, 0, 1.15), clamp(b, 0, 1.15));
+    rr(-400, -250, 800, 500, 36); ctx.fillStyle = '#7c2d12'; ctx.fill(); ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 4; ctx.stroke();
+    txt('🎈 샤를 법칙', 0, -140, 64, '#fde047', 900, 'center');
+    txt('압력이 일정할 때', 0, -50, 44, '#fed7aa', 800, 'center');
+    txt('기체의 온도가 높아지면', 0, 30, 46, '#fff', 900, 'center');
+    txt('기체의 부피는', 0, 100, 46, '#fff', 900, 'center');
+    stroked('일정한 비율로 증가!', 0, 190, 58, '#fde047', 'center', 0);
+    ctx.restore();
+  }
+}
+function drawCharles2(lt, V) {
+  panel(60, 130, 1800, 730);
+  txt('⚠️ 온도(℃)가 2배면 부피도 2배?', 960, 215, 56, '#fde047', 900, 'center');
+  const g = ease((lt - V(.1)) / .8);
+  // 온도 막대
+  const bx = 300, base = 680;
+  [[20, '20 ℃'], [40, '40 ℃']].forEach(([T, lab], i) => { const h = 360 * (T / 40) * (i ? g : 1); rr(bx + i * 200, base - h, 150, h, 14); ctx.fillStyle = tcol(T * 2); ctx.fill(); txt(lab, bx + 75 + i * 200, base + 46, 36, '#fff', 900, 'center'); });
+  txt('온도 ×2', bx + 175, 300, 44, C_HOT, 900, 'center');
+  // 부피 막대
+  const vx = 1100, s = 7.4;
+  [[27.2, '27.2 mL'], [29.1, '29.1 mL']].forEach(([v, lab], i) => { const vv = i ? 27.2 + (v - 27.2) * g : v, h = vv * s; rr(vx + i * 200, base - h, 150, h, 14); ctx.fillStyle = i ? '#86efac' : '#93c5fd'; ctx.fill(); txt(lab, vx + 75 + i * 200, base + 46, 34, '#fff', 900, 'center'); });
+  // 2배 점선
+  const c = ease((lt - V(.45)) / .5); ctx.globalAlpha = c;
+  ctx.setLineDash([16, 10]); ctx.strokeStyle = '#fca5a5'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(vx + 190, base - 27.2 * s * 2); ctx.lineTo(vx + 360, base - 27.2 * s * 2); ctx.stroke(); ctx.setLineDash([]);
+  txt('2배라면 여기까지?', vx + 275, base - 27.2 * s * 2 - 18, 30, '#fca5a5', 900, 'center');
+  ctx.globalAlpha = ease((lt - V(.62)) / .5);
+  stroked('✖ 두 배가 아니에요! 조금씩 일정하게 ↑', 960, 820, 50, '#fde047', 'center', 0);
+  ctx.globalAlpha = 1;
+}
+function drawKeep(lt, V) {
+  panel(60, 130, 1800, 730);
+  txt('🔍 온도가 높아져도…', 960, 230, 54, '#fff', 900, 'center');
+  const cards = [['🔢', '입자의 개수', '그대로', V(.1), 0], ['⚪', '입자의 크기', '그대로', V(.22), 0], ['💨', '입자 운동', '빨라져요!', V(.55), 1], ['↔️', '입자 사이 거리', '멀어져요!', V(.75), 1]];
+  cards.forEach(([e, t1, t2, at, hot], i) => {
+    const b = back((lt - at) / .5); if (b <= 0) return; const x = 120 + i * 430, y = 300;
+    ctx.save(); ctx.translate(x + 190, y + 230); ctx.scale(clamp(b, 0, 1.2), clamp(b, 0, 1.2)); ctx.translate(-190, -230);
+    rr(0, 0, 380, 460, 34); ctx.fillStyle = hot ? '#b45309' : '#1e3a8a'; ctx.fill(); ctx.strokeStyle = hot ? '#fde047' : 'rgba(255,255,255,.3)'; ctx.lineWidth = hot ? 6 : 3; ctx.stroke();
+    emo(e, 190, 190, 130); txt(t1, 190, 300, 40, '#fff', 900, 'center'); stroked(t2, 190, 390, hot ? 52 : 56, hot ? '#fde047' : '#86efac', 'center', 0);
+    ctx.restore();
+  });
+}
+function drawSummary(lt, V) {
+  panel(60, 130, 1800, 730);
+  txt('📝 한눈에 정리', 960, 220, 54, '#fde047', 900, 'center');
+  const rows = [[V(.08), '온도 ↑', '부피 ↑', .85, C_HOT, 80], [V(.3), '온도 ↓', '부피 ↓', .5, C_COLD, 0]];
+  rows.forEach(([at, a1, a2, fr, col, T], i) => {
+    const b = ease((lt - at) / .5); if (b <= 0) return; const y = 280 + i * 190; ctx.globalAlpha = b;
+    rr(160, y, 1600, 160, 30); ctx.fillStyle = '#1e2350'; ctx.fill();
+    txt(a1, 330, y + 105, 64, col, 900, 'center'); txt('➜', 520, y + 105, 64, '#fff', 900, 'center'); txt(a2, 710, y + 105, 64, col, 900, 'center');
+    syringeFX(950, y + 30, 520, 100, fr * (.92 + .08 * Math.sin(lt * 2)), lt, 10, { r: 9, sp: T > 40 ? 1.6 : .6, T });
+    ctx.globalAlpha = 1;
+  });
+  const c = back((lt - V(.6)) / .6); if (c > 0) {
+    ctx.save(); ctx.globalAlpha = clamp(c, 0, 1); ctx.translate(960, 760); ctx.scale(clamp(c, 0, 1.15), clamp(c, 0, 1.15));
+    rr(-800, -60, 1600, 120, 60); const g = ctx.createLinearGradient(-800, 0, 800, 0); g.addColorStop(0, '#1d4ed8'); g.addColorStop(1, '#ea580c'); ctx.fillStyle = g; ctx.fill();
+    txt('샤를 법칙: 압력이 일정할 때 온도↑ → 부피는 일정한 비율로 증가', 0, 18, 44, '#fff', 900, 'center');
+    ctx.restore();
+  }
+}
+function drawMore(lt) {
+  txt('가상실험실에서 더 해 볼 수 있어요', 960, 230, 56, '#fff', 900, 'center');
+  const cards = [['✏️', '입자 모형 그리기', '가열 뒤 입자를 직접 그려요', '#0e7490'], ['🧩', '스티커 정리', '개념을 붙여서 정리', '#9a3412'], ['🌏', '실생활 카드', '열기구·축구공·탁구공', '#047857'], ['✅', '퀴즈', '바로 해설 · 다시 풀기', '#1d4ed8']];
+  cards.forEach((c, i) => { const b = back((lt - .4 - i * .9) / .5); if (b <= 0) return; const x = 120 + i * 430, y = 310;
+    ctx.save(); ctx.translate(x + 190, y + 230); ctx.scale(clamp(b, 0, 1.2), clamp(b, 0, 1.2)); ctx.rotate((i % 2 ? 1 : -1) * .03); ctx.translate(-190, -230);
+    rr(0, 0, 380, 460, 34); ctx.fillStyle = c[3]; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.stroke();
+    emo(c[0], 190, 200, 140); txt(c[1], 190, 310, 42, '#fff', 900, 'center'); txt(c[2], 190, 370, 24, 'rgba(255,255,255,.88)', 700, 'center');
+    ctx.restore(); });
+}
+function drawOutro(t, lt) {
+  const a = back(lt / .7);
+  ctx.save(); ctx.translate(960, 320); ctx.scale(a, a); emo('🎈', 0, 60, 160); ctx.restore();
+  stroked('지금 바로 실험해 봐요!', 960, 500, 84, '#fde047', 'center', 0);
+  const b = ease((lt - .6) / .6); ctx.globalAlpha = b;
+  rr(220, 560, 1480, 110, 55); ctx.fillStyle = '#121638'; ctx.fill(); ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 4; ctx.stroke();
+  txt(URL_LAB, 960, 632, 42, '#ffedd5', 800, 'center', 'Consolas, "Malgun Gothic", monospace');
+  ctx.globalAlpha = ease((lt - 1.4) / .6);
+  txt('👇 더보기란 주소를 눌러 보세요', 960, 770, 50, '#a7f3d0', 900, 'center');
+  txt('Made by Lee Jae Kwang', 960, 860, 34, '#c7d2fe', 800, 'center');
+  ctx.globalAlpha = 1;
+  const fo = clamp((t - (TOTAL - 0.9)) / 0.9, 0, 1); if (fo > 0) { ctx.fillStyle = `rgba(0,0,0,${fo})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// ───────── 한 프레임 ─────────
+function itemAt(t) { let it = ITEMS[0]; for (const x of ITEMS) if (x.t <= t) it = x; return it; }
+async function render(t) {
+  const it = itemAt(t);
+  advance(t, it);
+  if (it.type === 'card') { cardScene(it, t); return; }
+  if (it.def.full) { await fullScene(it, t); subtitle(it, t); return; }
+  bg(t); topBar(it, t); await drawLabPanel(it, t); drawSide(it, t); drawOverlays(t); subtitle(it, t); credit();
+  const lt = t - it.t; if (lt < .25) { ctx.fillStyle = `rgba(8,10,30,${1 - lt / .25})`; ctx.fillRect(0, 0, W, H); }
+}
+window.snapTo = async t => {
+  await window.ready; resetLab(); lastT = -1;
+  const it = itemAt(t); const t0 = Math.max(0, it.t - 0.01);
+  while (evI < EV.length && EV[evI].t <= t0) { try { EV[evI].fn(); } catch (e) { } evI++; }
+  lastT = t0;
+  for (let tt = t0; tt < t - 1e-6; tt += 1 / FPS) { const i2 = itemAt(tt); advance(tt, i2); }
+  await render(t);
+};
+window.snap = async (t, name) => { await snapTo(t); const b = await new Promise(r => cv.toBlob(r, 'image/jpeg', .85)); return (await fetch('/save?name=' + encodeURIComponent(name), { method: 'POST', body: b })).text(); };
+
+// ───────── 소리 ─────────
+const SR = 48000;
+function scheduleMusic(oc, out, fxOut, a, b, END) {
+  const sh = t => t - a, inWin = t0 => t0 >= a && t0 < b;
+  const mtr = n => 440 * Math.pow(2, (n - 69) / 12);
+  const rev = oc.createGain(); const dl = oc.createDelay(1); dl.delayTime.value = .3; const fb = oc.createGain(); fb.gain.value = .35; const lpR = oc.createBiquadFilter(); lpR.type = 'lowpass'; lpR.frequency.value = 2400;
+  rev.connect(dl); dl.connect(lpR); lpR.connect(fb); fb.connect(dl); const revG = oc.createGain(); revG.gain.value = .4; lpR.connect(revG); revG.connect(out);
+  function tone(type, f, t0, dur, vol, o2 = out, attack = .005, f1) { if (!inWin(t0)) return null; t0 = sh(t0); const o = oc.createOscillator(), g = oc.createGain(); o.type = type; o.frequency.setValueAtTime(f, t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t0 + dur); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + attack); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur); o.connect(g); g.connect(o2); o.start(t0); o.stop(t0 + dur + .05); return g; }
+  function pad(f, t0, dur, vol) { if (!inWin(t0)) return; t0 = sh(t0); const o = oc.createOscillator(), o2 = oc.createOscillator(), g = oc.createGain(), lp = oc.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1500; o.type = 'triangle'; o2.type = 'sine'; o.frequency.value = f; o2.frequency.value = f * 1.004;
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + 1); g.gain.setValueAtTime(vol, t0 + dur - .6); g.gain.linearRampToValueAtTime(0.0001, t0 + dur + .5);
+    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out); o.start(t0); o2.start(t0); o.stop(t0 + dur + .6); o2.stop(t0 + dur + .6); }
+  const nb = oc.createBuffer(1, SR, SR), nd = nb.getChannelData(0); for (let i = 0; i < SR; i++) nd[i] = Math.random() * 2 - 1;
+  function noise(t0, dur, vol, type, f0, f1, o2 = fxOut, q = 1) { if (!inWin(t0)) return; t0 = sh(t0); const s = oc.createBufferSource(); s.buffer = nb; const bq = oc.createBiquadFilter(); bq.type = type; bq.Q.value = q; bq.frequency.setValueAtTime(f0, t0); bq.frequency.exponentialRampToValueAtTime(f1, t0 + dur); const g = oc.createGain(); g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur); s.connect(bq); bq.connect(g); g.connect(o2); s.start(t0, Math.random() * .5); s.stop(t0 + dur + .05); }
+  // 100BPM 밝은 마림바 + 패드: F - Dm - B♭ - C
+  const BEAT = 60 / 100;
+  const mar = (n, t0, v) => { const g1 = tone('sine', mtr(n), t0, .5, v, out, .003); if (g1) g1.connect(rev); tone('sine', mtr(n) * 4, t0, .08, v * .25, out, .002); };
+  const CH = [[41, [65, 69, 72, 77]], [38, [62, 65, 69, 74]], [46, [62, 65, 70, 74]], [48, [64, 67, 72, 76]]];
+  const ARP = [0, 2, 1, 3, 2, 1, 3, 2];
+  for (let bar = 0; bar * BEAT * 4 < END; bar++) {
+    const [bass, ch] = CH[bar % 4], t0 = bar * BEAT * 4;
+    if (t0 > b) break;
+    ch.forEach(n => pad(mtr(n - 12), t0, BEAT * 4, .008));
+    tone('sine', mtr(bass), t0, BEAT * 1.8, .07, out, .02); tone('sine', mtr(bass), t0 + BEAT * 2, BEAT * 1.6, .05, out, .02);
+    for (let k = 0; k < 8; k++) { const tt = t0 + k * BEAT / 2 + (k % 2 ? .02 : 0); if (tt > END) break; mar(ch[ARP[k]], tt, k % 2 ? .02 : .03); }
+    if (bar % 2 === 1) noise(t0 + BEAT * 3.5, .06, .02, 'highpass', 7000, 6000, out);
+  }
+  for (const e of EV) {
+    const t0 = e.t; if (!inWin(t0)) continue; switch (e.sfx) {
+      case 'whoosh': noise(t0, .55, .26, 'bandpass', 400, 3600, fxOut, 1.2); break;
+      case 'pop': tone('sine', 420, t0, .12, .24, fxOut, .003, 1200); break;
+      case 'ding': tone('triangle', 988, t0, .1, .16, fxOut); tone('triangle', 1319, t0 + .07, .18, .14, fxOut); break;
+      case 'splash': noise(t0, .5, .16, 'bandpass', 2600, 400, fxOut, .7); tone('sine', 520, t0, .12, .08, fxOut, .005, 180); break;
+      case 'flame': noise(t0, .7, .14, 'lowpass', 300, 1200, fxOut, .7); break;
+      case 'cool': [1568, 1319, 1047].forEach((f, i) => tone('sine', f, t0 + i * .07, .16, .08, fxOut, .005, f * .92)); break;
+      case 'boil': for (let i = 0; i < 6; i++) tone('sine', 200 + (i * 73) % 260, t0 + i * .09, .07, .08, fxOut, .005, 600); break;
+      case 'ping': tone('triangle', 1200, t0, .08, .2, fxOut, .003, 1800); tone('sine', 2400, t0 + .05, .12, .1, fxOut); break;
+      case 'crack': noise(t0, .12, .25, 'bandpass', 4000, 1200, fxOut, 1); noise(t0 + .09, .1, .18, 'bandpass', 3000, 900, fxOut, 1); break;
+      case 'rise': [0, .12, .24].forEach((d, i) => tone('sine', 500 + i * 180, t0 + d, .14, .08, fxOut, .005, 900 + i * 200)); break;
+    }
+  }
+}
+async function buildAudio() {
+  const N = Math.ceil(SR * TOTAL), END = TOTAL - 1.2, SEG = 20, TAIL = 4;
+  const mus = [new Float32Array(N), new Float32Array(N)], fx = [new Float32Array(N), new Float32Array(N)];
+  for (let a = 0; a < TOTAL; a += SEG) {
+    const b = Math.min(TOTAL, a + SEG), len = Math.ceil(SR * (b - a + TAIL));
+    const oc = new OfflineAudioContext(4, len, SR);
+    const merger = oc.createChannelMerger(4); merger.connect(oc.destination);
+    const out = oc.createGain(), fxOut = oc.createGain(); out.channelCount = 2; out.channelCountMode = 'explicit'; fxOut.channelCount = 2; fxOut.channelCountMode = 'explicit';
+    const sm = oc.createChannelSplitter(2), sf = oc.createChannelSplitter(2); out.connect(sm); fxOut.connect(sf);
+    sm.connect(merger, 0, 0); sm.connect(merger, 1, 1); sf.connect(merger, 0, 2); sf.connect(merger, 1, 3);
+    scheduleMusic(oc, out, fxOut, a, b, END);
+    const r = await oc.startRendering(), o0 = Math.round(a * SR);
+    const srcs = [[mus, 0, 0], [mus, 1, 1], [fx, 0, 2], [fx, 1, 3]];
+    for (const [dst, c, ch] of srcs) { const s = r.getChannelData(ch), d = dst[c]; for (let i = 0; i < s.length && o0 + i < N; i++) d[o0 + i] += s[i]; }
+    log(`소리 합성 중… ${Math.round(b)}/${Math.round(TOTAL)}초`);
+  }
+  const voice = new Float32Array(N), duck = new Uint8Array(Math.ceil(N / 128) + 1);
+  const MV = 0.26, MD = 0.085;
+  for (const it of ITEMS) if (it.type === 'scene') {
+    const buf = AUD[it.sc.key], s = buf.getChannelData(0), o0 = Math.round(it.vt * SR);
+    for (let i = 0; i < s.length && o0 + i < N; i++) voice[o0 + i] += s[i];
+    const k0 = Math.floor((it.vt - .15) * SR / 128), k1 = Math.ceil((it.vt + buf.duration + .05) * SR / 128);
+    for (let k = Math.max(0, k0); k < Math.min(duck.length, k1); k++) duck[k] = 1;
+  }
+  const gk = new Float32Array(duck.length); let g = MV; const dn = 1 - Math.exp(-128 / (SR * .1)), up = 1 - Math.exp(-128 / (SR * .35));
+  const fadeA = (END - 1.5) * SR / 128, fadeB = TOTAL * SR / 128;
+  for (let k = 0; k < duck.length; k++) { const tgt = duck[k] ? MD : MV; g += (tgt - g) * (tgt < g ? dn : up); let f = 1; if (k > fadeA) f = Math.max(0, 1 - (k - fadeA) / (fadeB - fadeA)); gk[k] = g * f; }
+  const outBuf = new AudioBuffer({ length: N, numberOfChannels: 2, sampleRate: SR });
+  let peak = 0; const L0 = outBuf.getChannelData(0), R0 = outBuf.getChannelData(1);
+  for (let i = 0; i < N; i++) { const gm = gk[i >> 7], v = voice[i] * 1.4; const l = mus[0][i] * gm + fx[0][i] * .42 + v, r = mus[1][i] * gm + fx[1][i] * .42 + v; L0[i] = l; R0[i] = r; const m = Math.max(Math.abs(l), Math.abs(r)); if (m > peak) peak = m; }
+  const sc = peak > .97 ? .97 / peak : 1; if (sc < 1) for (let i = 0; i < N; i++) { L0[i] *= sc; R0[i] *= sc; }
+  log('소리 합성 완료 · 최대 ' + peak.toFixed(2));
+  return outBuf;
+}
+
+// ───────── 자막(srt) · 목차 ─────────
+const ts = s => { const ms = Math.round(s * 1000), h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, se = Math.floor(ms / 1000) % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(se).padStart(2, '0')},${String(ms % 1000).padStart(3, '0')}`; };
+function makeSrt() {
+  let n = 0, out = '';
+  for (const it of ITEMS) if (it.type === 'scene') {
+    const ch = splitChunks(it.sc.text), tot = ch.reduce((a, c) => a + c.length, 0); let acc = 0;
+    for (const c of ch) { const a = it.vt + acc / tot * it.vd, b = it.vt + (acc + c.length) / tot * it.vd; acc += c.length; out += `${++n}\n${ts(a)} --> ${ts(b)}\n${c}\n\n`; }
+  }
+  return out;
+}
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+function makeChapters() {
+  const out = [['0:00', '시작 · 생각 열기']];
+  for (const it of ITEMS) if (it.type === 'card') out.push([mmss(it.t), `${it.chap.num} ${it.chap.title}`]);
+  return out.map(x => x.join(' ')).join('\n');
+}
+async function saveText(name, text) { return (await fetch('/save?name=' + encodeURIComponent(name), { method: 'POST', body: new Blob([text], { type: 'text/plain;charset=utf-8' }) })).text(); }
+window.saveMeta = async () => { await window.ready; await saveText('subs.srt', makeSrt()); await saveText('chapters.txt', makeChapters()); return 'ok ' + TOTAL.toFixed(1) + 's\n' + makeChapters(); };
+
+// ───────── 썸네일 ─────────
+window.thumb = async () => {
+  await window.ready; resetLab();
+  L(`hwSetMode('hot'); for(let i=0;i<300;i++) hwStep(0.05); hwDraw();
+     WB.series=[{v0:27.2,pts:{}}]; [20,30,40,50,60,70,80].forEach(T=>{WB.T=T;WB.Td=T;dRecord(true);}); WB.T=80; WB.Td=80; dGraph();`);
+  const sy = LW.document.getElementById('cvHW'), gr = LW.document.getElementById('cvWG');
+  const tc = document.createElement('canvas'); tc.width = 1280; tc.height = 720; const g = tc.getContext('2d');
+  const bgG = g.createLinearGradient(0, 0, 1280, 720); bgG.addColorStop(0, '#1d4ed8'); bgG.addColorStop(.55, '#9333ea'); bgG.addColorStop(1, '#f97316'); g.fillStyle = bgG; g.fillRect(0, 0, 1280, 720);
+  g.save(); g.translate(900, 380); for (let i = 0; i < 24; i++) { g.rotate(Math.PI * 2 / 24); g.fillStyle = i % 2 ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,0)'; g.beginPath(); g.moveTo(0, 0); g.lineTo(1200, -140); g.lineTo(1200, 140); g.fill(); } g.restore();
+  g.save(); g.translate(930, 420); g.rotate(.07); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 40;
+  g.beginPath(); g.roundRect(-330, -250, 660, 500, 40); g.fillStyle = '#0a0f1e'; g.fill(); g.shadowBlur = 0;
+  g.save(); g.beginPath(); g.roundRect(-305, -225, 610, 450, 18); g.clip(); g.fillStyle = '#fffaf5'; g.fillRect(-305, -225, 610, 450);
+  g.drawImage(sy, -305, -225, 610, 337); g.drawImage(gr, -60, 60, 300, 170);
+  g.restore(); g.restore();
+  const T = (s, x, y, size, color, sw = 14) => { g.font = `900 ${size}px ${FONT}`; g.lineJoin = 'round'; g.lineWidth = sw; g.strokeStyle = '#1a0533'; g.strokeText(s, x, y); g.fillStyle = color; g.fillText(s, x, y); };
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  T('겨울 축구공,', 50, 270, 104, '#fff'); T('왜 찌그러질까?', 50, 396, 92, '#fde047');
+  g.fillStyle = '#facc15'; g.beginPath(); g.moveTo(0, 0); g.lineTo(600, 0); g.lineTo(550, 78); g.lineTo(0, 78); g.fill(); g.font = `900 38px ${FONT}`; g.fillStyle = '#1c1917'; g.fillText('중1 과학 · 기체의 성질', 30, 52);
+  g.beginPath(); g.roundRect(50, 470, 470, 92, 46); g.fillStyle = '#16a34a'; g.fill(); g.lineWidth = 5; g.strokeStyle = '#fff'; g.stroke();
+  g.font = `900 46px ${FONT}`; g.fillStyle = '#fff'; g.fillText('직접 실험해 봐!', 92, 533);
+  g.font = `120px ${EMO}`; g.fillText('⚽', 1110, 150); g.font = `86px ${EMO}`; g.fillText('👉', 540, 548);
+  g.font = `900 32px ${FONT}`; g.fillStyle = 'rgba(255,255,255,.95)'; g.fillText('샤를 법칙 · 온도와 부피 가상실험실', 52, 640);
+  await fetch('/save?name=thumbnail.png', { method: 'POST', body: await new Promise(r => tc.toBlob(r, 'image/png')) });
+  const sc = document.createElement('canvas'); sc.width = 320; sc.height = 180; const sg = sc.getContext('2d'); sg.imageSmoothingQuality = 'high'; sg.drawImage(tc, 0, 0, 320, 180);
+  await fetch('/save?name=thumbnail_small.png', { method: 'POST', body: await new Promise(r => sc.toBlob(r, 'image/png')) });
+  ctx.drawImage(tc, 0, 0, W, H); resetLab();
+  return 'thumb saved';
+};
+
+// ───────── 내보내기 ─────────
+const yieldNow = () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });
+window.exportMp4 = async (name = 'video.mp4') => {
+  await window.ready;
+  const audioBuf = await buildAudio();
+  const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), fastStart: 'in-memory', video: { codec: 'avc', width: W, height: H, frameRate: FPS }, audio: { codec: 'aac', numberOfChannels: 2, sampleRate: 48000 } });
+  let err = null; const fail = e => { err = e; console.error(e); };
+  const venc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: fail });
+  venc.configure({ codec: 'avc1.640028', width: W, height: H, bitrate: 7e6, framerate: FPS });
+  const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: fail });
+  aenc.configure({ codec: 'mp4a.40.2', numberOfChannels: 2, sampleRate: 48000, bitrate: 160e3 });
+  const Lc = audioBuf.getChannelData(0), Rc = audioBuf.getChannelData(1);
+  for (let s = 0; s < Lc.length; s += 1024) { const n = Math.min(1024, Lc.length - s), d = new Float32Array(n * 2); d.set(Lc.subarray(s, s + n), 0); d.set(Rc.subarray(s, s + n), n);
+    const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(s / 48000 * 1e6), data: d }); aenc.encode(ad); ad.close(); }
+  lastT = -1; resetLab();
+  const N = Math.round(TOTAL * FPS), t0 = performance.now();
+  for (let i = 0; i < N; i++) {
+    if (err) throw err;
+    await render(i / FPS);
+    const f = new VideoFrame(cv, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    venc.encode(f, { keyFrame: i % (FPS * 2) === 0 }); f.close();
+    while (venc.encodeQueueSize > 6) await yieldNow();
+    if (i % 30 === 0) { const el = (performance.now() - t0) / 1000; log(`인코딩 ${i}/${N} · ${el.toFixed(0)}초 경과 · 남은 약 ${((N - i) * el / Math.max(1, i)).toFixed(0)}초`); window.PROG = i / N; }
+  }
+  await venc.flush(); await aenc.flush(); muxer.finalize();
+  const buf = muxer.target.buffer;
+  const res = await (await fetch('/save?name=' + encodeURIComponent(name), { method: 'POST', body: buf })).text();
+  window.PROG = 1; log('저장 완료: ' + name);
+  return res + ' / ' + (buf.byteLength / 1e6).toFixed(1) + 'MB / ' + TOTAL.toFixed(1) + 's';
+};
+
+// ───────── 준비 ─────────
+window.ready = (async () => {
+  SCN = await (await fetch('scenes.json')).json();
+  const ac = new AudioContext({ sampleRate: 48000 });
+  for (const s of SCN.scenes) AUD[s.key] = await ac.decodeAudioData(await (await fetch('audio/' + s.key + '.mp3')).arrayBuffer());
+  ac.close();
+  const fr = document.getElementById('lab');
+  await new Promise(r => { if (fr.contentWindow && fr.contentWindow.document.readyState === 'complete' && fr.contentWindow.location.pathname === '/index.html') r(); else fr.onload = r; });
+  LW = fr.contentWindow;
+  await new Promise(r => setTimeout(r, 400));
+  Object.defineProperty(LW, 'devicePixelRatio', { get: () => 2 });
+  LW.requestAnimationFrame = () => 0;
+  L(`window.__VT=0; performance.now=()=>window.__VT*1000;
+     SND.on=false; toast=function(){}; confetti=function(){}; fireworks=function(){}; floatAt=function(){}; burstAt=function(){}; floatText=function(){};
+     try{localStorage.clear()}catch(e){}
+     const hold=document.createElement('div'); hold.style.cssText='position:absolute;left:0;top:0;width:760px;background:#fff;z-index:9999';
+     ['cvHW','cvWB','cvWG','cvSM'].forEach(id=>{const c=document.getElementById(id); c.style.width='760px'; c._w=0; hold.appendChild(c);});
+     document.body.appendChild(hold); 'ok'`);
+  buildTimeline();
+  resetLab();
+  log('준비 완료 · 총 ' + TOTAL.toFixed(1) + '초 · 장면 ' + ITEMS.length);
+  return true;
+})().catch(e => { log('오류: ' + e.message); console.error(e); throw e; });
+</script>
+</body></html>
