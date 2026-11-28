@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>저항의 연결과 전기 에너지의 전환 가상실험실</title>
+<style>
+
+:root{
+  --color-primary:#3361e8;
+  --color-primary-dark:#1f43b8;
+  --color-secondary:#0fb59b;
+  --color-accent:#ff8a3d;
+  --color-bg:#f1f0ff;
+  --color-surface:#ffffff;
+  --color-text:#1b1d4a;
+  --color-text-light:#5a5f80;
+  --color-success:#12a874;
+  --color-error:#e5484d;
+  --art:#e03131;
+  --ven:#4263eb;
+  --kid:#c2255c;
+  --urine:#f5b700;
+  --filt:#7048e8;
+  --reab:#12b886;
+  --sec:#f76707;
+  --line:#e2e3f3;
+  --radius:20px;
+  --shadow:0 10px 30px rgba(60,40,140,.10);
+  --shadow-s:0 4px 12px rgba(60,40,140,.10);
+  --font:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;font-family:var(--font);color:var(--color-text);}
+body{overflow-x:hidden;background:radial-gradient(1200px 600px at 10% -10%,#dfe8ff 0,transparent 60%),radial-gradient(900px 500px at 110% 10%,#d9fbf3 0,transparent 55%),var(--color-bg);min-height:100vh;}
+button{font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#bgBubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+#bgBubbles span{position:absolute;bottom:-80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95),rgba(120,170,255,.25) 60%,rgba(120,170,255,.05));animation:rise linear infinite;}
+@keyframes rise{to{transform:translateY(-120vh) translateX(30px);}}
+#fx{position:fixed;inset:0;width:100vw !important;height:100vh;pointer-events:none;z-index:9000;background:transparent !important;border-radius:0 !important;}
+#app{position:relative;z-index:1;max-width:980px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:12px 16px 70px;}
+/* 상단 바 */
+.topbar{position:sticky;top:0;z-index:50;margin:0 -16px 14px;padding:10px 16px 8px;background:rgba(238,243,255,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.topbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.brand{font-weight:800;font-size:15px;color:var(--color-primary-dark);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brand i{font-style:normal;margin-right:4px;}
+.icon-btn{border:none;background:#fff;border-radius:14px;min-width:48px;height:48px;font-size:21px;box-shadow:var(--shadow-s);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.icon-btn:active{transform:scale(.92);}
+.step-indicator{display:flex;gap:6px;}
+.step-dot{flex:1;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:12px;color:var(--color-text-light);min-width:0;background:none;border:none;padding:0;min-height:40px;}
+.step-dot i{display:block;width:100%;height:8px;border-radius:5px;background:#d7e0f5;position:relative;overflow:hidden;}
+.step-dot i::after{content:'';position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--color-secondary),#3ad1b8);border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.step-dot.done i::after{width:100%;}
+.step-dot.active i::after{width:100%;background:linear-gradient(90deg,var(--color-primary),#6a8cff);}
+.step-dot.active{color:var(--color-primary);font-weight:800;}
+.step-dot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* 화면 전환 */
+.screen{display:none;flex:1;flex-direction:column;}
+.screen.active{display:flex;animation:screenIn .5s cubic-bezier(.2,.8,.2,1);}
+.screen.active.back{animation:screenInBack .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes screenIn{from{opacity:0;transform:translateX(40px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes screenInBack{from{opacity:0;transform:translateX(-40px) scale(.985);}to{opacity:1;transform:none;}}
+.screen.active .rise-in{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 80ms);}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+h1{font-size:clamp(28px,5.4vw,42px);margin:6px 0 8px;line-height:1.25;letter-spacing:-.02em;}
+h2{font-size:clamp(21px,3.6vw,27px);margin:0 0 10px;letter-spacing:-.01em;}
+h3{font-size:18px;margin:0 0 8px;}
+p{line-height:1.7;color:var(--color-text-light);margin:6px 0;}
+b,strong{color:var(--color-text);}
+.grad-text{background:linear-gradient(100deg,#2448d8,#3a8bff 45%,#13b8a0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.card{background:var(--color-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.7);}
+.btn{position:relative;overflow:hidden;border:none;border-radius:16px;padding:14px 24px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,#3d6cff,#2448d8);min-height:52px;box-shadow:0 6px 0 #1a37a3,0 10px 20px rgba(36,72,216,.25);transition:transform .12s,box-shadow .12s;}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1a37a3,0 4px 10px rgba(36,72,216,.2);}
+.btn.secondary{background:#fff;color:var(--color-primary);box-shadow:0 5px 0 #c6d3f5,0 8px 16px rgba(36,72,216,.08);}
+.btn.secondary:active{box-shadow:0 1px 0 #c6d3f5;}
+.btn.mint{background:linear-gradient(135deg,#21c9a9,#0d9e86);box-shadow:0 6px 0 #0a7a67,0 10px 20px rgba(13,158,134,.25);}
+.btn.small{padding:10px 16px;font-size:15px;min-height:48px;border-radius:14px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none;}
+.btn.secondary .ripple{background:rgba(51,97,232,.2);}
+@keyframes ripple{to{transform:scale(4);opacity:0;}}
+.pulse{animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 6px 0 #1a37a3,0 0 0 0 rgba(61,108,255,.45);}50%{box-shadow:0 6px 0 #1a37a3,0 0 0 14px rgba(61,108,255,0);}}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:20px;}
+.btn-row.center{justify-content:center;}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 10px;}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#e3eaff;color:var(--color-primary-dark);font-size:13px;font-weight:800;}
+.badge.teal{background:#d8f6ef;color:#0a7f6c;}
+.badge.ext{background:#fff0e2;color:#b35300;font-size:12px;padding:3px 9px;vertical-align:middle;}
+.muted{font-size:13px;color:var(--color-text-light);}
+.row{display:flex;gap:14px;flex-wrap:wrap;}
+.row>*{flex:1 1 300px;min-width:0;}
+.hidden{display:none !important;}
+.gas-o2{color:var(--o2);font-weight:800;}
+.gas-co2{color:var(--co2);font-weight:800;}
+/* 도입 */
+#screen-intro{text-align:center;}
+.unit-tag{display:inline-block;font-size:14px;font-weight:800;color:#0a7f6c;background:#d8f6ef;padding:6px 14px;border-radius:999px;}
+.hero{width:min(260px,62vw);margin:4px auto 0;}
+.hero svg{width:100%;height:auto;display:block;overflow:visible;}
+.hero .lungs{transform-origin:130px 70px;animation:breathe 4s ease-in-out infinite;}
+.hero .dia{animation:diaMove 4s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:scale(.94);}50%{transform:scale(1.06);}}
+@keyframes diaMove{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
+.hero .puff{animation:puff 4s ease-in-out infinite;transform-origin:130px 10px;}
+@keyframes puff{0%,40%{opacity:0;transform:translateY(-14px) scale(.6);}50%{opacity:1;}90%,100%{opacity:0;transform:translateY(40px) scale(1);}}
+.goal-list{text-align:left;max-width:600px;margin:14px auto;padding:0;list-style:none;}
+.goal-list li{background:var(--color-surface);border-radius:14px;padding:13px 14px 13px 50px;margin-bottom:9px;box-shadow:var(--shadow-s);position:relative;line-height:1.55;}
+.goal-list li::before{content:attr(data-n);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:640px;margin:12px auto;}
+.flow div{background:var(--color-surface);border-radius:14px;padding:8px 2px;font-size:12px;box-shadow:var(--shadow-s);font-weight:700;color:var(--color-text-light);}
+.flow div b{display:block;font-size:22px;margin-bottom:2px;}
+.think{max-width:640px;margin:12px auto;text-align:left;}
+.breath-guide{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:8px 0 12px;}
+.breath-ball{width:96px;height:96px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffffff,#8fc6ff 45%,#3361e8);box-shadow:0 10px 30px rgba(51,97,232,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;transform:scale(.7);transition:transform 4s ease-in-out;}
+/* 개념 */
+.core-idea{position:relative;overflow:hidden;background:linear-gradient(130deg,#2448d8,#3a8bff 55%,#13b8a0);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:0 14px 30px rgba(36,72,216,.28);}
+.core-idea::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{50%{transform:translate(-12px,14px) scale(1.08);}}
+.core-idea .lbl{font-size:13px;font-weight:800;opacity:.92;letter-spacing:.06em;}
+.core-idea p{color:#fff;font-size:18px;margin:6px 0 0;line-height:1.65;position:relative;z-index:1;}
+.core-idea b{color:#fff;background:rgba(255,255,255,.18);padding:0 4px;border-radius:6px;}
+.concept-card>.head{display:flex;align-items:center;gap:12px;cursor:pointer;min-height:52px;}
+.concept-card>.head .num{flex:none;width:38px;height:38px;border-radius:12px;background:#e3eaff;color:var(--color-primary);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.concept-card>.head strong{flex:1;font-size:17px;}
+.concept-card>.head .chev{transition:transform .3s;color:var(--color-text-light);font-size:18px;}
+.concept-card.open>.head .chev{transform:rotate(180deg);}
+.concept-card.seen>.head .num{background:var(--color-secondary);color:#fff;}
+.concept-card .concept-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1);}
+.concept-card.open .concept-body{grid-template-rows:1fr;}
+.concept-card .concept-body>div{overflow:hidden;}
+.concept-card .concept-body>div>*:first-child{margin-top:12px;}
+.analogy{background:#fff7ee;border-left:5px solid var(--color-accent);border-radius:12px;padding:11px 13px;margin:8px 0;font-size:15px;line-height:1.65;}
+.info-panel{background:#f1f5ff;border-radius:14px;padding:12px 14px;min-height:66px;font-size:15px;line-height:1.65;transition:background .3s;}
+.info-panel.flash{animation:flashBg .6s;}
+@keyframes flashBg{0%{background:#dce6ff;}100%{background:#f1f5ff;}}
+.info-panel b{color:var(--color-primary-dark);}
+.diagram-wrap{max-width:560px;margin:0 auto;position:relative;}
+.diagram-wrap svg{width:100%;height:auto;display:block;}
+svg .part{cursor:pointer;transition:filter .2s;}
+svg .part:hover{filter:brightness(1.06);}
+svg .part.sel{filter:drop-shadow(0 0 6px rgba(51,97,232,.9));}
+.tbl-wrap{overflow-x:auto;}
+table.tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:15px;min-width:420px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;text-align:center;vertical-align:middle;line-height:1.45;}
+table.tbl tr>*:last-child{border-right:none;}
+table.tbl tr:last-child>*{border-bottom:none;}
+table.tbl th{background:#eef3ff;}
+table.tbl td.rev{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#effcf8;font-weight:700;color:#0a6d5d;}
+table.tbl td.q{color:#a6b1cc;font-weight:800;}
+@keyframes popIn{0%{transform:scale(.4);opacity:0;}100%{transform:none;opacity:1;}}
+.myth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;}
+.myth{background:var(--color-surface);border-radius:16px;box-shadow:var(--shadow-s);padding:14px;cursor:pointer;min-height:110px;position:relative;}
+.myth .no{color:#b4232a;font-weight:800;margin-bottom:6px;line-height:1.5;}
+.myth .yes{color:#0a6d5d;line-height:1.6;font-size:15px;display:none;}
+.myth .tapme{font-size:13px;color:var(--color-text-light);}
+.myth.open .yes{display:block;animation:riseIn .45s both;}
+.myth.open .tapme{display:none;}
+.myth.open .no{text-decoration:line-through;text-decoration-color:rgba(180,35,42,.5);}
+.area-demo{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.area-demo canvas{flex:1 1 260px;max-width:340px;}
+.area-demo .area-ctrl{flex:1 1 220px;}
+.meter{height:16px;border-radius:9px;background:#e6ecf8;overflow:hidden;margin:4px 0 10px;}
+.meter>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#21c9a9,#3361e8);transition:width .4s cubic-bezier(.2,.8,.2,1);}
+/* 탐구 */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:10px;scrollbar-width:thin;}
+.tab{flex:none;border:none;border-radius:14px;padding:10px 15px;font-size:15px;font-weight:800;background:#fff;color:var(--color-text-light);min-height:48px;box-shadow:var(--shadow-s);transition:all .2s;}
+.tab.active{background:linear-gradient(135deg,#3d6cff,#2448d8);color:#fff;transform:translateY(-1px);}
+.tabpane{display:none;}
+.tabpane.active{display:block;animation:riseIn .45s both;}
+.plan-step{display:flex;gap:12px;margin-bottom:12px;}
+.plan-step .k{flex:none;width:86px;font-weight:800;color:var(--color-primary);font-size:15px;padding-top:2px;}
+.plan-step .v{flex:1;line-height:1.65;color:var(--color-text);font-size:15px;min-width:0;}
+.plan-step ol{margin:0;padding-left:20px;}
+textarea,.inp{width:100%;border-radius:14px;border:1.5px solid #d3dcf0;padding:11px;font-family:var(--font);font-size:15px;resize:vertical;background:#fff;color:var(--color-text);transition:border .2s,box-shadow .2s;}
+textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 4px rgba(51,97,232,.15);}
+textarea{min-height:68px;}
+.saved{font-size:12px;color:var(--color-success);height:16px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.ctrl label{font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
+.ctrl label em{font-style:normal;color:var(--color-primary);}
+input[type=range]{width:100%;height:44px;accent-color:var(--color-primary);}
+.toggle{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{border:2px solid #d3dcf0;background:#fff;border-radius:999px;padding:9px 15px;font-size:15px;font-weight:800;min-height:46px;color:var(--color-text);transition:all .2s;}
+.chip.on{border-color:var(--color-primary);background:#e8eeff;color:var(--color-primary-dark);}
+.chip.warn.on{border-color:var(--color-error);background:#ffeced;color:#a3161b;}
+canvas{display:block;width:100%;border-radius:16px;background:#fff;touch-action:manipulation;}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin:10px 0;}
+.readout div{background:#f1f5ff;border-radius:14px;padding:9px 11px;}
+.readout small{display:block;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.readout b{font-size:21px;font-variant-numeric:tabular-nums;}
+.state-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-weight:800;font-size:15px;background:#eef1f8;color:var(--color-text-light);transition:all .3s;}
+.state-pill.in{background:#e0f1ff;color:#0f62b8;}
+.state-pill.out{background:#f1e9ff;color:#5b2fc4;}
+.model-wrap{max-width:420px;margin:0 auto;position:relative;touch-action:none;}
+.model-wrap svg{width:100%;height:auto;display:block;}
+.hold-btn{width:100%;border:none;border-radius:22px;min-height:84px;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(135deg,#45b3ff,#3361e8);box-shadow:0 8px 0 #2245b5,0 14px 28px rgba(51,97,232,.3);user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .12s,box-shadow .12s,background .3s;}
+.hold-btn.holding{transform:translateY(6px);box-shadow:0 2px 0 #2245b5,0 6px 16px rgba(51,97,232,.3);background:linear-gradient(135deg,#2ec4a6,#0f8f7b);}
+.gauge{position:relative;height:22px;border-radius:12px;background:linear-gradient(90deg,#7a4ff0 0%,#e9e3ff 38%,#eef2f8 50%,#e0f1ff 62%,#45b3ff 100%);margin:6px 0 2px;}
+.gauge i{position:absolute;top:-5px;width:6px;height:32px;border-radius:3px;background:#16204a;left:50%;transform:translateX(-50%);transition:left .12s;}
+.gauge-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-light);font-weight:700;}
+.lock-note{font-size:13px;color:var(--color-text-light);}
+.rec-table td,.rec-table th{font-size:14px;padding:7px;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--color-text-light);font-weight:700;margin:6px 0;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;}
+.legend i.tri{border-radius:2px;transform:rotate(45deg);width:11px;height:11px;}
+/* 스티커 */
+.board-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;}
+.board-tab{flex:none;border:none;background:#fff;border-radius:14px;padding:9px 13px;min-height:48px;font-weight:800;font-size:14px;color:var(--color-text-light);box-shadow:var(--shadow-s);}
+.board-tab.active{background:linear-gradient(135deg,#ffb238,#ff7a2f);color:#fff;}
+.board-tab.locked{opacity:.55;}
+.board-tab.done::after{content:' ✔';}
+.sticker-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;}
+.sticker-status .pill{background:#fff;border-radius:999px;padding:7px 13px;font-weight:800;font-size:14px;box-shadow:var(--shadow-s);}
+.sticker-board{position:relative;}
+.sticker-tray{display:flex;flex-wrap:wrap;gap:10px;min-height:76px;background:repeating-linear-gradient(45deg,#fffaf0,#fffaf0 12px,#fff4de 12px,#fff4de 24px);border:2px dashed #f2c98a;}
+.sticker-tray .tray-lbl{width:100%;font-size:13px;font-weight:800;color:#b36b00;}
+.sticker{position:relative;border:none;border-radius:13px;padding:11px 15px;font-size:16px;font-weight:800;min-height:48px;color:#3b2a00;background:linear-gradient(160deg,#fff,#fff3c4);box-shadow:0 3px 0 rgba(0,0,0,.12),0 6px 12px rgba(150,100,0,.12);transform:rotate(var(--tilt,0deg));transition:transform .18s,box-shadow .18s;}
+.sticker::before{content:'';position:absolute;inset:3px;border:1.5px dashed rgba(180,130,0,.35);border-radius:10px;pointer-events:none;}
+.sticker.c1{background:linear-gradient(160deg,#fff,#d6ecff);color:#0d3f78;}
+.sticker.c2{background:linear-gradient(160deg,#fff,#ffdbe2);color:#7c1430;}
+.sticker.c3{background:linear-gradient(160deg,#fff,#dcf8ee);color:#0a5747;}
+.sticker.c4{background:linear-gradient(160deg,#fff,#ece3ff);color:#3c1f8f;}
+.sticker.picked{transform:rotate(0) scale(1.12) translateY(-4px);box-shadow:0 12px 22px rgba(0,0,0,.22);outline:3px solid var(--color-primary);outline-offset:2px;z-index:3;}
+.sticker.wiggle{animation:wiggle .9s ease-in-out infinite;}
+@keyframes wiggle{0%,100%{transform:rotate(-2deg) scale(1.12) translateY(-4px);}50%{transform:rotate(2deg) scale(1.12) translateY(-4px);}}
+.slot{min-height:50px;min-width:86px;border:2.5px dashed #b6c3e2;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:4px;position:relative;background:rgba(255,255,255,.92);transition:border-color .2s,background .2s,transform .2s;}
+.slot .sticker{padding:8px 10px;font-size:15px;min-height:40px;transform:none;}
+.slot.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+@keyframes slotGlow{50%{box-shadow:0 0 0 5px rgba(51,97,232,.18);}}
+.slot.ok{border-style:solid;border-color:var(--color-success);background:#ecfbf5;}
+.slot.ok::after{content:'✔';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-success);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;animation:popIn .4s cubic-bezier(.3,1.6,.5,1);z-index:2;}
+.slot.no{border-style:solid;border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.slot.no::after{content:'✖';position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--color-error);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+.slot .hint{font-size:12px;color:var(--color-text-light);line-height:1.3;text-align:center;}
+.slot.abs{position:absolute;transform:translate(-50%,-50%);}
+.slot.abs.no{animation:shakeAbs .45s;}
+@keyframes shakeAbs{0%,100%{transform:translate(-50%,-50%);}25%{transform:translate(calc(-50% - 7px),-50%);}75%{transform:translate(calc(-50% + 7px),-50%);}}
+.svg-board{position:relative;max-width:540px;margin:0 auto;}
+.svg-board svg{width:100%;height:auto;display:block;}
+.stk-msg{min-height:26px;font-size:15px;line-height:1.6;margin-top:8px;}
+.stk-msg .h{display:block;color:#a35a00;}
+.complete-banner{position:relative;text-align:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,#fff7e6,#ffe8f0);margin-top:12px;overflow:hidden;}
+.complete-banner p{color:var(--color-text);font-weight:700;}
+.stamp{position:absolute;right:14px;top:10px;font-size:22px;font-weight:900;color:#e5484d;border:4px solid #e5484d;border-radius:12px;padding:3px 10px;transform:rotate(-14deg);opacity:.9;animation:stamp .6s cubic-bezier(.2,1.8,.4,1);background:rgba(255,255,255,.6);}
+@keyframes stamp{0%{transform:rotate(-14deg) scale(3);opacity:0;}100%{transform:rotate(-14deg) scale(1);opacity:.9;}}
+.gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;}
+.gx-panel{background:#f7f9ff;border-radius:16px;padding:12px;}
+.gx-panel h4{margin:0 0 8px;font-size:15px;}
+.gx-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.gx-box{border-radius:16px;padding:14px 6px;text-align:center;font-weight:800;font-size:15px;color:#fff;min-height:118px;display:flex;align-items:center;justify-content:center;}
+.gx-box.alv{background:radial-gradient(circle at 35% 35%,#ffd0da,#ff8fa6);color:#6b1028;}
+.gx-box.cap{background:linear-gradient(180deg,#ff6b6b,#c92a4a);}
+.gx-box.cell{background:radial-gradient(circle at 40% 40%,#fff0c2,#f5c451);color:#5c3d00;}
+.gx-arrows{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.gx-arrows .arw{font-size:13px;font-weight:900;color:var(--color-text-light);line-height:1;}
+.gx-principle{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-weight:800;flex-wrap:wrap;}
+/* 실생활 */
+.life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.life-card{background:var(--color-surface);border-radius:18px;box-shadow:var(--shadow);padding:16px;cursor:pointer;transition:transform .2s;position:relative;overflow:hidden;}
+.life-card:active{transform:scale(.98);}
+.life-card .ic{font-size:40px;line-height:1;display:inline-block;transition:transform .4s cubic-bezier(.3,1.6,.5,1);}
+.life-card.open .ic{transform:scale(1.15) rotate(-8deg);}
+.life-card h3{margin:8px 0 6px;}
+.life-card .why{display:none;}
+.life-card.open .why{display:block;animation:riseIn .45s both;}
+.life-card .more{font-size:13px;font-weight:800;color:var(--color-primary);}
+.life-card.open .more{display:none;}
+.link-tag{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:#0a7f6c;background:#d8f6ef;border-radius:999px;padding:4px 10px;}
+/* 퀴즈 */
+.quiz-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.quiz-progress{flex:1;height:12px;border-radius:7px;background:#dde5f6;overflow:hidden;}
+.quiz-progress i{display:block;height:100%;background:linear-gradient(90deg,#21c9a9,#3361e8);border-radius:7px;transition:width .5s cubic-bezier(.2,.8,.2,1);width:0;}
+.combo{font-weight:900;color:#ff6a00;min-width:70px;text-align:right;font-size:15px;}
+.combo.bump{animation:bump .5s cubic-bezier(.3,1.8,.5,1);}
+@keyframes bump{0%{transform:scale(1.8);}100%{transform:scale(1);}}
+.q-card{animation:qIn .45s cubic-bezier(.2,.8,.2,1);}
+@keyframes qIn{from{opacity:0;transform:translateX(30px) rotate(1deg);}to{opacity:1;transform:none;}}
+.q-type{display:inline-block;font-size:12px;font-weight:800;background:#e3eaff;color:var(--color-primary-dark);padding:4px 10px;border-radius:999px;margin-bottom:6px;}
+.q-text{font-size:18px;font-weight:800;line-height:1.6;margin:4px 0 12px;}
+.q-fig{margin:6px 0 12px;}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid #d3dcf0;background:#fff;border-radius:16px;padding:13px 14px;font-size:16px;margin-bottom:10px;min-height:54px;line-height:1.5;color:var(--color-text);transition:transform .12s,border-color .2s,background .2s;}
+.opt:active{transform:scale(.98);}
+.opt .n{flex:none;width:28px;height:28px;border-radius:9px;background:#eef2fb;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.opt.correct{border-color:var(--color-success);background:#e9fbf4;animation:correctPop .5s cubic-bezier(.3,1.6,.5,1);}
+.opt.correct .n{background:var(--color-success);color:#fff;}
+.opt.wrong{border-color:var(--color-error);background:#fff0f0;animation:shake .45s;}
+.opt.wrong .n{background:var(--color-error);color:#fff;}
+@keyframes correctPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+.feedback{border-radius:16px;padding:13px 15px;margin-top:6px;line-height:1.65;font-size:15px;animation:riseIn .4s both;}
+.feedback.ok{background:#e9fbf4;}
+.feedback.no{background:#fff3e8;}
+.feedback b.big{font-size:17px;}
+/* 결과 */
+.result-hero{text-align:center;}
+.trophy{font-size:84px;line-height:1;display:inline-block;animation:trophy 1s cubic-bezier(.3,1.6,.5,1) both;}
+@keyframes trophy{0%{transform:scale(0) rotate(-30deg);}100%{transform:none;}}
+.score-big{font-size:64px;font-weight:900;line-height:1.1;}
+.stars{font-size:38px;letter-spacing:6px;}
+.stars span{display:inline-block;opacity:.18;filter:grayscale(1);}
+.stars span.on{opacity:1;filter:none;animation:starIn .5s cubic-bezier(.3,1.8,.5,1) both;}
+@keyframes starIn{0%{transform:scale(0) rotate(-90deg);}100%{transform:none;}}
+.check-list label{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.55;cursor:pointer;min-height:48px;}
+.check-list input{width:24px;height:24px;flex:none;accent-color:var(--color-success);margin-top:1px;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120px);background:#16204a;color:#fff;padding:12px 20px;border-radius:999px;font-weight:800;z-index:9500;transition:transform .4s cubic-bezier(.3,1.5,.5,1);box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:92vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.float-txt{position:fixed;z-index:9600;pointer-events:none;font-weight:900;font-size:22px;animation:floatUp 1.1s ease-out forwards;text-shadow:0 2px 0 #fff,0 0 8px #fff;}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6);}20%{opacity:1;transform:translate(-50%,-14px) scale(1.15);}100%{opacity:0;transform:translate(-50%,-70px) scale(1);}}
+footer{text-align:center;font-size:12px;color:#8a94b2;padding:24px 0 6px;letter-spacing:.03em;}
+@media (max-width:560px){
+  #app{padding:8px 12px 60px;}
+  .topbar{margin:0 -12px 12px;padding:8px 12px 6px;}
+  .step-dot{font-size:11px;}
+  .card{padding:15px;}
+  .plan-step{flex-direction:column;gap:4px;}
+  .plan-step .k{width:auto;}
+  .flow div{font-size:11px;}
+  .slot{min-width:76px;min-height:44px;}
+  .slot .sticker{font-size:13px;padding:6px 7px;min-height:34px;}
+  .sticker{font-size:15px;padding:10px 12px;}
+  .q-text{font-size:17px;}
+  .gx-box{min-height:104px;font-size:14px;}
+}
+
+/* ====== 전기 단원 전용 ====== */
+:root{--pos:#e03131;--neg:#2f6fdb;--volt:#f2a900;--metal:#a9b4c2;--color-bg:#f3f1ff;}
+body{background:radial-gradient(1100px 600px at 5% -10%,#e4ddff 0,transparent 60%),radial-gradient(900px 500px at 110% 5%,#fff1c9 0,transparent 55%),var(--color-bg);}
+.topbar{background:rgba(243,241,255,.86);}
+#bgBubbles span{border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(242,169,0,.28) 60%,rgba(242,169,0,.04));}
+.grad-text{background:linear-gradient(100deg,#3b2fc9,#6a4cff 45%,#e89a00);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.core-idea{background:linear-gradient(130deg,#2a2c8f,#5a43e6 52%,#e39b00);box-shadow:0 14px 30px rgba(70,50,200,.28);}
+.unit-tag{color:#3d27a8;background:#e6e0ff;}
+.hero{width:min(360px,84vw);}
+.hero .fur{animation:furRub .7s ease-in-out infinite alternate;}
+@keyframes furRub{from{transform:translateX(-46px);}to{transform:translateX(46px);}}
+.hero .ehop{animation:ehop 2.8s ease-in-out infinite;}
+@keyframes ehop{0%,20%{opacity:0;transform:translateY(-34px);}35%{opacity:1;}60%,100%{opacity:1;transform:none;}}
+.hero .bit{animation:bitJump 2.8s ease-in-out infinite;}
+@keyframes bitJump{0%,45%{transform:none;}70%,88%{transform:translateY(-52px) rotate(25deg);}100%{transform:none;}}
+.hero .spark{animation:spark 1.4s steps(2) infinite;}
+@keyframes spark{0%{opacity:0;}50%{opacity:1;}}
+.pm{font-weight:900;}
+.pos{color:var(--pos);font-weight:900;} .neg{color:var(--neg);font-weight:900;}
+/* 생각 열기 */
+.hair-box{max-width:360px;margin:6px auto;}
+.hair-box svg{width:100%;height:auto;display:block;}
+.strand{transition:transform .6s cubic-bezier(.3,1.5,.5,1);transform-box:view-box;}
+/* 그림 */
+.fig{max-width:620px;margin:0 auto;}
+.fig svg{width:100%;height:auto;display:block;}
+.spin{animation:spin 9s linear infinite;transform-origin:120px 120px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.hop{animation:hop .7s cubic-bezier(.2,1.2,.4,1) both;}
+@keyframes hop{from{transform:translate(var(--dx),var(--dy)) scale(1.4);opacity:.3;}to{transform:none;opacity:1;}}
+.rubbing{animation:rubGo .5s ease-in-out;}
+@keyframes rubGo{0%,100%{transform:none;}25%{transform:translate(40px,-6px);}50%{transform:translate(10px,0);}75%{transform:translate(44px,6px);}}
+.part{cursor:pointer;}
+.part.sel{filter:drop-shadow(0 0 6px rgba(242,169,0,.95));}
+.rig{max-width:760px;margin:0 auto;position:relative;}
+.rig svg{width:100%;height:auto;display:block;background:linear-gradient(#f7f6ff,#fff);border-radius:16px;}
+.rig canvas{background:linear-gradient(#f7f6ff,#fff);}
+.status-line{font-weight:800;font-size:15px;margin:8px 0;min-height:26px;}
+.qa{background:#fbf8ff;border-radius:14px;padding:12px;margin-top:10px;}
+.qa h4{margin:0 0 6px;font-size:15px;}
+.rec-tbl td,.rec-tbl th{font-size:14px;padding:8px 6px;}
+.rec-tbl td.new{animation:popIn .5s cubic-bezier(.3,1.6,.5,1);background:#fff7e0;}
+.rec-tbl td.empty{color:#b5bad0;}
+.pred{background:#f7f5ff;border-radius:14px;padding:12px;margin:10px 0;}
+.pred .pq{font-weight:800;font-size:15px;margin:8px 0 6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.pred .mark{font-size:18px;}
+.mission{background:linear-gradient(135deg,#fff8e1,#f3eeff);border-radius:14px;padding:12px;margin-top:10px;}
+.legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;font-weight:800;color:var(--color-text-light);margin:6px 0;}
+.legend2 span{display:inline-flex;align-items:center;gap:5px;}
+.force-meter{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:800;}
+.force-meter .meter{flex:1;margin:0;height:20px;border-radius:12px;}
+.force-meter .meter>i{background:linear-gradient(90deg,#ffd43b,#f2a900 50%,#e8590c);border-radius:12px;}
+/* 스티커 판 */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start;}
+.sc{background:#f8f7fd;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.sc svg{width:100%;height:auto;display:block;background:#fff;border-radius:12px;}
+.sc-slots{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;font-size:14px;font-weight:800;color:var(--color-text-light);}
+.sc-slots .slot{min-width:0;}
+.res-tbl td{font-size:15px;}
+.res-tbl td .slot{margin:0 auto;max-width:200px;}
+.slot-num{font-size:15px;font-weight:900;color:#9aa6c4;}
+.board-tab .lk{margin-right:3px;}
+.slot .sticker{white-space:nowrap;}
+.complete-banner{padding-top:40px;}
+.stamp{font-size:18px;top:8px;}
+.trap-note{font-size:13px;color:#a35a00;font-weight:700;}
+.ion-key{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-weight:900;font-size:15px;line-height:1;}
+.ion-key.p{background:#ffe1e1;color:var(--pos);border:2px solid var(--pos);}
+.ion-key.n{background:#dfe9ff;color:var(--neg);border:2px solid var(--neg);}
+@media (max-width:560px){
+  .rec-tbl td,.rec-tbl th{font-size:12px;padding:6px 3px;}
+  .sc-slots{font-size:12px;}
+}
+/* ====== 전류·전압·저항 전용 ====== */
+:root{--cur:#e8590c;--ele:#2f6fdb;--volt:#f2a900;--res:#7048e8;--wire:#c9a227;--color-bg:#f2f6ff;}
+body{background:radial-gradient(1100px 600px at 5% -10%,#dbe6ff 0,transparent 60%),radial-gradient(900px 500px at 110% 5%,#fff0c4 0,transparent 55%),var(--color-bg);}
+.topbar{background:rgba(242,246,255,.86);}
+#bgBubbles span{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(47,111,219,.25) 60%,rgba(47,111,219,.04));}
+.grad-text{background:linear-gradient(100deg,#1e40af,#2f6fdb 45%,#e8590c);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.core-idea{background:linear-gradient(130deg,#1e3a8a,#2f6fdb 52%,#f08c00);}
+.unit-tag{color:#1e40af;background:#dfe8ff;font-size:13px;line-height:1.5;}
+.hero{width:min(380px,86vw);}
+.hero .glow{animation:glow 1.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+@keyframes glow{0%,100%{opacity:.55;transform:scale(.92);}50%{opacity:1;transform:scale(1.08);}}
+.flowdash{stroke-dasharray:2 22;animation:flowdash 1.2s linear infinite;}
+@keyframes flowdash{to{stroke-dashoffset:-24;}}
+.flowdash.rev{animation-direction:reverse;}
+.think-box{max-width:420px;margin:6px auto;}
+.think-box svg{width:100%;height:auto;display:block;}
+.safety{background:#fff4e6;border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.7;color:#7a3e00;margin-top:6px;}
+.volt-row{display:flex;gap:8px;align-items:center;}
+.volt-row input{flex:1;}
+.volt-row .btn{min-width:52px;padding:8px 12px;}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.steps .st{flex:1 1 120px;background:#eef2fb;border-radius:12px;padding:8px 10px;font-size:13px;font-weight:800;color:var(--color-text-light);line-height:1.35;border:2px solid transparent;}
+.steps .st b{display:block;font-size:12px;color:#8a94b2;}
+.steps .st.now{background:#fff8e1;border-color:#f2a900;color:#7a4b00;animation:slotGlow 1.4s ease-in-out infinite;}
+.steps .st.done{background:#e6f8f1;color:#0a6d5d;}
+.steps .st.done b::after{content:' ✔';}
+.card-in{background:#f7f9ff;border-radius:16px;padding:12px;margin:8px 0;}
+.tablet{background:#1d2333;border-radius:22px;padding:10px 10px 12px;margin:12px auto;max-width:640px;box-shadow:0 10px 24px rgba(20,30,60,.25);}
+.tablet-top{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#dfe6ff;font-weight:800;font-size:14px;padding:2px 6px 8px;flex-wrap:wrap;}
+.tablet svg{width:100%;height:auto;display:block;background:#fff;border-radius:14px;}
+.small-chip{min-height:38px;padding:6px 12px;font-size:13px;}
+.wire-c{stroke-dasharray:1000;stroke-dashoffset:1000;}
+.wire-c.on{animation:drawWire .8s ease-out forwards;}
+@keyframes drawWire{to{stroke-dashoffset:0;}}
+.flow-e{stroke-dasharray:3 15;animation:flowE var(--sp,1.5s) linear infinite;}
+@keyframes flowE{to{stroke-dashoffset:-36;}}
+.knob{transition:transform .35s cubic-bezier(.3,1.5,.5,1);transform-box:fill-box;transform-origin:center;}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.match-col{display:flex;flex-direction:column;gap:8px;}
+.mt{border:2px solid #d3dcf0;background:#fff;border-radius:14px;min-height:48px;font-size:15px;font-weight:800;color:var(--color-text);padding:8px;transition:all .2s;}
+.mt.sel{border-color:var(--color-primary);background:#e8eeff;transform:scale(1.03);}
+.mt.done{border-style:solid;color:#fff;}
+.mt.done::after{content:' ✔';}
+.mt.no{animation:shake .45s;border-color:var(--color-error);}
+.mt.p0{background:#e8590c;border-color:#e8590c;}.mt.p1{background:#2f6fdb;border-color:#2f6fdb;}.mt.p2{background:#0ca678;border-color:#0ca678;}
+.mt.p3{background:#7048e8;border-color:#7048e8;}.mt.p4{background:#d6336c;border-color:#d6336c;}.mt.p5{background:#5c7cfa;border-color:#5c7cfa;}
+.tri-box{max-width:280px;margin:6px auto;}
+.tri-box svg{width:100%;height:auto;display:block;}
+.tri-part{cursor:pointer;}
+.calc-out{background:linear-gradient(135deg,#fff8e1,#eef3ff);border-radius:16px;padding:14px;font-size:17px;font-weight:800;line-height:1.7;text-align:center;}
+.calc-out .big{font-size:30px;color:var(--color-primary-dark);font-variant-numeric:tabular-nums;}
+.ms{background:#f8f9ff;border-radius:16px;padding:12px;margin-bottom:10px;border:2px solid transparent;}
+.ms.solved{border-color:var(--color-success);background:#effcf6;}
+.ms .ms-q{font-weight:800;line-height:1.6;margin-bottom:8px;}
+.ms .ms-fig{max-width:320px;margin:4px auto 8px;}
+.ms .ms-fig svg{width:100%;height:auto;display:block;background:#fff;border-radius:12px;}
+.ms .ms-exp{font-size:15px;line-height:1.6;margin-top:6px;}
+.bins{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.bin{border:2.5px dashed #b6c3e2;background:#fff;border-radius:16px;min-height:120px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:15px;color:var(--color-text);}
+.bin span{font-size:12px;color:var(--color-text-light);}
+.bin.ready{border-color:var(--color-primary);background:#edf2ff;animation:slotGlow 1.2s ease-in-out infinite;}
+.bin-in{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px;}
+.bin-in i{font-style:normal;background:#e6f8f1;color:#0a6d5d;border-radius:10px;padding:4px 8px;font-size:13px;font-weight:800;}
+.bin.no{animation:shake .45s;border-color:var(--color-error);}
+.semi{margin-top:12px;}
+.state-pill.on{background:#e6f8f1;color:#0a6d5d;}
+.cls-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+.cls-bin{background:#f8f7fd;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;align-items:stretch;}
+.cls-bin h4{margin:0;font-size:15px;text-align:center;}
+.cls-bin p{margin:0;font-size:12px;text-align:center;}
+.res-tbl .slot .sticker{white-space:normal;line-height:1.3;}
+.res-tbl td .slot{max-width:240px;}
+.mini-graphs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}
+.mini-graphs svg{width:100%;height:auto;display:block;background:#fff;border-radius:10px;}
+.hot{animation:hot 1s ease-in-out infinite;}
+@keyframes hot{50%{filter:drop-shadow(0 0 8px #ff6b00);}}
+@media (max-width:560px){
+  .match .mt{font-size:13px;padding:6px;}
+  .calc-out .big{font-size:24px;}
+  .bins{gap:8px;}
+}
+
+
+/* ===== 저항의 연결 · 전기 에너지 단원 전용 ===== */
+:root{--ser:#e8590c;--par:#0ca678;--elec:#2f6fdb;--lite:#f2b705;--heat:#e03131;}
+.hero.hero-wide{width:min(560px,92vw);}
+.net-wrap{position:relative;width:100%;}
+.net-wrap svg{display:block;width:100%;height:auto;}
+.net-wrap canvas,.rig .net-wrap canvas{position:absolute;left:0;top:0;width:100%;pointer-events:none;background:transparent !important;border-radius:0;}
+.net-wrap{background:linear-gradient(#f7f6ff,#fff);border-radius:16px;}
+.bulb-hit{cursor:pointer;}
+.bulb-hit:hover .glass{stroke:#3361e8;}
+.bulb-hit:active{opacity:.8;}
+.meters{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 14px;margin:10px 0;}
+.mtr{background:#f6f7fd;border-radius:12px;padding:8px 12px;}
+.mtr .lb{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:800;color:var(--color-text-light);}
+.mtr .lb b{color:var(--color-text);}
+.mtr .bar{height:16px;border-radius:9px;background:#e3e8f4;overflow:hidden;margin-top:5px;position:relative;}
+.mtr .bar i{display:block;height:100%;border-radius:9px;transition:width .55s cubic-bezier(.2,.9,.3,1);}
+.mtr .bar .ref{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed #5a5f80;opacity:.6;}
+.steps-box{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px;}
+.steps-box .st{font-size:13px;font-weight:800;padding:6px 10px;border-radius:999px;background:#eef1f8;color:#5a5f80;}
+.steps-box .st.ok{background:#e3f8ef;color:#0b7a52;}
+.compare-box{background:#fffaf0;border:2px solid #ffe2b3;border-radius:14px;padding:12px;margin:12px 0;}
+.cmp-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin:6px 0;font-weight:800;font-size:15px;text-align:center;}
+.cmp-row .chip{min-width:52px;font-size:20px;padding:6px 10px;}
+.qa-box{background:#f5f8ff;border-radius:14px;padding:12px;margin-top:12px;}
+.qa-box textarea,.think textarea{width:100%;min-height:64px;border:2px solid #d3dcf0;border-radius:12px;padding:10px;font-family:var(--font);font-size:15px;resize:vertical;}
+.mark{font-weight:900;font-size:14px;margin-left:6px;}
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin:10px 0;}
+.app{border:2px solid #dfe5f3;background:#fff;border-radius:16px;padding:10px 6px;min-height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:14px;color:var(--color-text);transition:transform .15s,border-color .2s,box-shadow .2s;position:relative;}
+.app .em{font-size:38px;line-height:1;}
+.app.sel{border-color:var(--color-primary);box-shadow:0 6px 16px rgba(51,97,232,.2);transform:translateY(-2px);}
+.app.done::after{content:'✔';position:absolute;top:4px;right:8px;color:var(--color-success);font-weight:900;}
+.card.inner{background:#fbfcff;border:2px solid #e3e8f6;box-shadow:none;margin:8px 0;}
+.plate{max-width:340px;margin:0 auto;}
+.e1s{margin:8px 0;}
+.pchart .pr{display:grid;grid-template-columns:118px 1fr 74px;gap:8px;align-items:center;margin:5px 0;font-weight:800;font-size:14px;}
+.pchart .pb{height:22px;border-radius:8px;background:#e7ecf7;overflow:hidden;}
+.pchart .pb i{display:block;height:100%;border-radius:8px;transition:width .7s cubic-bezier(.2,.9,.3,1);}
+.pchart .v{text-align:right;}
+.eff-bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:10px 0;}
+.eff-bar{background:#f6f7fd;border-radius:12px;padding:10px 12px;}
+.eff-bar .stack{display:flex;height:26px;border-radius:9px;overflow:hidden;background:#e3e8f4;margin-top:6px;}
+.eff-bar .stack i{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;transition:width .5s;}
+.found-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin-top:10px;}
+.found-list .fd{background:#effaf5;border-left:5px solid var(--color-success);border-radius:10px;padding:8px 10px;font-size:14px;line-height:1.5;}
+.hs{cursor:pointer;}
+.hs .ring{fill:transparent;stroke:transparent;stroke-width:4;}
+.hs.found .ring{stroke:#12a874;stroke-dasharray:none;fill:rgba(18,168,116,.12);}
+.hs.miss .ring{animation:hsMiss .5s;}
+@keyframes hsMiss{50%{stroke:#e5484d;}}
+.inp{border:2px solid #d3dcf0;border-radius:12px;padding:10px 12px;font-size:16px;font-family:var(--font);font-weight:700;min-height:46px;width:100%;}
+.fan-spin{transform-box:fill-box;transform-origin:center;animation:fanSpin .8s linear infinite;}
+.fan-slow{animation-duration:3.2s;}
+@keyframes fanSpin{to{transform:rotate(360deg);}}
+.tv-on{animation:tvFlick 1.6s ease-in-out infinite;}
+@keyframes tvFlick{0%,100%{fill:#74c0fc;}50%{fill:#b197fc;}}
+.chg{animation:chgBlink 1s steps(2) infinite;}
+@keyframes chgBlink{50%{opacity:.25;}}
+.app-on{filter:drop-shadow(0 0 8px rgba(255,212,59,.9));}
+.conv{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:8px 0;}
+.conv .src{background:#e7efff;color:#1f43b8;border-radius:14px;padding:10px 14px;font-weight:900;}
+.conv .outs{display:flex;flex-direction:column;gap:6px;}
+.conv .o{border-radius:12px;padding:7px 12px;font-weight:900;font-size:14px;background:#f1f3f5;color:#adb5bd;transition:all .3s;}
+.conv .o.on{color:#fff;transform:scale(1.04);}
+.conv .ar{font-size:26px;color:#5a5f80;}
+.ladder-sw{cursor:pointer;}
+.mini-net{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;}
+.mini-net .cap2{text-align:center;font-weight:900;margin-top:2px;}
+@media (max-width:560px){
+  .pchart .pr{grid-template-columns:92px 1fr 62px;font-size:13px;}
+  .cmp-row{font-size:13px;}
+}
+
+</style>
+</head>
+<body>
+<div id="bgBubbles" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand"><i>🔌</i>저항의 연결 · 전기 에너지 가상실험실</div>
+      <button class="icon-btn" id="soundBtn" aria-label="효과음 켜기/끄기" title="효과음">🔊</button>
+    </div>
+    <nav class="step-indicator" id="stepIndicator" aria-label="학습 단계"></nav>
+  </div>
+
+  <!-- 1. 도입 -->
+  <section class="screen" id="screen-intro">
+    <div class="rise-in" style="--i:0"><span class="unit-tag">중2 · Ⅶ. 전기와 자기 · 1. 전기 · ⑤ 저항의 연결 ⑥ 전기 에너지의 전환</span></div>
+    <div class="hero hero-wide rise-in" style="--i:1" id="heroBox"></div>
+    <h1 class="rise-in" style="--i:2"><span class="grad-text">저항의 연결과 전기 에너지의 전환</span></h1>
+    <p class="rise-in" style="--i:3">전구를 한 줄로 이으면(<b>직렬연결</b>) 어떻게 될까? 갈래로 나누어 이으면(<b>병렬연결</b>)? 우리 집 전기 기구는 어떻게 연결되어 있고, 전기 에너지를 얼마나, 어떤 에너지로 바꾸어 쓸까? 직접 연결하고, 전구를 빼 보고, 조사하며 알아보자.</p>
+    <div class="badges rise-in" style="--i:4">
+      <span class="badge">교과서 254~259쪽</span>
+      <span class="badge">지도서 398~403쪽</span>
+      <span class="badge teal">성취기준 [9과14-03]</span>
+    </div>
+    <p class="muted rise-in" style="--i:4">[9과14-03] 저항의 직렬연결과 병렬연결의 특징을 비교하고, 일상생활에서 전기 에너지가 다양한 형태의 에너지로 전환됨을 소비 전력과 관련지어 설명할 수 있다.</p>
+    <ul class="goal-list rise-in" style="--i:5">
+      <li data-n="1">저항(전구)의 직렬연결과 병렬연결의 특징을 비교할 수 있다.</li>
+      <li data-n="2">가정에서 전기 기구를 병렬연결하여 사용하는 까닭을 설명할 수 있다.</li>
+      <li data-n="3">일상생활에서 전기 에너지가 다양한 형태의 에너지로 전환됨을 소비 전력과 관련지어 설명하고, 전기 에너지를 효율적으로 사용하는 방법을 실천할 수 있다.</li>
+    </ul>
+    <div class="flow rise-in" style="--i:6">
+      <div><b>🚪</b>도입</div><div><b>💡</b>개념</div><div><b>🧪</b>탐구</div><div><b>🏷️</b>스티커</div><div><b>🏠</b>실생활</div><div><b>✅</b>확인</div>
+    </div>
+    <div class="card think rise-in" style="--i:7">
+      <h3>💭 생각 열기 — "다른 자리에 꽂으면 충전될 거야."</h3>
+      <p style="margin-top:0">멀티탭의 스위치를 하나씩 눌러 보세요. 한 자리를 끄면 다른 자리는 어떻게 될까요?</p>
+      <div class="think-box" id="thinkBox"></div>
+      <div class="status-line" id="thinkMsg" style="text-align:center"></div>
+      <div class="pq">Q1. 멀티탭 내부에서 각각의 콘센트는 어떻게 연결되어 있을까? <span class="badge">교과서 254쪽</span></div>
+      <textarea data-save="think1" id="note-think1" placeholder="내 생각을 적어 보세요."></textarea><div class="saved" id="saved-think1"></div>
+      <div class="pq" style="margin-top:10px">Q2. 전기 기구가 같은 시간 동안 사용하는 전기 에너지는 어떻게 비교할 수 있을까? <span class="badge">교과서 256쪽</span></div>
+      <textarea data-save="think2" id="note-think2" placeholder="내 생각을 적어 보세요."></textarea><div class="saved" id="saved-think2"></div>
+      <div class="btn-row"><button class="btn small secondary" id="thinkAnsBtn">예시 답안 보기</button></div>
+      <div class="info-panel hidden" id="thinkAns"><b>Q1</b> 멀티탭 내부에서 각각의 콘센트는 서로 <b>병렬연결</b>되어 있다.<br><b>Q2</b> 전기 기구에 표시된 <b>소비 전력</b>을 비교하면 같은 시간 동안 사용하는 전기 에너지의 양을 비교할 수 있다.</div>
+    </div>
+    <div class="btn-row center rise-in" style="--i:8">
+      <button class="btn secondary hidden" id="resumeBtn">↻ 이어서 하기</button>
+      <button class="btn" id="startBtn">시작하기 →</button>
+    </div>
+  </section>
+
+  <!-- 2. 개념 -->
+  <section class="screen" id="screen-concept">
+    <h2>💡 핵심 아이디어와 개념</h2>
+    <div class="core-idea rise-in" style="--i:0">
+      <div class="lbl">KEY IDEA · 핵심 아이디어</div>
+      <p>저항을 <b>직렬연결</b>할수록 전체 저항이 커져 전류가 약해지고, 하나만 끊어져도 전체에 전류가 흐르지 않는다. <b>병렬연결</b>하면 각 저항에 같은 전압이 걸려 서로 영향을 받지 않으므로 가정의 전기 기구는 병렬연결한다. 전기 기구는 <b>전기 에너지</b>를 빛·열·소리·운동·화학 에너지로 <b>전환</b>하며, 1초 동안 사용하는 전기 에너지의 양이 <b>소비 전력(W)</b>이다.</p>
+    </div>
+    <div id="conceptCards"></div>
+    <h3 style="margin-top:8px">🔍 오개념 바로잡기 <span class="muted">— 카드를 눌러 확인해요</span></h3>
+    <div class="myth-grid" id="mythGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="0">← 이전</button>
+      <button class="btn" data-go="2" style="margin-left:auto">탐구하러 가기 →</button>
+    </div>
+  </section>
+
+  <!-- 3. 탐구 -->
+  <section class="screen" id="screen-experiment">
+    <h2>🧪 탐구하기</h2>
+    <div class="tabs" id="expTabs" role="tablist">
+      <button class="tab active" data-tab="plan">📝 탐구 계획서</button>
+      <button class="tab" data-tab="conn">① 저항의 연결</button>
+      <button class="tab" data-tab="tap">② 멀티탭과 가정</button>
+      <button class="tab" data-tab="power">③ 소비 전력 조사</button>
+      <button class="tab" data-tab="eff">④ 에너지 효율·대기 전력</button>
+      <button class="tab" data-tab="save">⑤ 효율적 사용 실천</button>
+    </div>
+
+    <div class="tabpane active" id="tab-plan">
+      <div class="card">
+        <h3>📝 탐구 계획서 — 저항을 연결하는 방법에 따라 무엇이 달라지고, 전기 기구는 전기 에너지를 어떻게 사용할까?</h3>
+        <div class="plan-step"><div class="k">문제 인식</div><div class="v">① 전구를 <b>직렬</b>로 연결할 때와 <b>병렬</b>로 연결할 때 전구의 밝기와 전구 하나를 뺐을 때의 변화는 어떻게 다를까? ② 전기 기구에서 전기 에너지는 어떤 에너지로 전환되고, 기구마다 사용하는 전기 에너지의 양은 어떻게 다를까?</div></div>
+        <div class="plan-step"><div class="k">가설</div><div class="v"><textarea data-save="hypo" id="note-hypo" placeholder="예) 전구 2개를 직렬로 연결하면 전구 1개의 밝기는 …, 병렬로 연결하면 …"></textarea><div class="saved" id="saved-hypo"></div></div></div>
+        <div class="plan-step"><div class="k">변인<br><span class="muted">(탐구 ①)</span></div><div class="v"><b>조작 변인</b>: 전구를 연결하는 방법(직렬·병렬), 연결한 전구의 수<br><b>통제 변인</b>: 전지(전압), 전구의 종류<br><b>종속 변인</b>: 전구 1개의 밝기, 전구 1개를 뺐을 때 나머지 전구의 변화</div></div>
+        <div class="plan-step"><div class="k">준비물</div><div class="v">스마트 기기(저항의 연결 시뮬레이션, 자료 조사), 가정의 전기 기구(소비 전력 표시 확인)</div></div>
+        <div class="plan-step"><div class="k">실험 과정</div><div class="v"><ol>
+          <li><b>① 저항의 연결</b> <span class="badge">교과서 254쪽 디지털 해 보기</span>: 전구 1개, 직렬 2개, 병렬 2개 회로를 만들어 전구 1개의 밝기를 비교하고, 전구 1개를 빼 본다.</li>
+          <li><b>② 멀티탭과 가정</b> <span class="badge">교과서 255쪽</span>: 멀티탭의 스위치를 켜고 끄며 전기 기구의 병렬연결을 확인하고, 직렬연결이라면 어떻게 될지 상상해 본다.</li>
+          <li><b>③ 소비 전력 조사</b> <span class="badge">교과서 256~257쪽 탐구</span>: 전기 기구의 에너지 전환과 소비 전력을 조사해 정리한다.</li>
+          <li><b>④ 에너지 효율·대기 전력</b> <span class="badge">교과서 258쪽</span>: 두 전구에 같은 전기 에너지를 공급해 에너지 효율을 비교하고, 대기 전력을 확인한다.</li>
+          <li><b>⑤ 효율적 사용 실천</b> <span class="badge">교과서 259쪽 해 보기</span>: 전기 에너지를 효율적으로 쓰지 않는 경우를 찾고, 카드 뉴스를 만든다.</li></ol></div></div>
+        <div class="plan-step"><div class="k">예상 결과</div><div class="v"><textarea data-save="expect" id="note-expect" placeholder="예) 직렬연결에서 전구 하나를 빼면 나머지 전구는 (  ). 열을 내는 전기 기구의 소비 전력은 (  )."></textarea><div class="saved" id="saved-expect"></div></div></div>
+        <div class="safety"><b>⚠️ 안전</b> · 젖은 손으로 전기 기구와 플러그를 만지지 않아요. · 소비 전력을 확인할 때는 전기 기구의 플러그를 뽑은 뒤 뒷면이나 아래쪽 표시를 봐요. · 멀티탭 하나에 소비 전력이 큰 기구를 여러 개 꽂지 않아요.</div>
+        <div class="btn-row" style="padding-top:6px"><button class="btn" data-tabgo="conn">① 실험 시작 →</button></div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-conn">
+      <div class="card">
+        <h3>① 저항의 직렬연결과 병렬연결의 특징 비교하기 <span class="badge">교과서 254쪽 디지털 해 보기</span></h3>
+        <p>전구는 전류의 흐름을 방해하는 <b>저항</b>이에요. 연결 방법을 고르고 전구의 밝기를 비교해 보세요. <b>전구를 누르면 빼거나 다시 끼울 수 있어요.</b></p>
+        <div class="pred" id="nPred"></div>
+        <div class="steps-box" id="nSteps"></div>
+        <div class="ctrl"><label>연결 방법</label><div class="toggle" id="nMode"></div></div>
+        <div class="ctrl"><label>보기</label><div class="toggle"><button class="chip on" id="nShowE">🔵 전자의 이동</button><button class="chip" id="nShowI">🔴 전류의 방향</button><button class="chip" id="nPut">🔧 전구 모두 끼우기</button></div></div>
+        <div class="rig" id="nNet"></div>
+        <div class="legend2"><span><span class="ion-key n">−</span> 전자</span><span style="color:#e8590c">⟶ 전류의 방향</span><span>💡 빛이 밝을수록 둘레가 크게 빛나요</span></div>
+        <div class="meters" id="nMeters"></div>
+        <div class="status-line" id="nMsg"></div>
+        <div class="compare-box">
+          <h4 style="margin:0 0 6px">과정 3. ○ 안에 &gt;, &lt; 또는 =로 표시해 보자.</h4>
+          <div class="cmp-row"><span>전구 1개의 밝기</span><div class="toggle" id="cmpS"></div><span>직렬연결한 경우<br>전구 1개의 밝기</span></div>
+          <div class="cmp-row"><span>전구 1개의 밝기</span><div class="toggle" id="cmpP"></div><span>병렬연결한 경우<br>전구 1개의 밝기</span></div>
+          <div class="btn-row" style="padding-top:4px"><button class="btn small" id="cmpChk">비교 확인하기</button><span class="mark" id="cmpMark"></span></div>
+        </div>
+        <h4>📋 실험 기록표 <span class="muted">(관찰하면 자동으로 채워져요)</span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="nTable"></table></div>
+        <div class="qa-box">
+          <div class="pq">📖 교과서 질문 — 전구를 직렬연결하거나 병렬연결할 때 어떤 차이가 있는지 정리해 보자.</div>
+          <textarea data-save="nAns" id="note-nAns" placeholder="직렬연결: …  /  병렬연결: …"></textarea><div class="saved" id="saved-nAns"></div>
+          <div class="btn-row" style="padding-top:4px"><button class="btn small secondary" data-ans="nAnsBox">예시 답안 보기</button></div>
+          <div class="info-panel hidden" id="nAnsBox">• <b>전구의 직렬연결</b>: 전구 1개를 연결할 때와 비교하면 직렬연결한 전구 1개의 밝기는 <b>어두워지고</b>, 전구 1개의 연결을 끊으면 <b>나머지 전구도 꺼진다</b>.<br>• <b>전구의 병렬연결</b>: 전구 1개를 연결할 때와 비교하면 병렬연결한 전구 1개의 밝기는 <b>변하지 않고</b>, 전구 1개의 연결을 끊어도 <b>나머지 전구의 불이 켜진 채로 있다</b>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-tap">
+      <div class="card">
+        <h3>② 멀티탭과 가정의 전기 기구 연결 <span class="badge">교과서 255쪽</span></h3>
+        <p>콘센트 옆 <b>스위치</b>를 눌러 전기 기구를 켜고 꺼 보세요. <b>내부 연결 보기</b>로 멀티탭 속 전선도 볼 수 있어요.</p>
+        <div class="ctrl"><label>연결 방식</label><div class="toggle" id="tMode"></div></div>
+        <div class="ctrl"><label>보기</label><div class="toggle"><button class="chip" id="tInside">🔍 내부 연결 보기</button><button class="chip" id="tAllOn">⚡ 모두 켜기</button><button class="chip" id="tAllOff">⏻ 모두 끄기</button></div></div>
+        <div class="rig" id="tapFig"></div>
+        <div class="readout" id="tRead"></div>
+        <div class="meters" id="tMeters"></div>
+        <div class="status-line" id="tMsg"></div>
+        <div class="analogy">⚠️ <b>안전</b> — 병렬연결한 기구를 많이 켤수록 멀티탭 전체에 흐르는 전류가 커져요. 소비 전력이 큰 기구를 한 멀티탭에 여러 개 꽂으면 과열될 수 있어요. <span class="badge ext">확장</span></div>
+        <div class="qa-box">
+          <div class="pq">📖 스스로 확인하기 2 — 멀티탭에 연결한 각 전기 기구에 걸리는 전압의 크기는 같다. <span class="mark" id="tq2m"></span></div>
+          <div class="toggle" id="tq2"><button class="chip" data-v="o">○</button><button class="chip" data-v="x">×</button></div>
+          <div class="pq" style="margin-top:12px">📖 스스로 확인하기 3 (창의력) — 가정에서 사용하는 전기 기구가 모두 직렬연결되어 있다면 어떤 일이 일어날지 상상하여 이야기해 보자.</div>
+          <textarea data-save="tq3" id="note-tq3" placeholder="'만약 직렬연결이라면?'을 눌러 확인한 뒤 적어 보세요."></textarea><div class="saved" id="saved-tq3"></div>
+          <div class="btn-row" style="padding-top:4px"><button class="btn small secondary" data-ans="tq3Box">예시 답안 보기</button></div>
+          <div class="info-panel hidden" id="tq3Box">가정 내 직렬연결된 전기 기구 중 하나라도 꺼지면 다른 전기 기구도 모두 꺼질 것이다. (또 각 기구에 220 V보다 작은 전압이 걸려 제대로 작동하지 않을 것이다.)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-power">
+      <div class="card">
+        <h3>③ 전기 기구에서 에너지가 전환될 때의 소비 전력 조사하기 <span class="badge">교과서 256~257쪽 탐구</span></h3>
+        <p>전기 기구를 눌러 <b>뒷면의 표시</b>를 확인하고, 전기 에너지가 <b>주로 어떤 에너지로 전환되는지</b> 골라 보세요. 맞히면 조사표에 기록돼요.</p>
+        <div class="pred" id="pPred"></div>
+        <div class="app-grid" id="appGrid"></div>
+        <div class="card inner hidden" id="appDetail"></div>
+        <h4>📋 조사표 <span class="muted" id="pCount"></span></h4>
+        <div class="tbl-wrap"><table class="tbl rec-tbl" id="pTable"></table></div>
+        <h4>📊 소비 전력 비교 <span class="muted">(조사한 기구만 표시)</span></h4>
+        <div id="pChart" class="pchart"></div>
+        <div class="analogy">💡 소비 전력 값은 <b>예시 값</b>이에요. 같은 용도·비슷한 용량이라도 제조 회사와 모델에 따라 소비 전력이 달라요. 집에서 실제 기구의 뒷면이나 아래쪽 표시를 찾아보세요.</div>
+        <div class="qa-box">
+          <div class="pq">📖 정리 — 소비 전력이 상대적으로 큰 전기 기구에는 어떤 특징이 있는지 정리해 보자.</div>
+          <textarea data-save="pAns" id="note-pAns" placeholder="그래프에서 🔥 표시가 붙은 기구들을 살펴보세요."></textarea><div class="saved" id="saved-pAns"></div>
+          <div class="btn-row" style="padding-top:4px"><button class="btn small secondary" data-ans="pAnsBox">예시 답안 보기</button></div>
+          <div class="info-panel hidden" id="pAnsBox">전기밥솥, 전기 주전자, 전열기, 다리미, 드라이어와 같이 전기 에너지를 <b>열에너지로 전환하는</b> 전기 기구의 소비 전력이 상대적으로 큰 편이다. 같은 종류의 전기 기구일 경우 크기나 용량이 클수록 소비 전력이 상대적으로 크다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-eff">
+      <div class="card">
+        <h3>④ 에너지 효율 비교하기 <span class="badge">교과서 258쪽 그림 Ⅶ-10</span></h3>
+        <p>두 전구 <b>가</b>, <b>나</b>에 <b>같은 양의 전기 에너지</b>를 공급해요. 전기 에너지가 어떤 에너지로 얼마나 전환되는지 지켜보세요.</p>
+        <div class="pred" id="ePred"></div>
+        <div class="btn-row" style="padding-top:0"><button class="btn" id="eRun">⚡ 전기 에너지 공급하기</button><button class="btn secondary" id="eReset">↺ 처음부터</button></div>
+        <div class="rig"><canvas id="eCv" height="330"></canvas></div>
+        <div class="legend2"><span style="color:#2f6fdb">⚡ 전기 에너지</span><span style="color:#d9a400">◆ 빛에너지</span><span style="color:#e03131">▲ 열에너지</span><span>한 조각 = 공급한 전기 에너지의 10 %</span></div>
+        <div class="eff-bars" id="eBars"></div>
+        <div class="status-line" id="eMsg"></div>
+        <div class="analogy">⚖️ 에너지는 보존되므로 공급한 전기 에너지와 방출한 빛에너지, 열에너지의 합은 같아요. 효율이 높은 전구는 같은 전기 에너지로 <b>빛에너지를 더 많이</b> 내요.</div>
+      </div>
+      <div class="card">
+        <h3>🔴 대기 전력 확인하기 <span class="badge">교과서 258쪽</span></h3>
+        <p>텔레비전을 리모컨으로 끈 뒤에도 전기 에너지를 쓸까요? 상태를 바꾸며 <b>사용한 전기 에너지</b> 막대를 지켜보세요. <span class="badge ext">가상 값</span></p>
+        <div class="toggle" id="sbMode"></div>
+        <div class="rig" id="sbFig" style="max-width:520px"></div>
+        <div class="meters" id="sbMeters"></div>
+        <div class="status-line" id="sbMsg"></div>
+        <div class="analogy">🔌 <b>대기 전력을 줄이는 방법</b>: 전원 스위치가 있는 멀티탭 사용 · 장기간 사용하지 않는 전기 기구의 플러그 뽑기 · 대기 전력 차단 기능이 있는 전기 기구 사용하기</div>
+      </div>
+    </div>
+
+    <div class="tabpane" id="tab-save">
+      <div class="card">
+        <h3>⑤ 전기 에너지의 효율적 사용 실천하기 <span class="badge">교과서 259쪽 해 보기</span></h3>
+        <p><b>과정 1.</b> 그림 속 집에서 전기 에너지를 <b>효율적으로 사용하지 않는 경우</b>를 찾아 눌러 보세요. <span class="pill">찾은 곳 <b id="hsCount">0 / 6</b></span></p>
+        <div class="rig" id="houseFig"></div>
+        <div class="info-panel" id="hsInfo">👀 낭비되는 곳을 찾아 눌러 보세요.</div>
+        <div class="found-list" id="hsList"></div>
+      </div>
+      <div class="card">
+        <h3>📰 과정 3. 카드 뉴스 만들기 <span class="badge">디지털</span></h3>
+        <p>제목을 쓰고 실천 방법을 <b>3개까지</b> 고르면 카드 뉴스가 만들어져요. 그림으로 저장해 공유 플랫폼에 올려 보세요.</p>
+        <div class="ctrl"><label>제목</label><input class="inp" id="cnTitle" maxlength="22" value="전기 에너지를 효율적으로 사용하는 방법"></div>
+        <div class="ctrl"><label>실천 방법 (최대 3개)</label><div class="toggle" id="cnPick"></div></div>
+        <div class="ctrl"><label>색</label><div class="toggle" id="cnTheme"></div></div>
+        <div class="rig" style="max-width:460px"><canvas id="cnCv" height="460"></canvas></div>
+        <div class="btn-row center"><button class="btn" id="cnSave">🖼️ 그림으로 저장(PNG)</button></div>
+      </div>
+      <div class="card">
+        <h3>✅ 정리 — 다른 모둠의 카드 뉴스 내용을 정리하고, 일상생활에서 실천해 보자</h3>
+        <div class="check-list" id="pledge"></div>
+        <div class="qa-box">
+          <div class="pq">📖 스스로 확인하기 3 (지속가능 사회에 기여) — 학교에서 전기 에너지를 효율적으로 사용하는 방법을 이야기해 보자.</div>
+          <textarea data-save="sq3" id="note-sq3" placeholder="교실, 과학실, 급식실 등에서 할 수 있는 방법을 적어 보세요."></textarea><div class="saved" id="saved-sq3"></div>
+          <div class="btn-row" style="padding-top:4px"><button class="btn small secondary" data-ans="sq3Box">예시 답안 보기</button></div>
+          <div class="info-panel hidden" id="sq3Box">사용하지 않는 전기 기구는 끈다, 에어컨은 적정 온도로 사용한다, 쉬는 시간과 이동 수업 때 교실 전등을 끈다 등</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn secondary" data-go="1">← 개념</button>
+      <button class="btn" data-go="3" style="margin-left:auto">스티커로 정리하기 →</button>
+    </div>
+  </section>
+
+  <!-- 4. 스티커 -->
+  <section class="screen" id="screen-sticker">
+    <h2>🏷️ 스티커 붙이기: 저항의 연결 · 전기 에너지 정리판</h2>
+    <p>스티커를 골라 알맞은 빈칸을 눌러 붙이세요. 다 붙였으면 <b>확인하기</b>! 어디에도 붙지 않는 <b>함정 스티커</b>도 숨어 있어요.</p>
+    <div class="board-tabs" id="boardTabs"></div>
+    <div class="sticker-status"><span class="pill">🏷️ 붙인 스티커 <span id="stkCount">0 / 0</span></span><span class="pill">🔁 시도 <span id="stkTry">0</span>회</span></div>
+    <div class="card"><h3 id="boardTitle"></h3><p class="muted" id="boardDesc"></p><div class="sticker-board" id="stkBoard"></div><div class="stk-msg" id="stkMsg"></div><div id="stkDone"></div></div>
+    <div class="card sticker-tray" id="stkTray"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="2">← 이전</button>
+      <button class="btn secondary" id="stkReset">↺ 이 판 처음부터</button>
+      <button class="btn" id="stkCheck">확인하기 ✔</button>
+      <button class="btn mint hidden" id="stkNext">다음 판 →</button>
+      <button class="btn mint hidden" id="stkToLife" data-go="4">실생활로 →</button>
+    </div>
+  </section>
+
+  <!-- 5. 실생활 -->
+  <section class="screen" id="screen-life">
+    <h2>🏠 생활 속 저항의 연결과 전기 에너지</h2>
+    <p>카드를 눌러 <b>왜 그럴까?</b>를 확인하세요.</p>
+    <div class="life-grid" id="lifeGrid"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="3">← 이전</button>
+      <button class="btn" id="toQuiz" style="margin-left:auto">개념 확인 10문제 →</button>
+    </div>
+  </section>
+
+  <!-- 6. 퀴즈 -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-top"><b id="qNum">1 / 10</b><div class="quiz-progress"><i id="qBar"></i></div><span class="combo" id="combo"></span></div>
+    <div class="card q-card" id="qCard"></div>
+    <div class="btn-row">
+      <button class="btn secondary" data-go="4">← 실생활</button>
+      <button class="btn hidden" id="qNext" style="margin-left:auto">다음 문제 →</button>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result">
+    <div class="card result-hero">
+      <div class="trophy" id="trophy">🏆</div>
+      <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <div class="score-big"><span class="grad-text" id="scoreBig">0</span><span style="font-size:28px;color:var(--color-text-light)"> / 10</span></div>
+      <p id="resultMsg" style="font-size:17px;color:var(--color-text);font-weight:700"></p>
+      <p class="muted" id="resultTime"></p>
+    </div>
+    <div class="card" id="wrongBox"></div>
+    <div class="card check-list">
+      <h3>✅ 학습목표 자가 점검 — 이제 나는</h3>
+      <label><input type="checkbox" data-save-check="c1"> 전구(저항)를 직렬연결할수록 전체 저항이 커져 전류가 약해지고 전구가 어두워짐을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c2"> 전구를 병렬연결하면 각 전구에 같은 전압이 걸려 밝기가 같고, 회로 전체 전류는 커짐을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c3"> 전구 하나의 연결이 끊어질 때 직렬·병렬연결의 차이를 말하고, 가정의 전기 기구를 병렬연결하는 까닭을 설명할 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c4"> 소비 전력의 뜻과 단위(W)를 알고, 전기 기구에서 전기 에너지가 어떤 에너지로 전환되는지 예를 들 수 있다.</label>
+      <label><input type="checkbox" data-save-check="c5"> 에너지 효율과 대기 전력을 설명하고, 전기 에너지를 효율적으로 사용하는 방법을 실천할 수 있다.</label>
+    </div>
+    <p class="muted" style="text-align:center">📸 이 화면을 캡처해서 선생님께 제출하세요.</p>
+    <div class="btn-row center">
+      <button class="btn secondary hidden" id="retryWrong">틀린 문제 다시 풀기</button>
+      <button class="btn secondary" id="retryAll">처음부터 다시 풀기</button>
+      <button class="btn" data-go="0">처음 화면으로</button>
+    </div>
+  </section>
+
+  <footer>Made by Lee Jae Kwang</footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+
+'use strict';
+/* ============ 저장 ============ */
+const LSP='vlab-spe-';
+function lsGet(k,d){try{const v=localStorage.getItem(LSP+k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(LSP+k,JSON.stringify(v));}catch(e){}}
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+
+/* ============ 효과음 (Web Audio로 직접 합성, 외부 파일 없음) ============ */
+const SND={ctx:null,on:lsGet('sound',true),master:null,buf:null};
+function audio(){
+  if(!SND.on) return null;
+  try{
+    if(!SND.ctx){const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+      SND.ctx=new C(); SND.master=SND.ctx.createGain(); SND.master.gain.value=.55; SND.master.connect(SND.ctx.destination);}
+    if(SND.ctx.state==='suspended') SND.ctx.resume();
+    return SND.ctx;
+  }catch(e){return null;}
+}
+function tone(f,dur,o={}){
+  const c=audio(); if(!c) return;
+  const t=c.currentTime+(o.when||0), vol=o.vol||.25;
+  const os=c.createOscillator(), g=c.createGain();
+  os.type=o.type||'sine'; os.frequency.setValueAtTime(f,t);
+  if(o.to) os.frequency.exponentialRampToValueAtTime(o.to,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+(o.attack||.006)); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  os.connect(g); g.connect(SND.master); os.start(t); os.stop(t+dur+.05);
+}
+function noise(dur,o={}){
+  const c=audio(); if(!c) return;
+  if(!SND.buf){SND.buf=c.createBuffer(1,Math.floor(c.sampleRate*1.5),c.sampleRate); const d=SND.buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;}
+  const t=c.currentTime+(o.when||0);
+  const s=c.createBufferSource(); s.buffer=SND.buf; s.loop=true;
+  const fl=c.createBiquadFilter(); fl.type=o.type||'bandpass'; fl.Q.value=o.q||1;
+  fl.frequency.setValueAtTime(o.f1||800,t); fl.frequency.exponentialRampToValueAtTime(o.f2||2000,t+dur);
+  const g=c.createGain(), a=o.attack!=null?o.attack:dur*.4;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.vol||.15,t+a); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(fl); fl.connect(g); g.connect(SND.master); s.start(t); s.stop(t+dur+.05);
+}
+function sfx(n){
+  try{switch(n){
+    case 'tap': tone(660,.07,{type:'triangle',vol:.14}); break;
+    case 'tick': tone(1250,.035,{type:'square',vol:.04}); break;
+    case 'pick': tone(520,.1,{vol:.22,to:900}); break;
+    case 'stick': tone(320,.09,{type:'square',vol:.07,to:150}); noise(.09,{vol:.16,f1:2200,f2:600,attack:.004}); break;
+    case 'peel': noise(.18,{vol:.12,f1:900,f2:3500,attack:.01}); break;
+    case 'correct': tone(784,.12,{type:'triangle',vol:.28}); tone(1047,.24,{type:'triangle',vol:.28,when:.1}); break;
+    case 'wrong': tone(230,.28,{type:'sawtooth',vol:.1,to:130}); break;
+    case 'combo': [523,659,784,1047].forEach((f,i)=>tone(f,.15,{type:'triangle',vol:.24,when:i*.07})); noise(.5,{vol:.08,f1:4000,f2:9000,type:'highpass',when:.2,attack:.01}); break;
+    case 'fanfare': [[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.2],[784,.58,.14],[1047,.7,.6]].forEach(a=>tone(a[0],a[2],{type:'triangle',vol:.27,when:a[1]})); noise(1,{vol:.1,f1:3000,f2:9000,type:'highpass',when:.36,attack:.02}); break;
+    case 'pop': tone(380+Math.random()*320,.07,{vol:.22,to:1300}); break;
+    case 'whoosh': noise(.32,{vol:.09,f1:400,f2:2600,q:.7}); break;
+    case 'inhale': noise(1.3,{vol:.09,f1:450,f2:1500,q:.5}); break;
+    case 'exhale': noise(1.5,{vol:.09,f1:1400,f2:380,q:.5}); break;
+    case 'stamp': tone(110,.2,{type:'square',vol:.13,to:55}); noise(.16,{vol:.22,f1:900,f2:200,attack:.003}); break;
+    case 'burst': noise(.55,{vol:.16,f1:4000,f2:9500,type:'highpass',attack:.004}); tone(900,.14,{vol:.12,to:1900}); break;
+    case 'unlock': tone(660,.1,{type:'triangle',vol:.22}); tone(990,.28,{type:'triangle',vol:.22,when:.09}); break;
+    case 'drip': tone(1400,.09,{vol:.2,to:420}); tone(700,.05,{vol:.08,when:.08}); break;
+    case 'flush': noise(1.3,{vol:.2,f1:300,f2:1800,type:'lowpass',q:.6,attack:.15}); noise(.9,{vol:.08,f1:2500,f2:600,when:.4}); break;
+    case 'flow': noise(.7,{vol:.1,f1:250,f2:700,type:'lowpass',q:.8}); break;
+    case 'filter': noise(.6,{vol:.1,f1:3000,f2:1200,q:2}); [0,.12,.24].forEach(w=>tone(900+w*600,.06,{vol:.08,when:w})); break;
+    case 'absorb': [523,659,784].forEach((f,i)=>tone(f,.14,{type:'sine',vol:.16,when:i*.08,to:f*1.25})); break;
+    case 'secrete': [784,622,494].forEach((f,i)=>tone(f,.14,{type:'triangle',vol:.14,when:i*.08,to:f*.8})); break;
+    case 'zoom': tone(300,.45,{vol:.14,to:1500}); noise(.4,{vol:.06,f1:600,f2:5000}); break;
+    case 'sparkle': [1319,1568,2093].forEach((f,i)=>tone(f,.12,{type:'sine',vol:.12,when:i*.06})); break;
+    case 'heat': for(let i=0;i<8;i++) tone(250+Math.random()*350,.08,{vol:.12,to:700+Math.random()*500,when:i*.13}); break;
+    case 'pen': tone(1800,.02,{type:'triangle',vol:.03}); break;
+    case 'bubble': tone(300,.12,{vol:.18,to:700}); break;
+    case 'scrape': noise(.45,{vol:.16,f1:700,f2:1600,q:3,attack:.02}); noise(.3,{vol:.08,f1:2400,f2:1200,q:4,when:.12}); break;
+    case 'slide': noise(.8,{vol:.1,f1:1800,f2:500,type:'bandpass',q:.8,attack:.03}); break;
+    case 'thud': tone(95,.18,{type:'square',vol:.12,to:50}); noise(.12,{vol:.18,f1:500,f2:150,attack:.003}); break;
+    case 'slip': tone(900,.5,{type:'triangle',vol:.16,to:180}); noise(.4,{vol:.1,f1:3000,f2:800,when:.05}); break;
+    case 'step': tone(160,.07,{type:'square',vol:.07,to:90}); noise(.06,{vol:.12,f1:900,f2:400,attack:.003}); break;
+    case 'rub': noise(.32,{vol:.15,f1:1500,f2:3800,q:1.4,attack:.03}); noise(.2,{vol:.07,f1:3000,f2:1200,q:2,when:.14}); break;
+    case 'zap': noise(.14,{vol:.24,f1:7000,f2:2600,type:'highpass',attack:.002}); tone(2200,.07,{type:'square',vol:.05,to:500}); break;
+    case 'crackle': for(let i=0;i<6;i++) noise(.035,{vol:.2,f1:6000,f2:3500,type:'highpass',attack:.002,when:i*.06+Math.random()*.04}); break;
+    case 'hum': tone(120,.45,{type:'sawtooth',vol:.035,to:200}); break;
+    case 'repel': tone(480,.28,{type:'triangle',vol:.18,to:980}); break;
+    case 'attract': tone(980,.28,{type:'triangle',vol:.18,to:420}); break;
+    case 'roll': noise(1.1,{vol:.13,f1:180,f2:520,type:'lowpass',q:1.2,attack:.12}); break;
+    case 'foil': [1568,2093,2637].forEach((f,i)=>tone(f,.12,{vol:.08,when:i*.05})); break;
+    case 'electron': tone(1300,.06,{type:'sine',vol:.09,to:2000}); break;
+    case 'switch': tone(190,.05,{type:'square',vol:.09,to:120}); noise(.05,{vol:.18,f1:3000,f2:1200,attack:.002}); break;
+    case 'bulb': tone(660,.3,{type:'sine',vol:.13,to:1320}); tone(1980,.25,{type:'sine',vol:.05,when:.08}); break;
+    case 'buzz': tone(110,.35,{type:'sawtooth',vol:.03,to:118}); break;
+    case 'knob': tone(1500,.03,{type:'square',vol:.035}); break;
+    case 'beep': tone(1760,.07,{type:'square',vol:.05}); break;
+    case 'water': noise(.9,{vol:.12,f1:250,f2:900,type:'lowpass',q:.7,attack:.1}); break;
+    case 'connect': tone(600,.06,{type:'triangle',vol:.16}); tone(900,.09,{type:'triangle',vol:.16,when:.06}); break;
+    case 'thunk': tone(150,.12,{type:'triangle',vol:.14,to:90}); break;
+    case 'device': [880,1175,1568].forEach((f,i)=>tone(f,.1,{type:'sine',vol:.13,when:i*.07})); break;
+    case 'creak': tone(140,.5,{type:'sawtooth',vol:.05,to:260}); break;
+  }}catch(e){}
+}
+
+/* ============ 애니메이션 루프 & 폭죽(컨페티) ============ */
+const TASKS=[]; let loopOn=false, lastT=0;
+function addTask(fn){TASKS.push(fn);}
+function kick(){ if(!loopOn){loopOn=true; lastT=performance.now(); requestAnimationFrame(loop);} }
+function loop(t){
+  const dt=clamp((t-lastT)/1000,0.001,0.05); lastT=t; let any=false;
+  for(const f of TASKS){ try{ if(f(dt,t)) any=true; }catch(e){ console.error(e); } }
+  const fxAny=fxStep();
+  if(any||fxAny) requestAnimationFrame(loop); else loopOn=false;
+}
+const FX={cv:null,ctx:null,parts:[],dpr:1,dirty:false};
+const FXCOL=['#ff4d6d','#ffb238','#3361e8','#21c9a9','#7a4ff0','#45b3ff','#ffd43b','#ff8a3d'];
+function fxResize(){ if(!FX.cv) return; FX.dpr=Math.min(2,window.devicePixelRatio||1); FX.cv.width=Math.round(innerWidth*FX.dpr); FX.cv.height=Math.round(innerHeight*FX.dpr); }
+function confetti(x,y,o={}){
+  let n=o.count||40; if(REDUCED) n=Math.ceil(n/4);
+  const sp=o.speed||9, cols=o.colors||FXCOL, shapes=o.shapes||['r','c','s','b'];
+  for(let i=0;i<n;i++){
+    const a=(o.angle!=null?o.angle:-Math.PI/2)+(Math.random()-.5)*(o.spread!=null?o.spread:Math.PI*2);
+    const v=sp*(.4+Math.random()*.8);
+    FX.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:o.g!=null?o.g:.28,rot:Math.random()*6,vr:(Math.random()-.5)*.45,
+      s:(o.size||8)*(.6+Math.random()*.8),shape:shapes[i%shapes.length],col:cols[i%cols.length],life:1,dec:o.decay||(.009+Math.random()*.008),drag:o.drag||.985});
+  }
+  kick();
+}
+function burstAt(el,o={}){ if(!el) return; const r=el.getBoundingClientRect(); confetti(r.left+r.width/2,r.top+r.height/2,o); }
+function fireworks(){
+  sfx('burst'); const W=innerWidth,H=innerHeight;
+  for(let k=0;k<5;k++) setTimeout(()=>{ confetti(W*(.15+Math.random()*.7),H*(.18+Math.random()*.35),{count:60,speed:11,g:.17}); sfx('pop'); },k*260);
+  setTimeout(()=>{ const n=REDUCED?15:90; for(let i=0;i<n;i++) FX.parts.push({x:Math.random()*W,y:-20-Math.random()*240,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,g:.05,rot:Math.random()*6,vr:(Math.random()-.5)*.3,s:6+Math.random()*7,shape:['r','b','s'][i%3],col:FXCOL[i%FXCOL.length],life:1,dec:.004,drag:.995}); kick(); },300);
+}
+function starPath(c,r){ c.beginPath(); for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2, rr=i%2?r*.45:r; c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} c.closePath(); c.fill(); }
+function fxStep(){
+  const P=FX.parts, c=FX.ctx; if(!c) return false;
+  if(!P.length){ if(FX.dirty){ c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,FX.cv.width,FX.cv.height); FX.dirty=false; } return false; }
+  FX.dirty=true; c.setTransform(FX.dpr,0,0,FX.dpr,0,0); c.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i]; p.vx*=p.drag; p.vy=p.vy*p.drag+p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=p.dec;
+    if(p.life<=0||p.y>innerHeight+40){P.splice(i,1);continue;}
+    c.save(); c.globalAlpha=Math.min(1,p.life*1.6); c.translate(p.x,p.y); c.rotate(p.rot); c.fillStyle=p.col; const s=p.s;
+    if(p.shape==='c'){c.beginPath();c.arc(0,0,s/2,0,7);c.fill();}
+    else if(p.shape==='s') starPath(c,s*.7);
+    else if(p.shape==='b') c.fillRect(-s/2,-s/5,s,(s/2.5)*Math.abs(Math.cos(p.rot*2))+1);
+    else c.fillRect(-s/2,-s/2,s,s*.62);
+    c.restore();
+  }
+  return true;
+}
+function floatText(x,y,txt,color){
+  const d=document.createElement('div'); d.className='float-txt'; d.textContent=txt; d.style.left=x+'px'; d.style.top=y+'px'; d.style.color=color||'#12a874';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1200);
+}
+function floatAt(el,txt,color){ if(!el) return; const r=el.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,txt,color); }
+let toastTimer=null;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2300); }
+
+/* ============ 캔버스 도우미 ============ */
+function prepCanvas(cv){
+  const w=cv.clientWidth; if(!w) return null;
+  const H=+cv.getAttribute('height'); const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=H+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv._w=w; cv._dpr=dpr; cv._H=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); return {ctx,W:w,H:cv._H};
+}
+function visible(el){ return !!(el && el.offsetParent!==null); }
+
+/* ============ 화면 이동 ============ */
+const SCREENS=['screen-intro','screen-concept','screen-experiment','screen-sticker','screen-life','screen-quiz','screen-result'];
+const STEP_NAMES=['도입','개념','탐구','스티커','실생활','개념 확인'];
+let cur=-1; const enterHooks={};
+function renderSteps(){
+  const box=$('stepIndicator');
+  if(!box.children.length){
+    STEP_NAMES.forEach((n,k)=>{ const b=document.createElement('button'); b.className='step-dot'; b.innerHTML='<i></i><span>'+n+'</span>'; b.setAttribute('aria-label',(k+1)+'단계 '+n);
+      b.addEventListener('click',()=>{ sfx('tap'); goTo(k===5?(qz&&qz.done?6:5):k); }); box.appendChild(b); });
+  }
+  const pos=Math.min(cur,6);
+  [...box.children].forEach((b,k)=>{ b.classList.toggle('active',k===pos||(pos===6&&k===5)); b.classList.toggle('done',k<pos); });
+}
+function goTo(i){
+  if(i===cur) return;
+  const back=i<cur, prev=cur;
+  SCREENS.forEach((id,k)=>{ const el=$(id); el.classList.toggle('active',k===i); el.classList.toggle('back',k===i&&back); });
+  cur=i; renderSteps(); window.scrollTo(0,0);
+  if(prev>=0) sfx('whoosh');
+  if(i<=5) lsSet('progress',i);
+  if(enterHooks[i]) enterHooks[i]();
+  kick();
+}
+
+
+</script>
+<script>
+'use strict';
+/* ============ 공통 그림 도우미 ============ */
+const C_POS='#e03131', C_NEG='#2f6fdb', C_F='#7b2ff7';
+let SVGID=0;
+const r1=v=>Math.round(v*10)/10;
+function arw(x1,y1,x2,y2,c,w,dash){
+  w=w||6; const a=Math.atan2(y2-y1,x2-x1), L=Math.hypot(x2-x1,y2-y1); if(L<3) return '';
+  const h=Math.min(w*3,L*.7), hx=x2-Math.cos(a)*h, hy=y2-Math.sin(a)*h, px=Math.sin(a)*h*.6, py=-Math.cos(a)*h*.6;
+  return `<g><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#fff" stroke-width="${w+5}" stroke-linecap="round" opacity=".85"/><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"${dash?' stroke-dasharray="11 8"':''}/><polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(hx+px).toFixed(1)},${(hy+py).toFixed(1)} ${(hx-px).toFixed(1)},${(hy-py).toFixed(1)}" fill="${c}" stroke="#fff" stroke-width="1.5"/></g>`;
+}
+function txt(x,y,t,o){ o=o||{}; return `<text x="${x}" y="${y}" text-anchor="${o.a||'middle'}" font-size="${o.s||17}" font-weight="900" fill="${o.c||'#1b1d4a'}" stroke="#fff" stroke-width="${o.halo==null?4:o.halo}" paint-order="stroke">${t}</text>`; }
+/* 전하 기호: s>0 (+) 빨강 원, s<0 (−) 파랑 원 — 색과 기호를 함께 */
+function chg(x,y,s,r,attr){ r=r||9; const p=s>0; x=r1(x); y=r1(y);
+  return `<g${attr||''}><circle cx="${x}" cy="${y}" r="${r}" fill="${p?'#ffe1e1':'#dfe9ff'}" stroke="${p?C_POS:C_NEG}" stroke-width="${r>7?2:1.5}"/><text x="${x}" y="${r1(y+r*.47)}" text-anchor="middle" font-size="${r1(r*1.45)}" font-weight="900" fill="${p?C_POS:C_NEG}">${p?'+':'−'}</text></g>`; }
+function prepRatio(cv,LW,LH){ const w=cv.clientWidth; if(!w) return null; const h=w*LH/LW, dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv._w!==w||cv._dpr!==dpr){ cv.style.height=h+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv._w=w; cv._dpr=dpr; }
+  const ctx=cv.getContext('2d'); const k=w/LW*dpr; ctx.setTransform(k,0,0,k,0,0); return ctx; }
+function cChg(c,x,y,s,r,al){ c.save(); c.globalAlpha=al==null?1:al; c.beginPath(); c.arc(x,y,r,0,7); c.fillStyle=s>0?'#ffe1e1':'#dfe9ff'; c.fill(); c.lineWidth=r>8?2.4:1.8; c.strokeStyle=s>0?C_POS:C_NEG; c.stroke();
+  c.fillStyle=s>0?C_POS:C_NEG; c.font=`900 ${Math.round(r*1.5)}px sans-serif`; c.textAlign='center'; c.textBaseline='middle'; c.fillText(s>0?'+':'−',x,y+r*.08); c.restore(); }
+function cTxt(c,t,x,y,sz,col,al){ c.save(); c.font=`900 ${sz}px 'Noto Sans KR',sans-serif`; c.textAlign=al||'center'; c.textBaseline='middle'; c.lineWidth=5; c.strokeStyle='#fff'; c.strokeText(t,x,y); c.fillStyle=col||'#1b1d4a'; c.fillText(t,x,y); c.restore(); }
+const C_CUR='#e8590c';
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
+const f2=v=>(Math.round(v*100)/100).toFixed(2);
+const fmt=v=>{ const r=Math.round(v*100)/100; return (Math.abs(r-Math.round(r))<1e-9)?String(Math.round(r)):String(r); };
+function polyLen(P){ let L=0; for(let i=1;i<P.length;i++) L+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]); return L; }
+function polyAt(P,s){
+  for(let i=1;i<P.length;i++){ const ax=P[i-1][0],ay=P[i-1][1],bx=P[i][0],by=P[i][1],l=Math.hypot(bx-ax,by-ay);
+    if(s<=l||i===P.length-1){ const t=l?clamp(s/l,0,1):0, dx=(bx-ax)/(l||1), dy=(by-ay)/(l||1); return {x:ax+(bx-ax)*t,y:ay+(by-ay)*t,dx,dy,nx:-dy,ny:dx}; }
+    s-=l; }
+}
+function polySub(P,s0,s1){ const out=[]; let acc=0; const a=polyAt(P,s0); out.push([a.x,a.y]);
+  for(let i=1;i<P.length;i++){ acc+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]); if(acc>s0&&acc<s1) out.push(P[i]); }
+  const b=polyAt(P,s1); out.push([b.x,b.y]); return out; }
+function cPath(c,pts){ c.beginPath(); pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])); }
+function cArrow(c,x1,y1,x2,y2,col,w){ w=w||6; const a=Math.atan2(y2-y1,x2-x1), h=w*3;
+  c.save(); c.lineCap='round'; c.strokeStyle='#fff'; c.lineWidth=w+5; c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2-Math.cos(a)*h,y2-Math.sin(a)*h); c.stroke();
+  c.strokeStyle=col; c.lineWidth=w; c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2-Math.cos(a)*h,y2-Math.sin(a)*h); c.stroke();
+  c.fillStyle=col; c.beginPath(); c.moveTo(x2,y2); c.lineTo(x2-Math.cos(a)*h+Math.sin(a)*h*.65,y2-Math.sin(a)*h-Math.cos(a)*h*.65); c.lineTo(x2-Math.cos(a)*h-Math.sin(a)*h*.65,y2-Math.sin(a)*h+Math.cos(a)*h*.65); c.closePath(); c.fill(); c.restore(); }
+function cRound(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+
+/* 전지(세로) SVG: x 중심, y1 위, y2 아래, top=(+)가 위인지 */
+function battV(x,y1,y2,plusTop,o){ o=o||{}; const w=o.w||48, h=y2-y1, u='bt'+(++SVGID);
+  const band=plusTop?`<rect x="${x-w/2}" y="${y1}" width="${w}" height="${h*.32}" rx="6" fill="#f08c00"/>`:`<rect x="${x-w/2}" y="${y2-h*.32}" width="${w}" height="${h*.32}" rx="6" fill="#f08c00"/>`;
+  const nub=plusTop?`<rect x="${x-10}" y="${y1-9}" width="20" height="10" rx="3" fill="#868e96"/>`:`<rect x="${x-10}" y="${y2-1}" width="20" height="10" rx="3" fill="#868e96"/>`;
+  const lab=o.nolabel?'':(txt(x-w/2-22,(plusTop?y1:y2)+12,'(+)',{s:o.fs||20,c:C_POS})+txt(x-w/2-22,(plusTop?y2:y1)+12,'(−)',{s:o.fs||20,c:C_NEG}));
+  return `<g>${nub}<rect x="${x-w/2}" y="${y1}" width="${w}" height="${h}" rx="7" fill="#343a40"/>${band}<rect x="${x-w/2+6}" y="${y1+4}" width="6" height="${h-8}" rx="3" fill="#fff" opacity=".18"/>${lab}</g>`; }
+function bulbSVG(cx,cy,r,lit,lvl){ lvl=lvl==null?1:lvl; const u='bl'+(++SVGID);
+  return `<g>${lit?`<defs><radialGradient id="${u}"><stop offset="0" stop-color="#fff3a0" stop-opacity="${.95*Math.min(1,.45+lvl*.25)}"/><stop offset="1" stop-color="#ffd43b" stop-opacity="0"/></radialGradient></defs><circle class="glow" cx="${cx}" cy="${cy}" r="${r*(1.5+lvl*.6)}" fill="url(#${u})"/>`:''}
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="${lit?'#fff7c2':'#f1f3f5'}" fill-opacity=".9" stroke="#9aa6bb" stroke-width="3"/>
+  <path d="M${cx-r*.45},${cy+r*.75} L${cx-r*.3},${cy-r*.1} l${r*.15},-${r*.25} l${r*.15},${r*.25} l${r*.15},-${r*.25} l${r*.15},${r*.25} L${cx+r*.45},${cy+r*.75}" fill="none" stroke="${lit?'#f76707':'#868e96'}" stroke-width="${lit?4:3}" stroke-linejoin="round"/>
+  <rect x="${cx-r*.55}" y="${cy+r*.78}" width="${r*1.1}" height="${r*.5}" rx="4" fill="#adb5bd"/></g>`; }
+
+/* 기본 전기 회로 그림 (600×380): 전지 왼쪽 세로, 전구 위, 스위치 아래 */
+const CIRP='M90,141 V60 H272 M328,60 H510 V320 H332 M268,320 H90 V230';
+function circSVG(o){ o=o||{}; const top=!o.flip, open=!!o.open, u='ci'+(++SVGID);
+  let s=`<svg viewBox="0 0 600 380" role="img" aria-label="전기 회로">`;
+  s+=`<path d="${CIRP}" fill="none" stroke="#5c6475" stroke-width="7" stroke-linejoin="round"/>`;
+  s+=`<circle cx="268" cy="320" r="7" fill="#495057"/><circle cx="332" cy="320" r="7" fill="#495057"/>`;
+  s+=open?`<line x1="268" y1="320" x2="322" y2="288" stroke="#495057" stroke-width="8" stroke-linecap="round"/>`:`<line x1="268" y1="320" x2="332" y2="320" stroke="#495057" stroke-width="8" stroke-linecap="round"/>`;
+  s+=bulbSVG(300,52,30,!!o.lit,o.lvl);
+  s+=battV(90,150,230,top,{nolabel:o.nolabel});
+  if(o.flowE&&!open){ const dirRev=!top; s+=`<path d="${CIRP}" fill="none" stroke="${C_NEG}" stroke-width="7" class="flowdash${dirRev?'':' rev'}" stroke-linecap="round"/>`; }
+  const ar=(x1,y1,x2,y2,c)=>arw(x1,y1,x2,y2,c,6);
+  if(o.arrowsI&&!open){ const d=top?1:-1; s+=d>0?ar(380,28,460,28,C_CUR)+ar(540,150,540,230,C_CUR)+ar(230,350,150,350,C_CUR):ar(460,28,380,28,C_CUR)+ar(540,230,540,150,C_CUR)+ar(150,350,230,350,C_CUR); }
+  if(o.arrowsE&&!open){ const d=top?1:-1; s+=d>0?ar(460,92,380,92,C_NEG)+ar(480,230,480,150,C_NEG)+ar(150,290,230,290,C_NEG):ar(380,92,460,92,C_NEG)+ar(480,150,480,230,C_NEG)+ar(230,290,150,290,C_NEG); }
+  (o.marks||[]).forEach(m=>{ s+=arw(m.x1,m.y1,m.x2,m.y2,m.c||'#495057',6)+txt(m.lx,m.ly,m.label,{s:22,c:m.c||'#1b1d4a'}); });
+  (o.texts||[]).forEach(t=>{ s+=txt(t[0],t[1],t[2],{s:t[3]||22,c:t[4]}); });
+  return s+`</svg>`; }
+
+/* 그래프 SVG (520×330) */
+function graphSVG(o){ const W=o.W||520,H=o.H||330, x0=o.x0||74, x1=W-24, yb=H-52, yt=26;
+  const X=v=>x0+(x1-x0)*v/o.xmax, Y=v=>yb-(yb-yt)*v/o.ymax, fs=o.fs||17;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria||'그래프'}">`;
+  (o.xticks||[]).forEach(v=>{ s+=`<line x1="${X(v)}" y1="${yt}" x2="${X(v)}" y2="${yb}" stroke="#e7ebf3" stroke-width="1.5"/>`+(o.noTickLbl?'':`<text x="${X(v)}" y="${yb+22}" text-anchor="middle" font-size="${fs}" fill="#5a5f80" font-weight="700">${v}</text>`); });
+  (o.yticks||[]).forEach(v=>{ s+=`<line x1="${x0}" y1="${Y(v)}" x2="${x1}" y2="${Y(v)}" stroke="#e7ebf3" stroke-width="1.5"/>`+(o.noTickLbl?'':`<text x="${x0-8}" y="${Y(v)+6}" text-anchor="end" font-size="${fs}" fill="#5a5f80" font-weight="700">${o.ytf?o.ytf(v):v}</text>`); });
+  s+=`<line x1="${x0}" y1="${yb}" x2="${x1+6}" y2="${yb}" stroke="#343a40" stroke-width="2.5"/><line x1="${x0}" y1="${yb}" x2="${x0}" y2="${yt-8}" stroke="#343a40" stroke-width="2.5"/>`;
+  s+=`<text x="${x0-10}" y="${yb+22}" text-anchor="end" font-size="${fs}" fill="#5a5f80" font-weight="700">0</text>`;
+  s+=`<text x="${x1}" y="${H-6}" text-anchor="end" font-size="${fs+1}" font-weight="900" fill="#1b1d4a">${o.xlabel}</text><text x="${x0+8}" y="${yt-6}" font-size="${fs+1}" font-weight="900" fill="#1b1d4a">${o.ylabel}</text>`;
+  if(o.curve){ let d=''; const c=o.curve; for(let i=0;i<=60;i++){ const xv=c.from+(c.to-c.from)*i/60, yv=c.fn(xv); if(yv>o.ymax*1.02) continue; d+=(d?'L':'M')+X(xv).toFixed(1)+','+Y(yv).toFixed(1); } s+=`<path d="${d}" fill="none" stroke="${c.color}" stroke-width="${c.w||3}" ${c.dash?'stroke-dasharray="8 7"':''} stroke-linecap="round"/>`; }
+  (o.series||[]).forEach(se=>{ const pts=se.pts.slice().sort((a,b)=>a[0]-b[0]);
+    if(se.line&&pts.length){ const pp=se.origin?[[0,0]].concat(pts):pts; if(pp.length>1) s+=`<polyline points="${pp.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ')}" fill="none" stroke="${se.color}" stroke-width="${se.w||3.5}" ${se.dash?'stroke-dasharray="9 7"':''} stroke-linecap="round" stroke-linejoin="round" opacity="${se.op||1}"/>`; }
+    if(!se.noDots) pts.forEach(p=>{ const x=X(p[0]),y=Y(p[1]); s+=se.shape==='sq'?`<rect x="${x-7}" y="${y-7}" width="14" height="14" rx="2" fill="${se.color}" stroke="#fff" stroke-width="2" opacity="${se.op||1}"/>`:`<circle cx="${x}" cy="${y}" r="7.5" fill="${se.color}" stroke="#fff" stroke-width="2" opacity="${se.op||1}"/>`; });
+    if(se.label&&pts.length){ const p=pts[pts.length-1]; s+=txt(X(p[0])+(se.lx||8),Y(p[1])+(se.ly||-10),se.label,{s:se.ls||20,c:se.color,a:se.la||'start'}); } });
+  if(o.marker){ const [mx,my]=o.marker; s+=`<line x1="${X(mx)}" y1="${yb}" x2="${X(mx)}" y2="${Y(my)}" stroke="#adb5bd" stroke-dasharray="4 4" stroke-width="2"/><line x1="${x0}" y1="${Y(my)}" x2="${X(mx)}" y2="${Y(my)}" stroke="#adb5bd" stroke-dasharray="4 4" stroke-width="2"/><circle cx="${X(mx)}" cy="${Y(my)}" r="11" fill="none" stroke="${o.markerColor||'#1b1d4a'}" stroke-width="3"/>`; }
+  if(o.legend){ let lx=x0+96; o.legend.forEach(l=>{ s+=(l[2]==='sq'?`<rect x="${lx}" y="${yt+4}" width="14" height="14" rx="2" fill="${l[1]}"/>`:`<circle cx="${lx+7}" cy="${yt+11}" r="7" fill="${l[1]}"/>`)+`<text x="${lx+20}" y="${yt+17}" font-size="${fs-1}" font-weight="800" fill="#343a40">${l[0]}</text>`; lx+=l[0].length*15+44; }); }
+  (o.extra||[]).forEach(e=>{ s+=e(X,Y); });
+  return s+`</svg>`; }
+
+
+/* ============ 단원 그림: 전구·전지·회로 ============ */
+const NW=600,NH=380,YB=350,XL=70,XR=530,BX0=268,BX1=340;
+const C_LIT='#f2b705', C_HEAT='#e03131';
+function mixC(a,b,t){ const p=x=>[1,3,5].map(i=>parseInt(x.substr(i,2),16)); const A=p(a),B=p(b); return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join(''); }
+/* 전구: cx, 전선 높이 wy, 밝기 b(0~1), rem=빠짐 */
+function lamp(cx,wy,b,rem,id,o){ o=o||{}; const r=o.r||24, cy=wy-r*1.5, u='lp'+(++SVGID), bt=cy+r*.78, bh=r*.52;
+  let s=`<g class="${o.click?'bulb-hit':''}" data-b="${id}">`;
+  if(o.click) s+=`<rect x="${cx-38}" y="${cy-r-14}" width="76" height="${wy-cy+r+18}" fill="transparent"/>`;
+  s+=`<path d="M${cx-r*.36},${bt+bh} L${cx-13},${wy} M${cx+r*.36},${bt+bh} L${cx+13},${wy}" stroke="#5c6475" stroke-width="3.5" stroke-linecap="round" fill="none"/>`;
+  if(rem){ s+=`<rect x="${cx-r*.55}" y="${bt}" width="${r*1.1}" height="${bh}" rx="4" fill="#fff" stroke="#adb5bd" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" fill-opacity=".6" stroke="#c5ccd8" stroke-width="2.5" stroke-dasharray="6 5"/>`+txt(cx,cy+6,'빠짐',{s:o.fs||16,c:'#e5484d'}); }
+  else{
+    if(b>0.01) s+=`<defs><radialGradient id="${u}"><stop offset="0" stop-color="#fff59a" stop-opacity="${(.4+.6*b).toFixed(2)}"/><stop offset="1" stop-color="#ffd43b" stop-opacity="0"/></radialGradient></defs><circle class="glow" cx="${cx}" cy="${cy}" r="${(r*(1.2+1.5*b)).toFixed(1)}" fill="url(#${u})"/>`;
+    s+=`<circle class="glass" cx="${cx}" cy="${cy}" r="${r}" fill="${b>0.01?mixC('#f1f3f5','#fff3a0',Math.min(1,.3+b*.7)):'#f1f3f5'}" stroke="#9aa6bb" stroke-width="3"/>`;
+    s+=`<path d="M${cx-r*.42},${bt} L${cx-r*.28},${cy-r*.1} l${r*.14},-${r*.24} l${r*.14},${r*.24} l${r*.14},-${r*.24} l${r*.14},${r*.24} L${cx+r*.42},${bt}" fill="none" stroke="${b>0.01?mixC('#f0a050','#f76707',b):'#868e96'}" stroke-width="${b>0.01?2.5+b*1.5:2.5}" stroke-linejoin="round"/>`;
+    s+=`<rect x="${cx-r*.55}" y="${bt}" width="${r*1.1}" height="${bh}" rx="4" fill="#adb5bd"/>`;
+  }
+  if(o.label) s+=txt(cx-r-30,cy+8,o.label,{s:o.fs||22});
+  return s+'</g>'; }
+/* 가로 전지: (+)극이 오른쪽 */
+function battH(cx,y,o){ o=o||{};
+  return `<g><rect x="${cx-32}" y="${y-16}" width="64" height="32" rx="7" fill="#343a40"/><rect x="${cx+10}" y="${y-16}" width="22" height="32" rx="6" fill="#f08c00"/><rect x="${cx+32}" y="${y-8}" width="8" height="16" rx="3" fill="#868e96"/><rect x="${cx-26}" y="${y-12}" width="30" height="5" rx="2.5" fill="#fff" opacity=".18"/>${o.nolabel?'':txt(cx-50,y-20,'(−)',{s:18,c:C_NEG})+txt(cx+56,y-20,'(+)',{s:18,c:C_POS})}</g>`; }
+function netLayout(mode,n){ if(mode==='ser'){ const xs=n===1?[300]:n===2?[215,385]:[170,300,430]; return [{y:150,xs}]; }
+  const ys=n===1?[180]:n===2?[140,262]:[112,207,302]; return ys.map(y=>({y,xs:[300]})); }
+function netState(N){ const br=netLayout(N.mode,N.n), rem=N.rem||new Set();
+  if(N.mode==='ser'){ const open=rem.size>0; return {br,open,I:open?0:1/N.n,R:N.n,Vb:open?0:1/N.n,bright:br[0].xs.map((_,i)=>rem.has(i)?null:(open?0:1/N.n)),branchI:[open?0:1/N.n]}; }
+  const act=br.map((_,i)=>!rem.has(i)&&!(N.sw&&N.sw[i]==='open')); const k=act.filter(Boolean).length;
+  return {br,open:k===0,I:k,R:k?1/k:Infinity,Vb:1,bright:br.map((_,i)=>rem.has(i)?null:(act[i]?1:0)),branchI:act.map(a=>a?1:0)}; }
+function loopPts(y){ return [[BX0,YB],[XL,YB],[XL,y],[XR,y],[XR,YB],[BX1,YB]]; }
+function netSVG(N){ const st=netState(N), rem=N.rem||new Set(), br=st.br, ytop=Math.min(...br.map(b=>b.y));
+  let s=`<svg viewBox="0 0 ${NW} ${NH}" role="img" aria-label="${N.mode==='ser'?'직렬':'병렬'}연결 회로">`;
+  let d=`M${XL},${YB} H${BX0} M${BX1},${YB} H${XR} M${XL},${YB} V${ytop} M${XR},${YB} V${ytop}`;
+  br.forEach((b,k)=>{ const gaps=b.xs.map(x=>[x-13,x+13]); if(N.sw&&N.sw[k]) gaps.push([425,455]); gaps.sort((p,q)=>p[0]-q[0]); let x=XL; gaps.forEach(g=>{ d+=` M${x},${b.y} H${g[0]}`; x=g[1]; }); d+=` M${x},${b.y} H${XR}`; });
+  s+=`<path d="${d}" fill="none" stroke="#5c6475" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>`;
+  br.forEach(b=>{ if(b.y!==ytop) s+=`<circle cx="${XL}" cy="${b.y}" r="8" fill="#5c6475"/><circle cx="${XR}" cy="${b.y}" r="8" fill="#5c6475"/>`; });
+  if(N.sw) Object.keys(N.sw).forEach(k=>{ const y=br[k].y, op=N.sw[k]==='open'; s+=`<circle cx="425" cy="${y}" r="6" fill="#495057"/><circle cx="455" cy="${y}" r="6" fill="#495057"/>`+(op?`<line x1="425" y1="${y}" x2="452" y2="${y-24}" stroke="#495057" stroke-width="7" stroke-linecap="round"/>`:`<line x1="425" y1="${y}" x2="455" y2="${y}" stroke="#495057" stroke-width="7" stroke-linecap="round"/>`)+txt(440,y+32,'스위치',{s:15,c:'#495057'}); });
+  s+=battH(300,YB,{nolabel:N.nolabel});
+  br.forEach((b,k)=>b.xs.forEach((x,i)=>{ const id=N.mode==='ser'?i:k; s+=lamp(x,b.y,st.bright[id]||0,rem.has(id),id,{click:N.click,label:N.labels?N.labels[id]:'',fs:N.fs}); }));
+  if(N.showI&&!st.open){ s+=arw(390,YB+18,470,YB+18,C_CUR,5)+arw(XR+20,YB-40,XR+20,ytop+50,C_CUR,5)+arw(XL-20,ytop+50,XL-20,YB-40,C_CUR,5);
+    br.forEach((b,k)=>{ if(st.branchI[k]>0) s+=arw(520,b.y+19,476,b.y+19,C_CUR,5); }); }
+  if(N.anim){ br.forEach((b,k)=>{ if(!(st.branchI[k]>0)) return; const P=loopPts(b.y), L=polyLen(P), v=60*st.branchI[k], dur=(L/v).toFixed(1), cnt=Math.floor(L/62), path=`M${BX0},${YB} H${XL} V${b.y} H${XR} V${YB} H${BX1}`;
+    for(let j=0;j<cnt;j++) s+=`<circle r="7" fill="#dfe9ff" stroke="${C_NEG}" stroke-width="2.5"><animateMotion dur="${dur}s" begin="-${(dur*(j/cnt+k*.5/cnt)).toFixed(2)}s" repeatCount="indefinite" path="${path}"/></circle>`; }); }
+  return s+`</svg>`; }
+/* 회로 + 전자 캔버스 */
+const NETS=[];
+function makeNet(hostId,o){ const N=Object.assign({host:hostId,mode:'ser',n:1,rem:new Set(),showE:true,showI:false,click:false,off:[]},o);
+  N.render=()=>{ const h=$(hostId); if(!h) return; h.innerHTML=`<div class="net-wrap">${netSVG(N)}<canvas height="${NH}"></canvas></div>`; N.cv=h.querySelector('canvas');
+    if(N.click) h.querySelectorAll('.bulb-hit').forEach(g=>g.addEventListener('click',()=>{ const id=+g.dataset.b; if(N.rem.has(id)){ N.rem.delete(id); sfx('connect'); setTimeout(()=>sfx('bulb'),110); } else { N.rem.add(id); sfx('thunk'); } N.render(); if(N.onchange) N.onchange(N,id); kick(); })); };
+  N.set=(mode,n)=>{ N.mode=mode; N.n=n; N.rem.clear(); N.off=[]; N.render(); kick(); };
+  NETS.push(N); N.render(); return N; }
+function drawElectrons(N,c,dt,t){ c.clearRect(0,0,NW,NH); if(!N.showE) return; const st=netState(N), nb=st.br.length, SP=32, V0=64; const anyFlow=st.branchI.some(v=>v>0);
+  st.br.forEach((b,k)=>{ const P=loopPts(b.y), L0=polyLen(P), L=L0+(BX1-BX0), sA=(BX0-XL)+(YB-b.y), sB=sA+(XR-XL); const I=st.branchI[k];
+    N.off[k]=((N.off[k]||0)+V0*I*dt)%L; const cnt=Math.floor(L/SP);
+    for(let j=0;j<cnt;j++){ let s=(j*SP+(I>0?N.off[k]:0)+k*SP/nb)%L; if(s>L0-4) continue;
+      if(!(I>0)){ if(!(N.mode==='ser'||(!anyFlow&&k===0)||(s>=sA&&s<=sB))) continue; }
+      const p=polyAt(P,s); let x=p.x,y=p.y; if(!(I>0)){ x+=Math.sin(t*.007+j*2.3+k)*3.2; y+=Math.cos(t*.006+j*1.7+k)*3.2; }
+      cChg(c,x,y,-1,7); } }); }
+addTask((dt,t)=>{ let any=false; NETS.forEach(N=>{ const cv=N.cv; if(!cv||!visible(cv)) return; const cc=cv.closest('.concept-card'); if(cc&&!cc.classList.contains('open')) return; const c=prepRatio(cv,NW,NH); if(!c) return; any=true; drawElectrons(N,c,dt,t); }); return any; });
+/* 막대 측정기 */
+function meter(label,val,max,ref,color,word){ const w=clamp(val/max*100,0,100), rf=ref!=null?`<span class="ref" style="left:${clamp(ref/max*100,0,100)}%"></span>`:'';
+  return `<div class="mtr"><div class="lb"><span>${label}</span><b>${word}</b></div><div class="bar"><i style="width:${w}%;background:${color}"></i>${rf}</div></div>`; }
+function cmpWord(v,ref,big,small,same){ if(Math.abs(v-ref)<1e-6) return same||'전구 1개일 때와 같음'; return v>ref?(big||'전구 1개일 때보다 큼'):(small||'전구 1개일 때보다 작음'); }
+function netMeters(N,opts){ opts=opts||{}; const st=netState(N); const shown=st.bright.find(v=>v!=null); let h='';
+  h+=meter('💡 전구 1개의 밝기',shown||0,1,1,'linear-gradient(90deg,#ffe066,#f2b705)',st.open?'꺼짐 (전류 0)':cmpWord(shown,1,'더 밝음','전구 1개일 때보다 어두움','전구 1개일 때와 같음'));
+  if(!opts.noV) h+=meter('🔋 전구 1개에 걸리는 전압',st.open&&N.mode==='ser'?0:st.Vb,1,1,'linear-gradient(90deg,#a5d8ff,#1c7ed6)',st.open&&N.mode==='ser'?'—':cmpWord(st.Vb,1));
+  if(!opts.noR) h+=meter('🧱 회로 전체 저항',st.open?3:st.R,3,1,'linear-gradient(90deg,#ffd8a8,#e8590c)',st.open?'끊어짐 (전류가 흐르지 못함)':cmpWord(st.R,1,'전구 1개일 때보다 큼','전구 1개일 때보다 작음'));
+  h+=meter('⚡ 회로 전체 전류의 세기',st.I,3,1,'linear-gradient(90deg,#b2f2bb,#0ca678)',st.I===0?'0 (흐르지 않음)':cmpWord(st.I,1,'전구 1개일 때보다 셈','전구 1개일 때보다 약함'));
+  return h; }
+
+/* ============ 도입 그림 ============ */
+function heroSVG(){ const a=netSVG({mode:'ser',n:2,anim:true,nolabel:true}).replace('<svg ','<svg x="10" y="10" width="600" height="380" '), b=netSVG({mode:'par',n:2,anim:true,nolabel:true}).replace('<svg ','<svg x="630" y="10" width="600" height="380" ');
+  return `<svg viewBox="0 0 1240 450" role="img" aria-label="직렬연결과 병렬연결 회로">${a}${b}${txt(310,428,'직렬연결 — 한 줄로',{s:34,c:'#e8590c'})}${txt(930,428,'병렬연결 — 여러 갈래로',{s:34,c:'#0ca678'})}</svg>`; }
+
+/* ============ 멀티탭 그림 (도입·탐구 ②) ============ */
+const TAP_APPS=[{em:'💡',n:'전등',k:'lamp'},{em:'🌀',n:'선풍기',k:'fan'},{em:'📺',n:'텔레비전',k:'tv'},{em:'📱',n:'휴대 전화 충전',k:'phone'}];
+function tapSVG(apps,on,mode,inside){ const n=apps.length, x0=150, W=x0+(n-1)*140+110, ser=mode==='ser', allOn=on.every(Boolean);
+  const works=i=>ser?allOn:on[i];
+  let s=`<svg viewBox="0 0 ${W} 330" role="img" aria-label="멀티탭">`;
+  s+=`<rect x="14" y="228" width="50" height="76" rx="9" fill="#f1f3f5" stroke="#ced4da" stroke-width="2"/><circle cx="32" cy="266" r="4" fill="#495057"/><circle cx="46" cy="266" r="4" fill="#495057"/>`+txt(39,322,'콘센트',{s:14,c:'#5a5f80'});
+  s+=`<path d="M58,266 C80,266 78,282 98,280" fill="none" stroke="#343a40" stroke-width="7" stroke-linecap="round"/>`;
+  s+=`<rect x="96" y="245" width="${W-112}" height="62" rx="16" fill="#fff" fill-opacity="${inside?.55:1}" stroke="#c9d1e3" stroke-width="3"/>`;
+  if(inside){ if(!ser){ s+=`<line x1="100" y1="262" x2="${W-24}" y2="262" stroke="#e03131" stroke-width="4"/><line x1="100" y1="292" x2="${W-24}" y2="292" stroke="#1c7ed6" stroke-width="4"/>`; apps.forEach((_,i)=>{ const cx=x0+i*140; s+=`<line x1="${cx-7}" y1="262" x2="${cx-7}" y2="275" stroke="#e03131" stroke-width="3"/><line x1="${cx+7}" y1="292" x2="${cx+7}" y2="275" stroke="#1c7ed6" stroke-width="3"/>`; }); }
+    else { let d=`M100,262`; apps.forEach((_,i)=>{ const cx=x0+i*140; d+=` H${cx-7} V275 M${cx+7},275 V262`; }); d+=` H${W-24} V296 H100`; s+=`<path d="${d}" fill="none" stroke="#7048e8" stroke-width="4" stroke-dasharray="${''}"/>`; } }
+  apps.forEach((a,i)=>{ const cx=x0+i*140, w=works(i), weak=w&&ser;
+    s+=`<path d="M${cx},255 C${cx},215 ${cx},200 ${cx},160" fill="none" stroke="#495057" stroke-width="4"/>`;
+    s+=`<rect x="${cx-54}" y="40" width="108" height="120" rx="16" fill="#fff" stroke="${w?(weak?'#ffa94d':'#ffd43b'):'#dee2e6'}" stroke-width="${w?4:2.5}" ${w&&!weak?'class="app-on"':''}/>`;
+    const cls=a.k==='fan'&&w?`class="fan-spin${weak?' fan-slow':''}"`:'';
+    s+=`<text x="${cx}" y="112" text-anchor="middle" font-size="50" ${cls} opacity="${w?(weak?.6:1):.35}">${a.em}</text>`;
+    if(a.k==='phone'&&w) s+=`<text x="${cx+34}" y="66" text-anchor="middle" font-size="22" class="chg">🔋</text>`;
+    if(a.k==='lamp'&&w&&!weak) s+=`<circle cx="${cx}" cy="94" r="40" fill="#ffe066" opacity=".35"/>`;
+    s+=txt(cx,150,a.n,{s:a.n.length>5?13:16,c:w?'#1b1d4a':'#868e96'});
+    if(w) s+=`<rect x="${cx-(weak?66:36)}" y="6" width="${weak?132:72}" height="28" rx="14" fill="${weak?'#fff0e2':'#e3f8ef'}" stroke="${weak?'#e8590c':'#0ca678'}" stroke-width="2"/>`+txt(cx,26,weak?'220 V보다 작음 ⚠️':'220 V ✔',{s:15,c:weak?'#b35300':'#0b7a52',halo:0});
+    s+=`<g class="tap-sw" data-i="${i}" style="cursor:pointer"><rect x="${cx-28}" y="247" width="88" height="58" fill="transparent"/><circle cx="${cx}" cy="276" r="20" fill="#eef1f8" stroke="#adb5bd" stroke-width="2"/><circle cx="${cx-7}" cy="276" r="3.5" fill="#495057"/><circle cx="${cx+7}" cy="276" r="3.5" fill="#495057"/>`;
+    s+=`<rect x="${cx+28}" y="258" width="26" height="36" rx="7" fill="${on[i]?'#12a874':'#ced4da'}" stroke="#fff" stroke-width="2"/>`+txt(cx+41,281,on[i]?'ON':'OFF',{s:10,c:'#fff',halo:0})+`</g>`;
+  });
+  return s+`</svg>`; }
+/* 생각 열기 */
+const THINK={on:[true,true,true]}; const THINK_APPS=[{em:'📱',n:'휴대 전화 충전',k:'phone'},{em:'💡',n:'스탠드',k:'lamp'},{em:'🌀',n:'선풍기',k:'fan'}];
+function thinkDraw(){ $('thinkBox').innerHTML=tapSVG(THINK_APPS,THINK.on,'par',false);
+  $('thinkBox').querySelectorAll('.tap-sw').forEach(g=>g.addEventListener('click',()=>{ const i=+g.dataset.i; THINK.on[i]=!THINK.on[i]; sfx('switch'); if(THINK.on[i]) setTimeout(()=>sfx('device'),90); thinkDraw();
+    const off=THINK.on.map((v,k)=>v?null:THINK_APPS[k].n).filter(Boolean); $('thinkMsg').textContent=THINK.on[i]?`🔌 ${THINK_APPS[i].n}을(를) 다시 켰어요.`:`⏻ ${THINK_APPS[i].n}만 꺼졌어요. 나머지 기구는 그대로 작동해요! 왜 그럴까요?`; }));
+  if(!$('thinkMsg').textContent) $('thinkMsg').textContent='👆 콘센트 옆 스위치(ON/OFF)를 눌러 보세요.'; }
+/* ============ 개념 ============ */
+const EN=x=>(x==='빛'||x==='열')?x+'에너지':x+' 에너지';
+const ENG=[['빛','💡','#e0a800'],['열','🔥','#e03131'],['소리','🔊','#7048e8'],['운동','🌀','#0ca678'],['화학','🔋','#1c7ed6']];
+const CONV_APPS=[['💡','전등',['빛']],['🌀','선풍기',['운동']],['👔','전기다리미',['열']],['📺','텔레비전',['빛','소리']],['🔊','스피커',['소리']],['📱','휴대 전화 충전',['화학']],['💨','헤어드라이어',['운동','열']],['🍚','전기밥솥',['열']]];
+const CONCEPTS=[
+ {t:'저항의 직렬연결 — 한 줄로 잇기',html:`<p>여러 개의 저항(전구)을 <b>한 줄로</b> 차례차례 연결하는 방법을 <b>직렬연결</b>이라고 해요. 전구 수를 바꾸며 밝기와 측정기를 보세요.</p>
+  <div class="toggle" id="k1N"><button class="chip on" data-v="1">전구 1개</button><button class="chip" data-v="2">직렬 2개</button><button class="chip" data-v="3">직렬 3개</button></div>
+  <div class="rig" id="k1Net" style="margin-top:6px"></div><div class="meters" id="k1M"></div>
+  <div class="info-panel" id="k1Info">전구 1개만 연결했을 때의 밝기를 기억해 두세요. 점선은 <b>전구 1개일 때</b>의 기준이에요.</div>`},
+ {t:'저항의 병렬연결 — 여러 갈래로 잇기',html:`<p>여러 개의 저항(전구)을 <b>여러 갈래로 나누어</b> 연결하는 방법을 <b>병렬연결</b>이라고 해요. 갈래마다 전지에 바로 연결되는 길이 생겨요.</p>
+  <div class="toggle" id="k2N"><button class="chip on" data-v="1">전구 1개</button><button class="chip" data-v="2">병렬 2개</button><button class="chip" data-v="3">병렬 3개</button></div>
+  <div class="rig" id="k2Net" style="margin-top:6px"></div><div class="meters" id="k2M"></div>
+  <div class="info-panel" id="k2Info">갈래를 늘려 보세요. 전구 1개의 밝기와 회로 전체 전류는 어떻게 될까요?</div>`},
+ {t:'전구 하나의 연결이 끊어지면?',html:`<p>두 회로에서 <b>왼쪽(위쪽) 전구를 빼 보세요</b>. 남은 전구는 어떻게 될까요?</p>
+  <div class="btn-row" style="padding-top:0;margin-top:0"><button class="btn small" id="k3Btn">🔧 전구 하나 빼기</button></div>
+  <div class="mini-net"><div><div id="k3a"></div><div class="cap2" style="color:var(--ser)">직렬연결</div></div><div><div id="k3b"></div><div class="cap2" style="color:var(--par)">병렬연결</div></div></div>
+  <div class="info-panel" id="k3Info">직렬연결은 전류가 지나갈 길이 <b>하나</b>, 병렬연결은 길이 <b>여러 개</b>예요.</div>`},
+ {t:'가정의 전기 기구는 병렬연결',html:`<p>가정에서 사용하는 전기 기구는 모두 <b>병렬연결</b>되어 있어요. 기구의 스위치를 눌러 보세요.</p>
+  <div class="fig" id="k4Fig" style="max-width:640px"></div>
+  <div class="info-panel" id="k4Info">병렬연결하면 다른 전기 기구의 영향을 받지 않고 사용할 수 있으며, 각 전기 기구에는 모두 <b>같은 크기의 전압(220 V)</b>이 걸려요.</div>
+  <div class="analogy">🔌 멀티탭도 마찬가지예요. 멀티탭의 단자들은 서로 <b>병렬연결</b>되어 있어 각각 따로 켜거나 끌 수 있어요. (교과서 그림 Ⅶ-9)</div>`},
+ {t:'전기 에너지와 소비 전력',html:`<p>전기 기구에 전류가 흐를 때 공급하는 에너지를 <b>전기 에너지</b>라고 해요. 전기 기구가 <b>1초 동안 사용하는 전기 에너지의 양</b>을 <b>소비 전력</b>이라고 하며, 단위는 <b>W(와트)</b>를 사용해요.</p>
+  <div class="analogy">📏 소비 전력이 <b>1 W</b>인 전기 기구는 <b>1초 동안 1 J</b>의 전기 에너지를 사용해요.</div>
+  <div class="btn-row" style="padding-top:0"><button class="btn small" id="k5Run">▶ 1초 동안 사용하는 전기 에너지 비교</button></div>
+  <div id="k5Bars" class="pchart"></div>
+  <div class="info-panel" id="k5Info">소비 전력은 전기 기구들이 전기 에너지를 <b>얼마나 사용하는지</b>를 나타내는 기준이에요. 각 기구에 표시된 소비 전력을 보면 그 기구가 사용하는 전기 에너지의 양을 알 수 있어요. <span class="muted">(값은 예시)</span></div>`},
+ {t:'전기 에너지의 전환',html:`<p>전기 기구에서는 전기 에너지를 <b>빛에너지, 열에너지, 소리 에너지, 운동 에너지, 화학 에너지</b> 등으로 전환하여 사용해요. 기구를 눌러 보세요.</p>
+  <div class="toggle" id="k6Btns">${CONV_APPS.map((a,i)=>`<button class="chip" data-v="${i}">${a[0]} ${a[1]}</button>`).join('')}</div>
+  <div class="conv" id="k6Conv"></div>
+  <div class="info-panel" id="k6Info">👆 기구를 고르면 전기 에너지가 <b>주로</b> 어떤 에너지로 전환되는지 보여 줘요.</div>`},
+ {t:'에너지 효율과 대기 전력',html:`<p>전기 기구에 공급한 전기 에너지 중에서 <b>필요한 에너지로 전환되는 비율</b>을 <b>에너지 효율</b>이라고 해요. 전구에서는 빛에너지로 전환되는 비율이 높을수록 효율이 높아요.</p>
+  <div class="toggle" id="k7Btns"><button class="chip on" data-v="a">전구 가</button><button class="chip" data-v="b">전구 나</button></div>
+  <div class="eff-bars" id="k7Bar"></div>
+  <div class="info-panel" id="k7Info"></div>
+  <p>전기 기구는 실제 사용하지 않을 때에도 전기 에너지를 일부 소비하는데, 이를 <b>대기 전력</b>이라고 해요. 대기 전력이 작은 기구를 사용하고 플러그를 뽑는 것도 전기 에너지를 효율적으로 사용하는 방법이에요.</p>
+  <div class="fig" id="k7Label" style="max-width:420px"></div>
+  <div class="analogy">🏷️ 전기 기구에 붙이는 <b>에너지 소비 효율 등급</b> 표시는 1등급에 가까울수록 에너지 효율이 높아요. (교과서 그림 Ⅶ-11)</div>`}
+];
+const MYTHS=[
+ ['전구를 직렬로 많이 연결할수록 회로 전체 저항이 작아진다.','직렬연결할수록 전체 저항은 <b>커져요</b>. 그래서 회로에 흐르는 전류의 세기가 작아지고 각 전구가 어두워져요.'],
+ ['전구를 병렬로 연결하면 전구가 나누어 써서 각 전구가 어두워진다.','병렬연결한 각 전구에는 전구 1개일 때와 <b>같은 전압</b>이 걸려 같은 세기의 전류가 흐르므로 밝기가 <b>같아요</b>.'],
+ ['직렬연결에서는 전지에 가까운 전구가 전류를 먼저 써 버려 더 밝다.','전류는 전구를 지나도 줄어들지 않아요. 직렬연결한 <b>똑같은 전구들의 밝기는 같아요</b>.'],
+ ['병렬로 전구를 더 연결해도 회로 전체에 흐르는 전류는 그대로다.','병렬연결하면 전체 저항이 작아져서 회로 <b>전체 전류의 세기는 커져요</b>. 각 전구의 밝기만 그대로예요.'],
+ ['병렬연결에서 전구 하나를 빼면 남은 전구가 더 밝아진다.','남은 전구에 걸리는 전압은 그대로라서 밝기도 <b>그대로</b>예요. 회로 전체 전류만 작아져요.'],
+ ['소비 전력이 큰 전기 기구일수록 좋은 제품이다.','소비 전력은 <b>1초 동안 사용하는 전기 에너지의 양</b>이에요. 클수록 같은 시간 동안 전기 에너지를 <b>많이 사용</b>한다는 뜻이에요.'],
+ ['리모컨으로 끈 텔레비전은 전기 에너지를 전혀 쓰지 않는다.','사용하지 않을 때에도 전기 에너지를 일부 소비해요. 이것이 <b>대기 전력</b>이에요. 플러그를 뽑거나 스위치가 있는 멀티탭을 꺼야 해요.'],
+ ['효율이 낮은 전구에서는 전기 에너지 일부가 사라진다.','에너지는 보존돼요. 빛으로 전환되지 못한 에너지는 <b>열에너지</b>로 전환될 뿐, 빛에너지와 열에너지의 합은 공급한 전기 에너지와 같아요.']
+];
+let K3rem=false; const K4={on:[true,true,true,true]};
+const K4APPS=[['💡','전등'],['🧺','세탁기'],['📺','텔레비전'],['❄️','냉장고']];
+function k4SVG(){ let s=`<svg viewBox="0 0 640 300" role="img" aria-label="가정의 전기 기구 병렬연결">`;
+  s+=`<rect x="10" y="70" width="72" height="150" rx="12" fill="#343a40"/>`+txt(46,132,'가정의',{s:15,c:'#fff',halo:0})+txt(46,152,'전원',{s:15,c:'#fff',halo:0})+txt(46,180,'220 V',{s:16,c:'#ffd43b',halo:0});
+  s+=`<path d="M82,90 H620 M82,200 H620" stroke="#5c6475" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+  K4APPS.forEach((a,i)=>{ const x=180+i*130, on=K4.on[i];
+    s+=`<g class="ladder-sw" data-i="${i}"><rect x="${x-58}" y="20" width="116" height="270" fill="transparent"/>`;
+    s+=`<circle cx="${x}" cy="90" r="7" fill="#5c6475"/><circle cx="${x}" cy="200" r="7" fill="#5c6475"/><line x1="${x}" y1="90" x2="${x}" y2="112" stroke="#5c6475" stroke-width="5"/><line x1="${x}" y1="136" x2="${x}" y2="200" stroke="#5c6475" stroke-width="5"/>`;
+    s+=on?`<line x1="${x}" y1="112" x2="${x}" y2="136" stroke="#495057" stroke-width="6" stroke-linecap="round"/>`:`<line x1="${x}" y1="112" x2="${x+20}" y2="132" stroke="#495057" stroke-width="6" stroke-linecap="round"/>`;
+    s+=`<circle cx="${x}" cy="112" r="5" fill="#495057"/><circle cx="${x}" cy="136" r="5" fill="#495057"/>`;
+    s+=`<circle cx="${x}" cy="168" r="27" fill="${on?'#fff9db':'#f1f3f5'}" stroke="${on?'#f2b705':'#ced4da'}" stroke-width="3"/><text x="${x}" y="179" text-anchor="middle" font-size="30" opacity="${on?1:.35}">${a[0]}</text>`;
+    s+=txt(x,236,a[1],{s:16,c:on?'#1b1d4a':'#868e96'})+txt(x,262,on?'220 V':'꺼짐',{s:16,c:on?'#0b7a52':'#868e96'})+`</g>`; });
+  return s+`</svg>`; }
+function k4Draw(){ $('k4Fig').innerHTML=k4SVG(); $('k4Fig').querySelectorAll('.ladder-sw').forEach(g=>g.addEventListener('click',()=>{ const i=+g.dataset.i; K4.on[i]=!K4.on[i]; sfx('switch'); k4Draw();
+  const n=K4.on.filter(Boolean).length; const ip=$('k4Info'); ip.innerHTML=K4.on[i]?`<b>${K4APPS[i][1]}</b>을(를) 켰어요. 다른 기구는 그대로이고, 켜진 기구 ${n}개에 모두 <b>220 V</b>가 걸려요.`:`<b>${K4APPS[i][1]}</b>을(를) 꺼도 나머지 ${n}개 기구는 <b>그대로 작동</b>해요. 각 기구가 전원에 따로 연결된 <b>병렬연결</b>이기 때문이에요.`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); })); }
+function k5Bars(go){ const L=[['💡','전등',35],['📺','텔레비전',200],['👔','전기다리미',1500]];
+  $('k5Bars').innerHTML=L.map(a=>`<div class="pr"><span>${a[0]} ${a[1]}</span><div class="pb"><i style="width:${go?Math.max(1.5,a[2]/1500*100):0}%;background:${a[2]>1000?'linear-gradient(90deg,#ffa8a8,#e03131)':'linear-gradient(90deg,#a5d8ff,#1c7ed6)'};transition-duration:${go?1:0}s"></i></div><span class="v">${a[2]} W</span></div>`).join('')+(go?`<p class="muted" style="margin:4px 0 0">1초 동안 전등 <b>35 J</b>, 텔레비전 <b>200 J</b>, 전기다리미 <b>1500 J</b>의 전기 에너지를 사용해요.</p>`:''); }
+function k6Show(i){ const a=CONV_APPS[i]; $('k6Conv').innerHTML=`<div class="src">⚡ 전기 에너지</div><div class="ar">➜</div><div style="font-size:44px">${a[0]}</div><div class="ar">➜</div><div class="outs">${ENG.map(e=>`<div class="o${a[2].includes(e[0])?' on':''}" style="${a[2].includes(e[0])?'background:'+e[2]:''}">${e[1]} ${EN(e[0])}</div>`).join('')}</div>`;
+  $('k6Info').innerHTML=`<b>${a[1]}</b>: 전기 에너지 → <b>${a[2].map(EN).join(', ')}</b>`; }
+function effBar(name,light){ return `<div class="eff-bar"><b>전구 ${name}</b> <span class="muted">— 공급한 전기 에너지 100 %</span><div class="stack"><i style="width:${light}%;background:#e0a800">빛 ${light}%</i><i style="width:${100-light}%;background:#e03131">열 ${100-light}%</i></div></div>`; }
+function k7Show(v){ const L=v==='a'?20:80; $('k7Bar').innerHTML=effBar(v==='a'?'가':'나',L);
+  $('k7Info').innerHTML=v==='a'?'전구 <b>가</b>는 공급한 전기 에너지의 <b>20 %</b>만 빛에너지로, 80 %는 열에너지로 전환돼요. → 에너지 효율이 <b>낮아요</b>.':'전구 <b>나</b>는 공급한 전기 에너지의 <b>80 %</b>를 빛에너지로 전환해요. → 에너지 효율이 <b>높아요</b>. 같은 밝기의 빛을 낼 때 전기 에너지를 더 적게 사용해요.'; }
+function gradeSVG(){ const cols=['#2b8a3e','#74b816','#fab005','#f76707','#e03131']; let s=`<svg viewBox="0 0 420 230" role="img" aria-label="에너지 소비 효율 등급 표시"><rect x="4" y="4" width="412" height="222" rx="14" fill="#fff" stroke="#adb5bd" stroke-width="2"/>`+txt(210,32,'에너지 소비 효율 등급 (예시)',{s:18});
+  cols.forEach((c,i)=>{ const y=48+i*34, w=120+i*40; s+=`<polygon points="20,${y} ${20+w},${y} ${36+w},${y+14} ${20+w},${y+28} 20,${y+28}" fill="${c}"/>`+txt(34,y+21,(i+1)+'',{s:18,c:'#fff',halo:0,a:'start'})+txt(70,y+21,i===0?'효율 높음':i===4?'효율 낮음':'',{s:14,c:'#fff',halo:0,a:'start'}); });
+  s+=`<polygon points="400,48 352,48 340,62 352,76 400,76" fill="#2b8a3e"/>`+txt(375,69,'1',{s:20,c:'#fff',halo:0});
+  return s+`</svg>`; }
+let K1net,K2net,K3a,K3b;
+function buildConcepts(){
+  const box=$('conceptCards'); const seen=lsGet('seen',{});
+  box.innerHTML=CONCEPTS.map((c,i)=>`<div class="card concept-card rise-in${seen[i]?' seen':''}" style="--i:${i+1}" data-i="${i}">
+    <div class="head" role="button" tabindex="0"><span class="num">${i+1}</span><strong>${c.t}</strong><span class="chev">▾</span></div>
+    <div class="concept-body"><div>${c.html}</div></div></div>`).join('');
+  box.querySelectorAll('.concept-card>.head').forEach(h=>h.addEventListener('click',()=>{
+    const card=h.parentElement, i=+card.dataset.i, open=!card.classList.contains('open');
+    card.classList.toggle('open',open); sfx(open?'pop':'tap');
+    if(open){ card.classList.add('seen'); const s=lsGet('seen',{}); s[i]=1; lsSet('seen',s); setTimeout(kick,60); setTimeout(kick,500); }
+  }));
+  $('mythGrid').innerHTML=MYTHS.map((m,i)=>`<div class="myth rise-in" style="--i:${i+5}"><div class="no">❌ ${m[0]}</div><div class="tapme">👆 눌러서 바로잡기</div><div class="yes">✅ ${m[1]}</div></div>`).join('');
+  $('mythGrid').querySelectorAll('.myth').forEach(m=>m.addEventListener('click',()=>{ if(!m.classList.contains('open')){ m.classList.add('open'); sfx('correct'); burstAt(m,{count:14,speed:6,size:6}); } }));
+  // 1 직렬
+  K1net=makeNet('k1Net',{mode:'ser',n:1}); $('k1M').innerHTML=netMeters(K1net,{noV:true});
+  bindChips('k1N',v=>{ const n=+v; K1net.set('ser',n); $('k1M').innerHTML=netMeters(K1net,{noV:true}); sfx(n>1?'thunk':'bulb'); const ip=$('k1Info');
+    ip.innerHTML=n===1?'전구 1개만 연결했을 때의 밝기를 기억해 두세요. 점선은 <b>전구 1개일 때</b>의 기준이에요.':`전구 ${n}개를 직렬로 연결하면 회로의 <b>전체 저항이 커져서</b> 회로에 흐르는 <b>전류의 세기가 작아져요</b>. 그래서 각 전구의 밝기는 전구 1개일 때보다 <b>어두워요</b>.${n===3?' 직렬로 연결할수록 점점 더 어두워져요!':''}`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); });
+  // 2 병렬
+  K2net=makeNet('k2Net',{mode:'par',n:1}); $('k2M').innerHTML=netMeters(K2net);
+  bindChips('k2N',v=>{ const n=+v; K2net.set('par',n); $('k2M').innerHTML=netMeters(K2net); sfx('bulb'); const ip=$('k2Info');
+    ip.innerHTML=n===1?'갈래를 늘려 보세요. 전구 1개의 밝기와 회로 전체 전류는 어떻게 될까요?':`전구 ${n}개를 병렬로 연결해도 각 전구에 걸리는 <b>전압의 크기는 변하지 않아요</b>. 그래서 각 전구의 밝기는 전구 1개일 때와 <b>같아요</b>. 대신 회로의 전체 저항이 작아져서 <b>회로 전체 전류의 세기는 커져요</b>.`; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); });
+  // 3 끊어지면
+  K3a=makeNet('k3a',{mode:'ser',n:2,nolabel:true}); K3b=makeNet('k3b',{mode:'par',n:2,nolabel:true});
+  $('k3Btn').addEventListener('click',()=>{ K3rem=!K3rem; [K3a,K3b].forEach(N=>{ if(K3rem) N.rem.add(0); else N.rem.delete(0); N.render(); }); sfx(K3rem?'thunk':'connect'); if(!K3rem) setTimeout(()=>sfx('bulb'),110);
+    $('k3Btn').textContent=K3rem?'🔧 전구 다시 끼우기':'🔧 전구 하나 빼기'; const ip=$('k3Info');
+    ip.innerHTML=K3rem?'<b>직렬연결</b>: 전구 하나라도 연결이 끊어지면 회로 전체에 전류가 흐르지 않아 <b>다른 전구도 꺼져요</b>.<br><b>병렬연결</b>: 한 전구의 연결이 끊어져도 다른 갈래로 전류가 흐르므로 <b>다른 전구는 꺼지지 않아요</b>.':'직렬연결은 전류가 지나갈 길이 <b>하나</b>, 병렬연결은 길이 <b>여러 개</b>예요.'; ip.classList.remove('flash'); void ip.offsetWidth; ip.classList.add('flash'); kick(); });
+  // 4 가정
+  k4Draw();
+  // 5 소비 전력
+  k5Bars(false); $('k5Run').addEventListener('click',()=>{ k5Bars(false); sfx('hum'); requestAnimationFrame(()=>requestAnimationFrame(()=>{ k5Bars(true); setTimeout(()=>sfx('beep'),1000); })); });
+  // 6 전환
+  k6Show(0); $('k6Btns').querySelector('.chip').classList.add('on'); bindChips('k6Btns',v=>{ k6Show(+v); sfx('sparkle'); burstAt($('k6Conv'),{count:10,speed:5,size:6}); });
+  // 7 효율
+  k7Show('a'); bindChips('k7Btns',v=>{ k7Show(v); sfx(v==='b'?'bulb':'tap'); }); $('k7Label').innerHTML=gradeSVG();
+}
+/* ============ 탐구 공통 ============ */
+let curTab='plan';
+function setTab(t){
+  curTab=t; sfx('tap');
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('#screen-experiment .tabpane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  const tb=$('expTabs').getBoundingClientRect().top+window.scrollY; if(window.scrollY>tb-90) window.scrollTo(0,Math.max(0,tb-90));
+  lsSet('tab',t);
+  if(t==='power') pChart();
+  if(t==='save') cnDraw();
+  kick(); setTimeout(kick,80);
+}
+function bindChips(id,fn){ $(id).querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(fn(c.dataset.v,c)===false) return; $(id).querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); })); }
+function chipGroup(id,items,curV,fn){
+  const el=$(id); el.innerHTML=items.map(it=>`<button class="chip${String(it[0])===String(curV)?' on':''}" data-v="${it[0]}">${it[1]}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(fn(c.dataset.v)===false) return; el.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); }));
+}
+function makePred(boxId,key,items){
+  const st=lsGet(key,{}); const box=$(boxId);
+  box.innerHTML=`<h4 style="margin:0 0 4px">🔮 실험 전에 예측해 보기</h4>`+items.map((it,i)=>`<div class="pq">${i+1}. ${it.q} <span class="mark" id="${boxId}-m${i}"></span></div><div class="toggle" data-pi="${i}">${it.opts.map(o=>`<button class="chip${st[i]===o?' on':''}" data-v="${o}">${o}</button>`).join('')}</div>`).join('')+`<div class="btn-row" style="padding-top:8px"><button class="btn small" id="${boxId}-chk">예측 확인하기</button></div>`;
+  box.querySelectorAll('[data-pi]').forEach(g=>g.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ const i=+g.dataset.pi; st[i]=c.dataset.v; lsSet(key,st); g.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); $(boxId+'-m'+i).textContent=''; sfx('tap'); })));
+  $(boxId+'-chk').addEventListener('click',()=>{ let ok=0,miss=0;
+    if(items.some((it,i)=>!st[i])){ toast('모든 문항을 예측해 주세요'); sfx('tap'); return; }
+    items.forEach((it,i)=>{ const m=$(boxId+'-m'+i); if(!it.done()){ miss++; m.textContent='⏳ 실험 전'; m.style.color='#8a94b2'; return; } const g=st[i]===it.ans; if(g) ok++; m.textContent=g?'✔ 맞았어요':'✖ 실제: '+it.ans; m.style.color=g?'#12a874':'#e5484d'; });
+    if(miss){ toast('⏳ 아직 하지 않은 실험이 있어요. 실험한 뒤 다시 확인해요'); sfx('tap'); return; }
+    if(ok===items.length){ sfx('fanfare'); fireworks(); toast('🎯 예측 '+ok+'개 모두 적중!'); } else { sfx('correct'); toast(`예측 ${ok}/${items.length} 적중! 결과로 다시 생각해 봐요`); burstAt($(boxId+'-chk'),{count:16,speed:6}); } });
+}
+function flash(el){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+
+/* ---- ① 저항의 연결 (교과서 254쪽 디지털 해 보기) ---- */
+const CONN=Object.assign({mode:'one',seen:{},cut:{},cmp:{}},lsGet('conn',{}));
+const CMODES=[['one','전구 1개','ser',1],['ser2','직렬 2개','ser',2],['par2','병렬 2개','par',2],['ser3','직렬 3개 ⭐','ser',3],['par3','병렬 3개 ⭐','par',3]];
+let NNET=null;
+function connSave(){ lsSet('conn',{mode:CONN.mode,seen:CONN.seen,cut:CONN.cut,cmp:CONN.cmp}); }
+function connMode(m){ const d=CMODES.find(x=>x[0]===m); CONN.mode=m; CONN.seen[m]=true; connSave(); NNET.set(d[2],d[3]); connUpdate(); }
+function connUpdate(){ const st=netState(NNET), m=CONN.mode, d=CMODES.find(x=>x[0]===m);
+  $('nMeters').innerHTML=netMeters(NNET);
+  const rem=NNET.rem.size; let msg='';
+  if(m==='one') msg=rem?'전구를 빼면 회로가 끊어져 전류가 흐르지 않아요. 전구를 다시 끼워 보세요.':'💡 <b>과정 2</b> — 전구 1개의 밝기를 기억해 두세요. 이것이 비교 기준이에요.';
+  else if(d[2]==='ser') msg=rem?`🔌 <b>직렬연결</b>에서 전구 ${rem}개를 뺐더니 <b>나머지 전구도 모두 꺼졌어요</b>! 전류가 지나갈 길이 하나뿐이라 회로 전체에 전류가 흐르지 않아요.`:`직렬연결: 전체 저항이 커져 전류가 약해지고, 전구 1개의 밝기는 전구 1개일 때보다 <b>어두워요</b>. 👉 전구 하나를 눌러 빼 보세요.`;
+  else msg=st.open?'모든 전구를 빼서 전류가 흐르지 않아요.':rem?`🔌 <b>병렬연결</b>에서 전구 ${rem}개를 빼도 <b>나머지 전구는 켜진 채로</b> 있고 밝기도 그대로예요! 회로 전체 전류만 작아졌어요.`:`병렬연결: 각 전구에 같은 전압이 걸려 전구 1개의 밝기는 전구 1개일 때와 <b>같아요</b>. 회로 전체 전류는 커졌어요. 👉 전구 하나를 눌러 빼 보세요.`;
+  $('nMsg').innerHTML=msg;
+  const S=CONN.seen, C=CONN.cut;
+  const steps=[['과정 1 · 시뮬레이션 실행',true],['과정 2 · 전구 1개',!!S.one],['과정 3 · 직렬 2개·병렬 2개 비교',!!(S.ser2&&S.par2)],['과정 4 · 전구 1개 빼 보기',!!(C.ser2&&C.par2)],['⭐ 더 해 보기 · 3개 연결',!!(S.ser3||S.par3)]];
+  $('nSteps').innerHTML=steps.map(s=>`<span class="st${s[1]?' ok':''}">${s[1]?'✔':'○'} ${s[0]}</span>`).join('');
+  const rows=[['ser2','직렬 2개'],['par2','병렬 2개'],['ser3','직렬 3개 ⭐'],['par3','병렬 3개 ⭐']];
+  $('nTable').innerHTML=`<tr><th>연결 방법</th><th>전구 1개의 밝기<br><span class="muted">(전구 1개일 때와 비교)</span></th><th>회로 전체 전류</th><th>전구 1개를 뺐을 때<br>나머지 전구</th></tr>`+rows.map(r=>{ const ser=r[0].startsWith('ser'); const sn=S[r[0]]&&S.one;
+    return `<tr><td><b style="color:${ser?'var(--ser)':'var(--par)'}">${r[1]}</b></td><td>${sn?(ser?'어두워짐 ⬇':'같음 ='):'—'}</td><td>${sn?(ser?'작아짐 ⬇':'커짐 ⬆'):'—'}</td><td>${C[r[0]]?(ser?'모두 꺼짐 ✖':'켜진 채로 있음 ✔'):'—'}</td></tr>`; }).join('');
+}
+function connChange(N){ const m=CONN.mode; if((m==='ser2'||m==='ser3'||m==='par2'||m==='par3')&&N.rem.size>0&&N.rem.size<N.n){ if(!CONN.cut[m]){ CONN.cut[m]=true; connSave(); const ser=m.startsWith('ser'); setTimeout(()=>{ sfx(ser?'wrong':'correct'); toast(ser?'😮 하나를 뺐더니 모두 꺼졌어요!':'😀 하나를 빼도 나머지는 켜져 있어요!'); },200); } }
+  connUpdate(); }
+
+/* ---- ② 멀티탭 (교과서 255쪽) ---- */
+const TAP=Object.assign({mode:'par',on:[true,false,true,false],inside:false},lsGet('tap',{}));
+function tapSave(){ lsSet('tap',{mode:TAP.mode,on:TAP.on,inside:TAP.inside}); }
+function tapDraw(){ const ser=TAP.mode==='ser'; $('tapFig').innerHTML=tapSVG(TAP_APPS,TAP.on,TAP.mode,TAP.inside);
+  $('tapFig').querySelectorAll('.tap-sw').forEach(g=>g.addEventListener('click',()=>{ const i=+g.dataset.i; TAP.on[i]=!TAP.on[i]; sfx('switch'); tapSave(); tapDraw(); tapMsg(i); }));
+  const n=TAP.on.filter(Boolean).length, all=TAP.on.every(Boolean), working=ser?(all?4:0):n;
+  $('tRead').innerHTML=`<div><small>스위치 켠 기구</small><b>${n} / 4</b></div><div><small>작동하는 기구</small><b>${working}개</b></div><div><small>각 기구에 걸리는 전압</small><b style="font-size:17px">${working?(ser?'220 V보다 작음':'220 V (모두 같음)'):'—'}</b></div>`;
+  const I=ser?(all?.7:0):n; $('tMeters').innerHTML=meter('⚡ 멀티탭 전체에 흐르는 전류',I,4,null,'linear-gradient(90deg,#b2f2bb,#0ca678)',I===0?'0':ser?'약함':(n>=3?'커짐 (기구가 많을수록)':n===1?'기구 1개만큼':'기구 수만큼 커짐'));
+  $('tInside').classList.toggle('on',TAP.inside); }
+function tapMsg(i){ const ser=TAP.mode==='ser', a=TAP_APPS[i].n, all=TAP.on.every(Boolean), on=TAP.on[i]; let m;
+  if(!ser) m=on?`🔌 ${a}을(를) 켰어요. 다른 기구는 그대로이고, 이 기구에도 <b>220 V</b>가 걸려요.`:`⏻ ${a}을(를) 꺼도 <b>나머지 기구는 그대로 작동</b>해요. 멀티탭의 콘센트는 서로 <b>병렬연결</b>되어 있어요.`;
+  else m=all?`😵 모두 켜야 겨우 작동하는데, 각 기구에 <b>220 V보다 작은 전압</b>이 걸려 제대로 작동하지 않아요.`:`😱 ${on?'켰는데도':'하나를 껐더니'} <b>모든 기구가 꺼졌어요!</b> 직렬연결이면 하나라도 꺼지면 회로 전체에 전류가 흐르지 않아요.`;
+  if(ser&&!on) sfx('wrong'); $('tMsg').innerHTML=m; }
+
+/* ---- ③ 소비 전력 조사 (교과서 256~257쪽 탐구) ---- */
+const APPS=[
+ {k:'lamp',em:'💡',n:'전등(LED등)',w:35,e:['빛'],tip:'불을 밝히는 기구예요.'},
+ {k:'fan',em:'🌀',n:'선풍기',w:45,e:['운동'],tip:'날개를 돌려 바람을 일으켜요.'},
+ {k:'dryer',em:'💨',n:'헤어드라이어',w:1700,e:['운동','열'],tip:'바람을 일으키면서 뜨거운 열도 내요. 두 가지를 골라요.'},
+ {k:'tv',em:'📺',n:'텔레비전',w:200,e:['빛','소리'],tip:'화면이 빛나고 소리도 나요. 두 가지를 골라요.'},
+ {k:'wash',em:'🧺',n:'세탁기',w:550,e:['운동'],tip:'통을 돌려 빨래를 해요.'},
+ {k:'iron',em:'👔',n:'전기다리미',w:1500,e:['열'],tip:'뜨거운 바닥으로 옷의 주름을 펴요.'},
+ {k:'phone',em:'📱',n:'휴대 전화 충전',w:6,e:['화학'],tip:'배터리 속에 에너지를 저장해요.'},
+ {k:'rice',em:'🍚',n:'전기밥솥',w:1000,e:['열'],tip:'쌀을 익혀 밥을 지어요.'},
+ {k:'spk',em:'🔊',n:'스피커',w:20,e:['소리'],tip:'음악을 들려줘요.'},
+ {k:'kettle',em:'☕',n:'전기 주전자',w:1800,e:['열'],tip:'물을 끓여요.'}];
+const POW=Object.assign({done:{}},lsGet('pow',{})); let pSel=null, pPick=new Set();
+function powSave(){ lsSet('pow',{done:POW.done}); }
+function plateSVG(a){ return `<svg viewBox="0 0 340 170" role="img" aria-label="${a.n} 뒷면 표시"><rect x="4" y="4" width="332" height="162" rx="12" fill="#f8f9fa" stroke="#868e96" stroke-width="2.5"/><rect x="4" y="4" width="332" height="36" rx="12" fill="#495057"/>`+txt(170,29,'제품 표시 (뒷면)',{s:17,c:'#fff',halo:0})+txt(22,70,'제품명',{s:16,c:'#5a5f80',a:'start',halo:0})+txt(320,70,a.n,{s:17,a:'end',halo:0})+txt(22,104,'정격 전압',{s:16,c:'#5a5f80',a:'start',halo:0})+txt(320,104,'220 V~ 60 Hz',{s:17,a:'end',halo:0})+txt(22,140,'소비 전력',{s:16,c:'#5a5f80',a:'start',halo:0})+`<rect x="190" y="116" width="134" height="36" rx="8" fill="#fff3bf" stroke="#f2b705" stroke-width="2"/>`+txt(316,141,a.w+' W',{s:22,c:'#c92a2a',a:'end',halo:0})+`</svg>`; }
+function appGrid(){ $('appGrid').innerHTML=APPS.map(a=>`<button class="app${POW.done[a.k]?' done':''}${pSel===a.k?' sel':''}" data-k="${a.k}"><span class="em">${a.em}</span><span>${a.n}</span></button>`).join('');
+  $('appGrid').querySelectorAll('.app').forEach(b=>b.addEventListener('click',()=>{ pSel=b.dataset.k; pPick=new Set(); sfx('device'); appGrid(); appDetail(); setTimeout(()=>{ const r=$('appDetail').getBoundingClientRect(); if(r.top>innerHeight*.6) window.scrollBy({top:r.top-innerHeight*.35,behavior:'smooth'}); },60); }));
+  $('pCount').textContent=`(${Object.keys(POW.done).length} / ${APPS.length})`; }
+function appDetail(){ const a=APPS.find(x=>x.k===pSel), box=$('appDetail'); if(!a){ box.classList.add('hidden'); return; } box.classList.remove('hidden'); const done=!!POW.done[a.k];
+  box.innerHTML=`<h4 style="margin:0 0 6px">${a.em} ${a.n}</h4><div class="plate">${plateSVG(a)}</div>
+   <div class="pq">전기 에너지가 <b>주로</b> 어떤 에너지로 전환될까요? <span class="muted">(해당하는 것을 모두)</span></div>
+   <div class="toggle" id="pEng">${ENG.map(e=>`<button class="chip${(done?a.e.includes(e[0]):pPick.has(e[0]))?' on':''}" data-v="${e[0]}">${e[1]} ${EN(e[0])}</button>`).join('')}</div>
+   <div class="btn-row" style="padding-top:6px"><button class="btn small" id="pChk"${done?' disabled':''}>${done?'기록 완료 ✔':'확인하고 기록하기'}</button></div><div id="pFb"></div>`;
+  if(done) pResult(a,false);
+  else box.querySelectorAll('#pEng .chip').forEach(c=>c.addEventListener('click',()=>{ const v=c.dataset.v; if(pPick.has(v)) pPick.delete(v); else pPick.add(v); c.classList.toggle('on',pPick.has(v)); sfx('tap'); }));
+  if(!done) $('pChk').addEventListener('click',()=>{ if(!pPick.size){ toast('에너지를 골라 주세요'); sfx('tap'); return; } const ok=pPick.size===a.e.length&&a.e.every(x=>pPick.has(x));
+    if(ok){ POW.done[a.k]=true; powSave(); sfx('correct'); burstAt($('pChk'),{count:26,speed:7}); appGrid(); appDetail(); pTable(); pChart(); if(Object.keys(POW.done).length===APPS.length) setTimeout(()=>{ sfx('fanfare'); fireworks(); toast('📋 전기 기구 10개 조사 완료!'); },400); }
+    else { sfx('wrong'); $('pFb').innerHTML=`<div class="feedback no">🤔 다시 생각해 봐요. 💡 ${a.tip}</div>`; } }); }
+function pResult(a){ const pct=Math.max(1.5,a.w/1800*100);
+  $('pFb').innerHTML=`<div class="feedback ok"><b>${a.n}</b>: 전기 에너지 → <b>${a.e.map(EN).join(', ')}</b><br>소비 전력 <b>${a.w} W</b> → <b>1초 동안 ${a.w} J</b>의 전기 에너지를 사용해요.</div><div class="pchart e1s"><div class="pr"><span>⏱ 1초 동안</span><div class="pb"><i id="pE1" style="width:0;background:${a.e.includes('열')?'linear-gradient(90deg,#ffa8a8,#e03131)':'linear-gradient(90deg,#a5d8ff,#1c7ed6)'}"></i></div><span class="v">${a.w} J</span></div></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ const e=$('pE1'); if(e){ e.style.transitionDuration='1s'; e.style.width=pct+'%'; } })); }
+function pTable(){ const L=APPS.filter(a=>POW.done[a.k]); $('pTable').innerHTML=`<tr><th>전기 기구</th><th>에너지 전환</th><th>소비 전력</th></tr>`+(L.length?L.map(a=>`<tr><td>${a.em} ${a.n}</td><td>전기 에너지 → ${a.e.map(EN).join(', ')}</td><td><b>${a.w} W</b></td></tr>`).join(''):`<tr><td colspan="3" class="muted">위에서 전기 기구를 눌러 조사해 보세요.</td></tr>`); }
+function pChart(){ const L=APPS.filter(a=>POW.done[a.k]).sort((p,q)=>q.w-p.w);
+  $('pChart').innerHTML=L.length?L.map(a=>{ const h=a.e.includes('열'); return `<div class="pr"><span>${h?'🔥':'　'} ${a.n}</span><div class="pb"><i style="width:${Math.max(1.2,a.w/1800*100)}%;background:${h?'linear-gradient(90deg,#ffa8a8,#e03131)':'linear-gradient(90deg,#a5d8ff,#1c7ed6)'}"></i></div><span class="v">${a.w} W</span></div>`; }).join('')+`<p class="muted" style="margin:6px 0 0">🔥 = 전기 에너지를 <b>열에너지</b>로 전환하는 기구 · 참고: 용도가 같아도 선풍기(약 45 W)와 에어컨(약 1800 W)처럼 소비 전력이 크게 차이 나기도 해요. (예시 값)</p>`:'<p class="muted">조사한 기구가 여기에 막대그래프로 나타나요.</p>'; }
+
+/* ---- ④ 에너지 효율 (교과서 258쪽) ---- */
+const EFF={running:false,t:0,items:[],sent:0,c:[{s:0,l:0,h:0},{s:0,l:0,h:0}],done:lsGet('effDone',false),glow:[0,0]};
+const EB=[{x:160,y:140,name:'가',light:[2,7]},{x:440,y:140,name:'나',light:[0,1,3,4,5,6,8,9]}];
+function effReset(){ EFF.running=false; EFF.t=0; EFF.items=[]; EFF.sent=0; EFF.c=[{s:0,l:0,h:0},{s:0,l:0,h:0}]; EFF.glow=[0,0]; effBars(); $('eMsg').textContent='⚡ 버튼을 눌러 두 전구에 같은 양의 전기 에너지를 공급해 보세요.'; kick(); }
+function effBars(){ $('eBars').innerHTML=EB.map((b,i)=>{ const c=EFF.c[i]; return `<div class="eff-bar"><b>전구 ${b.name}</b> <span class="muted">공급 ${c.s*10} % · 빛 ${c.l*10} % · 열 ${c.h*10} %</span><div class="stack"><i style="width:${c.l*10}%;background:#e0a800">${c.l?('빛 '+c.l*10+'%'):''}</i><i style="width:${c.h*10}%;background:#e03131">${c.h?('열 '+c.h*10+'%'):''}</i></div></div>`; }).join(''); }
+function effRun(){ if(EFF.running) return; effReset(); EFF.running=true; sfx('hum'); $('eMsg').textContent='⚡ 전기 에너지를 공급하는 중…'; kick(); }
+addTask(dt=>{ const cv=$('eCv'); if(!visible(cv)) return false; const c=prepRatio(cv,600,330); if(!c) return false; c.clearRect(0,0,600,330);
+  if(EFF.running){ EFF.t+=dt; while(EFF.sent<10&&EFF.t>=EFF.sent*.38){ const j=EFF.sent; EB.forEach((b,i)=>{ EFF.items.push({i,j,ph:0,t:0,x:b.x,y:300}); EFF.c[i].s++; }); EFF.sent++; sfx('tick'); effBars(); } }
+  EB.forEach((b,i)=>{ const gl=EFF.glow[i]; if(gl>0){ const g=c.createRadialGradient(b.x,b.y,10,b.x,b.y,60+gl*90); g.addColorStop(0,`rgba(255,240,140,${.25+gl*.6})`); g.addColorStop(1,'rgba(255,212,59,0)'); c.fillStyle=g; c.beginPath(); c.arc(b.x,b.y,60+gl*90,0,7); c.fill(); }
+    c.beginPath(); c.arc(b.x,b.y,48,0,7); c.fillStyle=gl>0?mixC('#f1f3f5','#fff3a0',Math.min(1,.3+gl)):'#f1f3f5'; c.fill(); c.lineWidth=4; c.strokeStyle='#9aa6bb'; c.stroke();
+    c.fillStyle='#adb5bd'; cRound(c,b.x-26,b.y+38,52,26,6); c.fill(); c.strokeStyle='#5c6475'; c.lineWidth=6; c.beginPath(); c.moveTo(b.x,b.y+64); c.lineTo(b.x,282); c.stroke();
+    c.fillStyle='#e7efff'; cRound(c,b.x-80,282,160,40,12); c.fill(); cTxt(c,'⚡ 전기 에너지',b.x,302,20,'#1f43b8'); cTxt(c,'전구 '+b.name,b.x,b.y,24,'#1b1d4a');
+    const k=EFF.c[i]; cTxt(c,`◆ 빛 ${k.l*10}%`,b.x-72,34,21,'#b38600'); cTxt(c,`▲ 열 ${k.h*10}%`,b.x+72,34,21,'#c92a2a'); });
+  let alive=false;
+  EFF.items.forEach(p=>{ const b=EB[p.i]; p.t+=dt;
+    if(p.ph===0){ const k=Math.min(1,p.t/.55); p.x=b.x; p.y=300-(300-b.y)*k; if(k>=1){ p.ph=1; p.t=0; p.light=b.light.includes(p.j); if(p.light){ EFF.c[p.i].l++; EFF.glow[p.i]=EFF.c[p.i].l/10; } else EFF.c[p.i].h++; effBars(); if(p.i===1) sfx(p.light?'sparkle':'heat'); p.a=(p.light?-Math.PI/2:0)+(p.j%2?-1:1)*(p.light?.45+(p.j%3)*.25:Math.PI/2+ .3*(p.j%3)); } }
+    else { const k=p.t/1.1; p.x=b.x+Math.cos(p.a)*(50+k*120)+(p.light?0:Math.sin(p.t*14)*5); p.y=b.y+Math.sin(p.a)*(50+k*120); if(k>=1){ p.gone=true; } }
+    if(p.gone) return; alive=true; c.save(); c.translate(p.x,p.y);
+    if(p.ph===0){ c.fillStyle='#2f6fdb'; c.beginPath(); c.moveTo(0,-11); c.lineTo(8,0); c.lineTo(0,11); c.lineTo(-8,0); c.closePath(); c.fill(); c.fillStyle='#fff'; c.font='900 12px sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('⚡',0,1); }
+    else if(p.light){ c.fillStyle='#f2b705'; c.strokeStyle='#fff'; c.lineWidth=2; c.beginPath(); c.moveTo(0,-12); c.lineTo(9,0); c.lineTo(0,12); c.lineTo(-9,0); c.closePath(); c.fill(); c.stroke(); }
+    else { c.fillStyle='#e03131'; c.strokeStyle='#fff'; c.lineWidth=2; c.beginPath(); c.moveTo(0,-11); c.lineTo(10,9); c.lineTo(-10,9); c.closePath(); c.fill(); c.stroke(); }
+    c.restore(); });
+  if(EFF.running&&EFF.sent>=10&&!alive){ EFF.running=false; EFF.done=true; lsSet('effDone',true); sfx('correct'); burstAt($('eRun'),{count:20,speed:6});
+    $('eMsg').innerHTML='✅ 같은 양의 전기 에너지를 공급했을 때 빛에너지로 전환되는 비율은 <b>나(80 %)</b>가 <b>가(20 %)</b>보다 높아요. → 에너지 효율은 <b>나</b>가 더 높아요. 두 전구 모두 빛 + 열 = 100 %!'; }
+  return EFF.running||alive||EFF.glow.some(g=>g>0); });
+
+/* ---- 대기 전력 ---- */
+const SB={mode:'watch',E:0,t:0}; const SBRATE={watch:1,standby:.05,unplug:0};
+function sbSVG(){ const m=SB.mode, on=m==='watch', plug=m!=='unplug';
+  let s=`<svg viewBox="0 0 520 250" role="img" aria-label="텔레비전과 플러그"><rect x="60" y="20" width="270" height="170" rx="14" fill="#212529"/><rect x="74" y="34" width="242" height="130" rx="6" fill="${on?'#74c0fc':'#343a40'}" ${on?'class="tv-on"':''}/>`;
+  if(on) s+=txt(195,108,'📺 방송 중',{s:22,c:'#1b1d4a'});
+  s+=`<circle cx="300" cy="178" r="6" fill="${m==='watch'?'#51cf66':m==='standby'?'#ff3b3b':'#495057'}"${m==='standby'?' class="chg"':''}/><rect x="170" y="190" width="50" height="22" fill="#495057"/><rect x="130" y="210" width="130" height="12" rx="6" fill="#495057"/>`;
+  s+=`<rect x="440" y="120" width="56" height="84" rx="10" fill="#f1f3f5" stroke="#ced4da" stroke-width="2"/><circle cx="460" cy="160" r="4" fill="#495057"/><circle cx="476" cy="160" r="4" fill="#495057"/>`+txt(468,226,'콘센트',{s:14,c:'#5a5f80'});
+  const px=plug?440:390; s+=`<path d="M320,180 C380,180 ${px-60},170 ${px-14},162" fill="none" stroke="#343a40" stroke-width="6"/><rect x="${px-22}" y="150" width="22" height="24" rx="4" fill="#343a40"/><line x1="${px}" y1="156" x2="${px+10}" y2="156" stroke="#adb5bd" stroke-width="3"/><line x1="${px}" y1="168" x2="${px+10}" y2="168" stroke="#adb5bd" stroke-width="3"/>`;
+  if(m==='standby') s+=txt(300,206,'대기 표시등',{s:13,c:'#e03131'});
+  return s+`</svg>`; }
+function sbDraw(){ $('sbFig').innerHTML=sbSVG(); sbMeters(); const m=SB.mode;
+  $('sbMsg').innerHTML=m==='watch'?'📺 텔레비전을 시청하는 중이에요. 전기 에너지를 빛·소리 에너지로 전환하며 사용해요.':m==='standby'?'🔴 리모컨으로 껐지만 <b>대기 표시등이 켜져 있어요</b>. 아주 적지만 전기 에너지를 계속 소비해요 → <b>대기 전력</b>!':'🔌 플러그를 뽑았더니 전기 에너지 사용이 <b>0</b>이 되었어요. 사용 막대가 더 이상 늘지 않아요.'; }
+function sbMeters(){ const r=SBRATE[SB.mode]; $('sbMeters').innerHTML=meter('⚡ 지금 1초 동안 사용하는 전기 에너지',r===0?0:Math.max(r,.04),1,null,'linear-gradient(90deg,#a5d8ff,#1c7ed6)',SB.mode==='watch'?'많음':SB.mode==='standby'?'아주 적지만 0이 아님':'0')+meter('🔋 지금까지 사용한 전기 에너지 (누적)',SB.E%60,60,null,'linear-gradient(90deg,#ffd8a8,#e8590c)',SB.mode==='unplug'?'더 이상 늘지 않음':'계속 늘어남'); }
+addTask(dt=>{ if(!visible($('sbFig'))) return false; const r=SBRATE[SB.mode]; if(!r) return false; SB.E+=r*dt*6; SB.t+=dt; if(SB.t>.25){ SB.t=0; sbMeters(); } return true; });
+
+/* ---- ⑤ 효율적 사용 실천 (교과서 259쪽 해 보기) ---- */
+const HS=[
+ {k:'light',x:478,y:62,t:'아무도 없는 방에 켜진 전등',m:'사용하지 않는 전등은 끈다.'},
+ {k:'charger',x:598,y:286,t:'휴대 전화 없이 꽂혀 있는 충전기',m:'사용하지 않는 전기 기구의 플러그는 뽑는다. (대기 전력)'},
+ {k:'tv',x:110,y:228,t:'대기 표시등이 켜진 텔레비전',m:'전원 스위치가 있는 멀티탭을 쓰거나 플러그를 뽑아 대기 전력을 줄인다.'},
+ {k:'ac',x:86,y:66,t:'창문을 열어 둔 채 켠 에어컨',m:'냉방할 때는 창문을 닫고, 에어컨은 적정 온도로 선풍기와 함께 사용한다.'},
+ {k:'bulb',x:268,y:176,t:'에너지 효율이 낮은 백열전구',m:'에너지 효율이 높은 발광 다이오드(LED)등을 사용한다.'},
+ {k:'grade',x:398,y:222,t:'에너지 소비 효율 5등급 냉장고',m:'새로 살 때는 에너지 소비 효율 등급이 1등급인 전기 기구를 선택한다.'}];
+const HSF=new Set(lsGet('hs',[]));
+function houseSVG(){ let s=`<svg viewBox="0 0 640 380" role="img" aria-label="집 안 그림"><rect x="6" y="6" width="628" height="368" rx="18" fill="#fff8ee" stroke="#e9d8bd" stroke-width="3"/><line x1="330" y1="6" x2="330" y2="330" stroke="#e9d8bd" stroke-width="6"/><rect x="6" y="330" width="628" height="44" fill="#e9d8bd"/>`+txt(170,32,'거실',{s:18,c:'#a07a45'})+txt(560,32,'빈 방',{s:18,c:'#a07a45'});
+  // 에어컨 + 열린 창문
+  s+=`<rect x="36" y="48" width="104" height="36" rx="8" fill="#fff" stroke="#adb5bd" stroke-width="2.5"/><path d="M50,92 q8,10 0,20 M74,92 q8,10 0,20 M98,92 q8,10 0,20 M122,92 q8,10 0,20" stroke="#74c0fc" stroke-width="3" fill="none"/>`+txt(88,72,'❄ 에어컨',{s:13,c:'#1c7ed6',halo:0});
+  s+=`<rect x="180" y="60" width="110" height="90" fill="#d0ebff" stroke="#868e96" stroke-width="3"/><path d="M180,60 L150,52 L150,160 L180,150 Z" fill="#a5d8ff" stroke="#868e96" stroke-width="2"/><path d="M290,60 L318,52 L318,160 L290,150 Z" fill="#a5d8ff" stroke="#868e96" stroke-width="2"/>`+txt(235,112,'열린 창문',{s:14,c:'#1c7ed6'});
+  // TV
+  s+=`<rect x="56" y="196" width="110" height="70" rx="6" fill="#212529"/><rect x="64" y="204" width="94" height="52" fill="#343a40"/><circle cx="154" cy="262" r="4" fill="#ff3b3b" class="chg"/><rect x="70" y="266" width="82" height="60" rx="6" fill="#c8a27a"/>`;
+  // 스탠드 + 백열전구
+  s+=`<line x1="268" y1="196" x2="268" y2="320" stroke="#868e96" stroke-width="5"/><rect x="246" y="318" width="44" height="10" rx="4" fill="#868e96"/><circle cx="268" cy="176" r="20" fill="#fff3bf" stroke="#f08c00" stroke-width="2.5"/><path d="M260,186 l4,-12 l4,8 l4,-8 l4,12" stroke="#f76707" stroke-width="2" fill="none"/><circle cx="268" cy="176" r="34" fill="#ffd43b" opacity=".18"/>`+txt(306,206,'백열전구',{s:13,c:'#b35300'});
+  // 빈 방 전등
+  s+=`<line x1="478" y1="6" x2="478" y2="40" stroke="#868e96" stroke-width="3"/><path d="M450,40 h56 l-8,22 h-40 z" fill="#ffe066" stroke="#f2b705" stroke-width="2"/><circle cx="478" cy="72" r="46" fill="#ffe066" opacity=".3"/>`;
+  // 냉장고 5등급
+  s+=`<rect x="360" y="150" width="76" height="178" rx="8" fill="#f1f3f5" stroke="#adb5bd" stroke-width="2.5"/><line x1="360" y1="214" x2="436" y2="214" stroke="#adb5bd" stroke-width="2"/><rect x="380" y="226" width="38" height="30" rx="4" fill="#e03131"/>`+txt(399,247,'5등급',{s:11,c:'#fff',halo:0});
+  // 충전기
+  s+=`<rect x="582" y="262" width="34" height="50" rx="6" fill="#f1f3f5" stroke="#ced4da" stroke-width="2"/><rect x="588" y="276" width="22" height="18" rx="3" fill="#fff" stroke="#495057" stroke-width="2"/><path d="M599,294 C599,318 560,318 560,326" stroke="#343a40" stroke-width="3" fill="none"/>`;
+  HS.forEach(h=>{ s+=`<g class="hs${HSF.has(h.k)?' found':''}" data-k="${h.k}"><circle class="ring" cx="${h.x}" cy="${h.y}" r="40"/>${HSF.has(h.k)?txt(h.x+28,h.y-26,'✔',{s:24,c:'#12a874'}):''}</g>`; });
+  return s+`</svg>`; }
+function houseDraw(){ $('houseFig').innerHTML=houseSVG(); $('hsCount').textContent=HSF.size+' / '+HS.length;
+  $('houseFig').querySelectorAll('.hs').forEach(g=>g.addEventListener('click',e=>{ e.stopPropagation(); const h=HS.find(x=>x.k===g.dataset.k); const isNew=!HSF.has(h.k); HSF.add(h.k); lsSet('hs',[...HSF]);
+    sfx(isNew?'correct':'tap'); if(isNew){ const r=g.getBoundingClientRect(); confetti(r.left+r.width/2,r.top+r.height/2,{count:22,speed:6}); floatText(r.left+r.width/2,r.top,'찾았다!','#12a874'); }
+    const ip=$('hsInfo'); ip.innerHTML=`⚠️ <b>${h.t}</b><br>✅ ${h.m}`; flash(ip); houseDraw(); if(isNew&&HSF.size===HS.length) setTimeout(()=>{ sfx('fanfare'); fireworks(); toast('🔎 낭비되는 곳 6곳을 모두 찾았어요!'); },400); }));
+  $('houseFig').querySelector('svg').addEventListener('click',()=>{ sfx('tap'); toast('🤔 그곳은 괜찮아요. 다른 곳을 찾아봐요'); });
+  $('hsList').innerHTML=HS.filter(h=>HSF.has(h.k)).map(h=>`<div class="fd">⚠️ ${h.t}<br><b>✅ ${h.m}</b></div>`).join(''); }
+const CN_OPTS=[['💡','발광 다이오드(LED)등을 사용해요'],['🏷️','에너지 소비 효율 1등급 기구를 사용해요'],['🔌','쓰지 않는 기구의 플러그는 뽑아요'],['🔴','스위치가 있는 멀티탭으로 대기 전력을 줄여요'],['🌙','사용하지 않는 전등은 꺼요'],['🌀','에어컨은 적정 온도로, 선풍기와 함께 써요'],['🪟','냉방할 때 창문을 닫아요']];
+const CN_TH=[['blue','🔵 파랑',['#3361e8','#45b3ff']],['green','🟢 초록',['#0ca678','#94d82d']],['orange','🟠 주황',['#f76707','#ffd43b']]];
+const CN=Object.assign({pick:[0,1,2],theme:'blue',title:'전기 에너지를 효율적으로 사용하는 방법'},lsGet('cn',{}));
+function cnSave(){ lsSet('cn',{pick:CN.pick,theme:CN.theme,title:CN.title}); }
+function wrapText(c,t,maxW){ const out=[]; let line=''; for(const ch of t){ if(c.measureText(line+ch).width>maxW&&line){ out.push(line); line=ch; } else line+=ch; } if(line) out.push(line); return out; }
+function cnPaint(c){ const th=CN_TH.find(x=>x[0]===CN.theme)[2]; const g=c.createLinearGradient(0,0,1080,1080); g.addColorStop(0,th[0]); g.addColorStop(1,th[1]); c.fillStyle=g; c.fillRect(0,0,1080,1080);
+  c.fillStyle='rgba(255,255,255,.14)'; [[930,150,180],[120,980,140],[980,900,90]].forEach(a=>{ c.beginPath(); c.arc(a[0],a[1],a[2],0,7); c.fill(); });
+  c.fillStyle='#fff'; c.textAlign='left'; c.textBaseline='top'; c.font="900 44px 'Noto Sans KR',sans-serif"; c.fillText('⚡ 카드 뉴스',80,70);
+  c.font="900 72px 'Noto Sans KR',sans-serif"; const tl=wrapText(c,CN.title||'제목을 입력하세요',920).slice(0,3); tl.forEach((l,i)=>c.fillText(l,80,150+i*90));
+  let y=170+tl.length*90+30; CN.pick.slice(0,3).forEach((pi,i)=>{ const o=CN_OPTS[pi]; c.fillStyle='rgba(255,255,255,.95)'; cRound(c,70,y,940,170,36); c.fill();
+    c.fillStyle=th[0]; c.beginPath(); c.arc(160,y+85,52,0,7); c.fill(); c.fillStyle='#fff'; c.font="900 56px 'Noto Sans KR',sans-serif"; c.textAlign='center'; c.textBaseline='middle'; c.fillText(String(i+1),160,y+88);
+    c.font="64px sans-serif"; c.fillText(o[0],290,y+88); c.fillStyle='#1b1d4a'; c.textAlign='left'; c.font="800 42px 'Noto Sans KR',sans-serif"; const ls=wrapText(c,o[1],620).slice(0,2); ls.forEach((l,k)=>c.fillText(l,350,y+88+(k-(ls.length-1)/2)*52)); y+=196; });
+  c.fillStyle='rgba(255,255,255,.9)'; c.font="700 30px 'Noto Sans KR',sans-serif"; c.textAlign='right'; c.textBaseline='alphabetic'; c.fillText('전기 에너지를 아끼면 지구의 환경을 지킬 수 있어요 🌏',1010,1040); }
+function cnDraw(){ const cv=$('cnCv'); if(!visible(cv)) return; const c=prepRatio(cv,1080,1080); if(!c) return; cnPaint(c); }
+function cnPickRender(){ $('cnPick').innerHTML=CN_OPTS.map((o,i)=>`<button class="chip small-chip${CN.pick.includes(i)?' on':''}" data-v="${i}">${o[0]} ${o[1]}</button>`).join('');
+  $('cnPick').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.v; if(CN.pick.includes(i)) CN.pick=CN.pick.filter(x=>x!==i); else { if(CN.pick.length>=3){ toast('실천 방법은 3개까지 고를 수 있어요'); sfx('tap'); return; } CN.pick.push(i); } sfx('pop'); cnSave(); cnPickRender(); cnDraw(); })); }
+const PLEDGE=['발광 다이오드등을 사용한다.','에어컨과 선풍기를 함께 사용한다.','에너지 소비 효율 등급이 1등급인 전기 기구를 사용한다.','사용하지 않는 전기 기구의 플러그는 뽑아 둔다.','사용하지 않는 전등은 끈다.'];
+
+function buildExperiments(){
+  // ①
+  NNET=makeNet('nNet',{mode:'ser',n:1,click:true,onchange:connChange});
+  chipGroup('nMode',CMODES.map(m=>[m[0],m[1]]),CONN.mode,v=>{ connMode(v); sfx('connect'); setTimeout(()=>sfx('bulb'),120); });
+  const d0=CMODES.find(x=>x[0]===CONN.mode); NNET.set(d0[2],d0[3]); CONN.seen[CONN.mode]=true; connSave(); connUpdate();
+  $('nShowE').addEventListener('click',()=>{ NNET.showE=!NNET.showE; $('nShowE').classList.toggle('on',NNET.showE); sfx('tap'); kick(); });
+  $('nShowI').addEventListener('click',()=>{ NNET.showI=!NNET.showI; $('nShowI').classList.toggle('on',NNET.showI); sfx('tap'); NNET.render(); kick(); });
+  $('nPut').addEventListener('click',()=>{ if(!NNET.rem.size){ toast('전구가 모두 끼워져 있어요'); sfx('tap'); return; } NNET.rem.clear(); NNET.render(); sfx('connect'); setTimeout(()=>sfx('bulb'),110); connUpdate(); kick(); });
+  makePred('nPred','pred-n',[
+    {q:'전구 2개를 <b>직렬연결</b>하면 전구 1개의 밝기는 전구 1개일 때와 비교하여?',opts:['밝아진다','같다','어두워진다'],ans:'어두워진다',done:()=>!!(CONN.seen.one&&CONN.seen.ser2)},
+    {q:'전구 2개를 <b>병렬연결</b>하면 전구 1개의 밝기는?',opts:['밝아진다','같다','어두워진다'],ans:'같다',done:()=>!!(CONN.seen.one&&CONN.seen.par2)},
+    {q:'<b>직렬연결</b>에서 전구 1개를 빼면 나머지 전구는?',opts:['켜진 채로 있다','꺼진다'],ans:'꺼진다',done:()=>!!CONN.cut.ser2},
+    {q:'<b>병렬연결</b>에서 전구 1개를 빼면 나머지 전구는?',opts:['켜진 채로 있다','꺼진다'],ans:'켜진 채로 있다',done:()=>!!CONN.cut.par2}]);
+  const cmpOpts=[['>','&gt;'],['=','='],['<','&lt;']];
+  chipGroup('cmpS',cmpOpts,CONN.cmp.s,v=>{ CONN.cmp.s=v; connSave(); sfx('tap'); $('cmpMark').textContent=''; });
+  chipGroup('cmpP',cmpOpts,CONN.cmp.p,v=>{ CONN.cmp.p=v; connSave(); sfx('tap'); $('cmpMark').textContent=''; });
+  $('cmpChk').addEventListener('click',()=>{ const S=CONN.seen; if(!(S.one&&S.ser2&&S.par2)){ toast('⏳ 전구 1개, 직렬 2개, 병렬 2개 회로를 모두 관찰한 뒤 확인해요'); sfx('tap'); return; } if(!CONN.cmp.s||!CONN.cmp.p){ toast('두 칸을 모두 골라 주세요'); sfx('tap'); return; }
+    const a=CONN.cmp.s==='>', b=CONN.cmp.p==='='; const m=$('cmpMark');
+    if(a&&b){ m.textContent='✔ 둘 다 맞았어요!'; m.style.color='#12a874'; sfx('fanfare'); burstAt($('cmpChk'),{count:40,speed:9}); }
+    else { m.textContent=(a?'':'✖ 직렬: 전구 1개가 더 밝아요(>). ')+(b?'':'✖ 병렬: 밝기가 같아요(=).'); m.style.color='#e5484d'; sfx('wrong'); } });
+  // ②
+  chipGroup('tMode',[['par','🔌 멀티탭 (병렬연결)'],['ser','🤔 만약 직렬연결이라면? (상상)']],TAP.mode,v=>{ TAP.mode=v; tapSave(); sfx(v==='ser'?'creak':'connect'); tapDraw(); $('tMsg').innerHTML=v==='ser'?'🤔 멀티탭 속 콘센트가 한 줄로(직렬) 연결되어 있다고 상상해 봐요. 스위치를 켜고 꺼 보세요.':'🔌 실제 멀티탭은 콘센트가 서로 병렬연결되어 있어요. 스위치를 켜고 꺼 보세요.'; });
+  $('tInside').addEventListener('click',()=>{ TAP.inside=!TAP.inside; tapSave(); sfx('zoom'); tapDraw(); });
+  $('tAllOn').addEventListener('click',()=>{ TAP.on=[true,true,true,true]; tapSave(); sfx('device'); tapDraw(); $('tMsg').innerHTML=TAP.mode==='par'?'⚡ 네 기구를 모두 켰어요. 각 기구에 모두 <b>220 V</b>가 걸리고, 멀티탭 전체 전류는 커졌어요.':'😵 모두 켜야 겨우 작동하지만, 각 기구에 <b>220 V보다 작은 전압</b>이 걸려 제대로 작동하지 않아요.'; });
+  $('tAllOff').addEventListener('click',()=>{ TAP.on=[false,false,false,false]; tapSave(); sfx('switch'); tapDraw(); $('tMsg').textContent='⏻ 모두 껐어요.'; });
+  tapDraw(); $('tMsg').innerHTML='👆 콘센트 옆 ON/OFF 스위치를 눌러 보세요.';
+  const q2=lsGet('tq2',''); chipGroup('tq2',[['o','○'],['x','×']],q2,v=>{ lsSet('tq2',v); const m=$('tq2m'); if(v==='o'){ m.textContent='✔ 정답! 병렬연결이라 모두 220 V로 같아요.'; m.style.color='#12a874'; sfx('correct'); burstAt($('tq2'),{count:16,speed:6}); } else { m.textContent='✖ 다시 생각해 봐요. 멀티탭은 병렬연결이에요.'; m.style.color='#e5484d'; sfx('wrong'); } });
+  // ③
+  appGrid(); pTable(); pChart();
+  makePred('pPred','pred-p',[
+    {q:'조사한 전기 기구 중 소비 전력이 가장 큰 기구는 전기 에너지를 주로 어떤 에너지로 전환할까?',opts:['빛에너지','열에너지','소리 에너지'],ans:'열에너지',done:()=>!!POW.done.kettle},
+    {q:'휴대 전화를 충전할 때 전기 에너지는 주로 어떤 에너지로 전환될까?',opts:['빛에너지','화학 에너지','운동 에너지'],ans:'화학 에너지',done:()=>!!POW.done.phone}]);
+  // ④
+  effReset(); $('eRun').addEventListener('click',effRun); $('eReset').addEventListener('click',()=>{ sfx('tap'); effReset(); });
+  makePred('ePred','pred-e',[
+    {q:'같은 양의 전기 에너지를 공급할 때 더 밝은 빛을 내는 전구는?',opts:['가','나','같다'],ans:'나',done:()=>EFF.done},
+    {q:'에너지 효율이 더 높은 전구는?',opts:['가','나','같다'],ans:'나',done:()=>EFF.done},
+    {q:'전구 가에서 방출한 빛에너지와 열에너지를 합한 양은 공급한 전기 에너지와 비교하여?',opts:['더 많다','같다','더 적다'],ans:'같다',done:()=>EFF.done}]);
+  chipGroup('sbMode',[['watch','📺 시청 중'],['standby','🔴 리모컨으로 끔'],['unplug','🔌 플러그 뽑기']],SB.mode,v=>{ SB.mode=v; sfx(v==='unplug'?'thunk':'switch'); sbDraw(); kick(); });
+  sbDraw();
+  // ⑤
+  houseDraw();
+  $('cnTitle').value=CN.title; $('cnTitle').addEventListener('input',()=>{ CN.title=$('cnTitle').value; cnSave(); cnDraw(); });
+  cnPickRender(); chipGroup('cnTheme',CN_TH.map(t=>[t[0],t[1]]),CN.theme,v=>{ CN.theme=v; cnSave(); sfx('pop'); cnDraw(); });
+  $('cnSave').addEventListener('click',()=>{ try{ const cv=document.createElement('canvas'); cv.width=1080; cv.height=1080; cnPaint(cv.getContext('2d')); const a=document.createElement('a'); a.href=cv.toDataURL('image/png'); a.download='카드뉴스_전기에너지.png'; document.body.appendChild(a); a.click(); a.remove(); sfx('fanfare'); burstAt($('cnSave'),{count:40,speed:9}); toast('🖼️ 카드 뉴스를 저장했어요!'); }catch(e){ toast('저장이 막혀 있어요. 화면을 캡처해 주세요'); } });
+  addEventListener('resize',()=>{ if(curTab==='save') cnDraw(); });
+  $('pledge').innerHTML=PLEDGE.map((p,i)=>`<label><input type="checkbox" data-pl="${i}"${lsGet('pl-'+i,false)?' checked':''}> ${p}</label>`).join('');
+  $('pledge').querySelectorAll('[data-pl]').forEach(c=>c.addEventListener('change',()=>{ lsSet('pl-'+c.dataset.pl,c.checked); if(c.checked){ sfx('pop'); burstAt(c,{count:12,speed:5,size:6}); if([...document.querySelectorAll('[data-pl]')].every(x=>x.checked)){ sfx('combo'); toast('🌏 실천 다짐 완료!'); } } }));
+}
+/* ============ 스티커 붙이기 판 ============ */
+const BOARDS=[
+  {short:'직렬 vs 병렬 비교표',title:'판 1 · 전구의 직렬연결과 병렬연결 비교하기',desc:'표 채우기형 — 같은 전구를 여러 개 연결할 때, 전구 1개만 연결할 때와 비교해 정리해요. (교과서 254~255쪽, 261쪽)',color:'c1',type:'table',
+   stickers:['어두워진다','같다','커진다','작아진다','작아진다','커진다','밝아진다'],
+   slots:[{id:'s1',answer:'어두워진다',name:'직렬 · 전구 1개의 밝기 칸',hints:['직렬연결하면 회로에 흐르는 전류가 약해져요.','탐구 ①에서 직렬 2개의 전구가 어떻게 보였나요?']},
+          {id:'p1',answer:'같다',name:'병렬 · 전구 1개의 밝기 칸',hints:['병렬연결한 각 전구에는 전구 1개일 때와 같은 전압이 걸려요.','탐구 ①의 비교에서 = 를 골랐어요.']},
+          {id:'s2',answer:'커진다',name:'직렬 · 회로 전체 저항 칸',hints:['전류가 방해물을 차례로 모두 지나야 해요.','측정기의 🧱 막대가 길어졌어요.']},
+          {id:'p2',answer:'작아진다',name:'병렬 · 회로 전체 저항 칸',hints:['전류가 지나갈 길이 여러 갈래로 늘어나요.','측정기의 🧱 막대가 짧아졌어요.']},
+          {id:'s3',answer:'작아진다',name:'직렬 · 회로 전체 전류 칸',hints:['전체 저항이 커지면 전류는?','측정기의 ⚡ 막대를 떠올려 봐요.']},
+          {id:'p3',answer:'커진다',name:'병렬 · 회로 전체 전류 칸',hints:['갈래마다 전구 1개일 때만큼 전류가 흘러요.','전구를 병렬로 더 연결할수록 ⚡ 막대가 길어졌어요.']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-0-${id}"></div>`;
+     return `<div class="tbl-wrap"><table class="tbl res-tbl"><tr><th>전구 수를 늘릴 때</th><th style="color:var(--ser)">직렬연결</th><th style="color:var(--par)">병렬연결</th></tr><tr><td><b>전구 1개의 밝기</b><br><span class="muted">(전구 1개일 때와 비교)</span></td><td>${sl('s1')}</td><td>${sl('p1')}</td></tr><tr><td><b>회로 전체 저항</b></td><td>${sl('s2')}</td><td>${sl('p2')}</td></tr><tr><td><b>회로 전체 전류의 세기</b></td><td>${sl('s3')}</td><td>${sl('p3')}</td></tr></table></div>`; },
+   summary:'<b>직렬</b>: 전체 저항 ⬆ → 전체 전류 ⬇ → 전구 1개의 밝기 ⬇ / <b>병렬</b>: 각 전구의 전압이 같아 밝기 = , 전체 저항 ⬇ → 전체 전류 ⬆'},
+  {short:'전구 하나를 빼면?',title:'판 2 · 전구 하나의 연결이 끊어지면?',desc:'실험 결과형 — (가), (나)는 전구 2개를 연결한 회로에서 왼쪽(위쪽) 전구를 뺀 모습, (다)는 멀티탭이에요. (교과서 254~255쪽)',color:'c3',type:'scene',
+   stickers:['직렬연결','꺼진다','병렬연결','켜진 채로 있다','병렬연결','더 밝아진다'],
+   slots:[{id:'a',answer:'직렬연결',name:'(가) 연결 방법 칸',hints:['전구들이 한 줄로 이어져 있어요.','전류가 지나갈 길이 하나뿐이에요.']},
+          {id:'b',answer:'꺼진다',name:'(가) 남은 전구 칸',hints:['한 줄 길이 끊어지면 전류가 흐를 수 있을까요?','탐구 ①에서 직렬 회로의 전구를 하나 뺐을 때를 떠올려 봐요.']},
+          {id:'c',answer:'병렬연결',name:'(나) 연결 방법 칸',hints:['전구들이 여러 갈래로 나뉘어 있어요.','갈래마다 전지에 따로 연결돼요.']},
+          {id:'d',answer:'켜진 채로 있다',name:'(나) 남은 전구 칸',hints:['다른 갈래는 끊어지지 않았어요.','남은 전구에 걸리는 전압은 그대로라 밝기도 그대로예요.']},
+          {id:'e',answer:'병렬연결',name:'(다) 멀티탭 콘센트 연결 칸',hints:['콘센트마다 따로 켜고 끌 수 있어요.','각 기구에 모두 220 V가 걸려요.']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-1-${id}"></div>`; const g1=netSVG({mode:'ser',n:2,rem:new Set([0]),nolabel:true}), g2=netSVG({mode:'par',n:2,rem:new Set([0]),nolabel:true}), g3=tapSVG(TAP_APPS.slice(0,3),[true,false,true],'par',false);
+     return `<div class="sc-grid"><div class="sc"><b style="text-align:center">(가)</b>${g1}<div class="sc-slots"><span>연결 방법</span>${sl('a')}<span>남은 전구</span>${sl('b')}</div></div><div class="sc"><b style="text-align:center">(나)</b>${g2}<div class="sc-slots"><span>연결 방법</span>${sl('c')}<span>남은 전구</span>${sl('d')}</div></div><div class="sc"><b style="text-align:center">(다)</b>${g3}<div class="sc-slots"><span>콘센트끼리의 연결</span>${sl('e')}</div></div></div>`; },
+   summary:'<b>직렬연결</b>은 하나라도 끊어지면 회로 전체에 전류가 흐르지 않아요. <b>병렬연결</b>은 하나가 끊어져도 나머지는 그대로! 그래서 가정의 전기 기구와 멀티탭은 <b>병렬연결</b>해요.'},
+  {short:'에너지 전환 분류',title:'판 3 · 전기 에너지는 주로 어떤 에너지로?',desc:'분류판형 — 전기 기구에서 전기 에너지가 주로 어떤 에너지로 전환되는지 분류해요. (교과서 256~257쪽, 259쪽)',color:'c2',type:'cls',
+   stickers:['전등','전기다리미','전기밥솥','스피커','선풍기','세탁기','휴대 전화 충전','건전지'],
+   slots:[{id:'l1',answer:'전등',name:'빛에너지 칸',hints:['어두운 곳을 밝혀 주는 기구예요.','LED등도 여기에 속해요.']},
+          {id:'h1',answer:['전기다리미','전기밥솥'],name:'열에너지 칸',hints:['뜨거워지는 기구예요.','소비 전력이 상대적으로 큰 기구들!']},{id:'h2',answer:['전기다리미','전기밥솥'],name:'열에너지 칸',hints:['뜨거워지는 기구예요.','옷을 다리거나 밥을 짓는 기구!']},
+          {id:'s1',answer:'스피커',name:'소리 에너지 칸',hints:['음악을 들려주는 기구예요.','이어폰도 같은 종류예요.']},
+          {id:'m1',answer:['선풍기','세탁기'],name:'운동 에너지 칸',hints:['무언가를 빙글빙글 돌리는 기구예요.','날개나 세탁통이 돌아가요.']},{id:'m2',answer:['선풍기','세탁기'],name:'운동 에너지 칸',hints:['무언가를 빙글빙글 돌리는 기구예요.','바람을 일으키거나 빨래를 해요.']},
+          {id:'c1',answer:'휴대 전화 충전',name:'화학 에너지 칸',hints:['배터리 속에 에너지를 저장해요.','충전하는 과정이에요.']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-2-${id}"></div>`;
+     return `<div class="cls-board"><div class="cls-bin"><h4>💡 빛에너지</h4>${sl('l1')}</div><div class="cls-bin"><h4>🔥 열에너지</h4>${sl('h1')}${sl('h2')}</div><div class="cls-bin"><h4>🔊 소리 에너지</h4>${sl('s1')}</div><div class="cls-bin"><h4>🌀 운동 에너지</h4>${sl('m1')}${sl('m2')}</div><div class="cls-bin"><h4>🔋 화학 에너지</h4>${sl('c1')}</div></div>`; },
+   summary:'전기 기구는 전기 에너지를 <b>빛·열·소리·운동·화학 에너지</b> 등으로 전환해 사용해요. (건전지는 전기 에너지를 사용하는 기구가 아니라 전기 에너지를 공급해요.)'},
+  {short:'소비 전력과 효율',title:'판 4 · 소비 전력, 에너지 효율, 대기 전력',desc:'표 채우기형 — 설명에 알맞은 용어를 붙여요. (교과서 256~258쪽)',color:'c4',type:'table',
+   stickers:['소비 전력','W(와트)','에너지 효율','대기 전력','열에너지로 전환하는 기구','A(암페어)','소리 에너지로 전환하는 기구'],
+   slots:[{id:'a',answer:'소비 전력',name:'첫째 줄 칸',hints:['전기 기구의 뒷면에 W로 표시돼요.','1초 동안 사용하는 전기 에너지의 양이에요.']},
+          {id:'b',answer:'W(와트)',name:'둘째 줄 칸',hints:['전류의 단위와 헷갈리지 마세요.','1초 동안 1 J을 사용하면 1 ○']},
+          {id:'c',answer:'에너지 효율',name:'셋째 줄 칸',hints:['전구 가(20 %)와 나(80 %)를 비교할 때 쓴 말이에요.','필요한 에너지로 바뀌는 비율!']},
+          {id:'d',answer:'대기 전력',name:'넷째 줄 칸',hints:['리모컨으로 끈 텔레비전의 빨간 표시등!','플러그를 뽑으면 줄일 수 있어요.']},
+          {id:'e',answer:'열에너지로 전환하는 기구',name:'다섯째 줄 칸',hints:['탐구 ③의 그래프에서 🔥 표시가 붙은 기구들이에요.','전기 주전자, 드라이어, 다리미, 전기밥솥!']}],
+   render(){ const sl=id=>`<div class="slot" id="slot-3-${id}"></div>`; const R=[['전기 기구가 1초 동안 사용하는 전기 에너지의 양','a'],['소비 전력의 단위','b'],['공급한 전기 에너지 중 필요한 에너지로 전환되는 비율','c'],['전기 기구를 사용하지 않을 때에도 소비하는 전력','d'],['소비 전력이 상대적으로 큰 전기 기구','e']];
+     return `<div class="tbl-wrap"><table class="tbl res-tbl"><tr><th>설명</th><th>용어</th></tr>${R.map(r=>`<tr><td>${r[0]}</td><td>${sl(r[1])}</td></tr>`).join('')}</table></div>`; },
+   summary:'<b>소비 전력(W)</b> = 1초 동안 사용하는 전기 에너지의 양. 열을 내는 기구의 소비 전력이 커요. <b>에너지 효율</b>이 높고 <b>대기 전력</b>이 작은 기구를 쓰면 전기 에너지를 아낄 수 있어요.'}
+];
+
+/* ============ 실생활 ============ */
+const LIFE=[
+  ['🔌','멀티탭은 따로따로 켜져요','멀티탭의 한 자리를 꺼도 다른 자리에 꽂은 기구는 계속 작동해요.','멀티탭의 단자들은 서로 <b>병렬연결</b>되어 있어 각각 따로 켜거나 끌 수 있고, 꽂은 기구마다 <b>같은 전압</b>이 걸려요. (교과서 그림 Ⅶ-9)','병렬연결'],
+  ['🏠','우리 집 전기 기구는 모두 220 V','냉장고를 켜 둔 채 텔레비전을 끄고 켜도 냉장고는 멈추지 않아요.','가정의 전기 기구는 <b>병렬연결</b>되어 있어 다른 기구의 영향을 받지 않고 사용할 수 있으며, 각 기구에 모두 <b>220 V</b>의 같은 전압이 걸려요.','병렬연결의 장점'],
+  ['🎄','한 줄 장식 전구가 한꺼번에 꺼지는 까닭','전구 하나가 빠졌을 뿐인데 장식 전구 줄 전체가 꺼지는 경우가 있어요.','전구들이 <b>직렬연결</b>된 제품이라면 전구 하나의 연결만 끊어져도 회로 전체에 전류가 흐르지 않아 <b>모든 전구가 꺼져요</b>.','직렬연결의 특징'],
+  ['💨','드라이어를 쓸 때 멀티탭이 뜨거워진다면?','드라이어, 전기다리미, 전기 주전자는 뒷면에 1000 W가 넘는 숫자가 적혀 있어요.','전기 에너지를 <b>열에너지로 전환</b>하는 기구는 소비 전력이 상대적으로 커요. 이런 기구를 한 멀티탭에 여러 개 꽂으면 전체 전류가 커져 위험할 수 있어요. <span class="badge ext">확장</span>','소비 전력 · 열에너지'],
+  ['❄️','에어컨과 선풍기, 같은 일을 하는데?','둘 다 시원하게 해 주지만 뒷면의 소비 전력 숫자는 크게 달라요.','선풍기와 에어컨처럼 <b>용도가 같더라도 소비 전력이 크게 차이</b> 나기도 해요. 에어컨을 적정 온도로 켜고 선풍기를 함께 사용하면 전기 에너지를 효율적으로 쓸 수 있어요.','소비 전력 비교'],
+  ['🏷️','가전제품의 1등급 스티커','새 냉장고나 세탁기에 숫자와 색깔 막대가 그려진 표시가 붙어 있어요.','<b>에너지 소비 효율 등급</b> 표시예요. 1등급에 가까울수록 에너지 효율이 높아 같은 일을 할 때 전기 에너지를 적게 사용해요. (교과서 그림 Ⅶ-11)','에너지 효율'],
+  ['💡','교실 전등을 LED등으로 바꾸는 까닭','학교와 집의 전등이 점점 발광 다이오드(LED)등으로 바뀌고 있어요.','발광 다이오드등은 공급한 전기 에너지 중 <b>빛에너지로 전환되는 비율이 높아</b> 같은 밝기를 낼 때 전기 에너지를 더 적게 사용해요.','에너지 효율'],
+  ['🔴','꺼진 텔레비전의 빨간 불','리모컨으로 끈 텔레비전에도 작은 빨간 불이 켜져 있어요.','사용하지 않을 때에도 전기 에너지를 일부 소비하는 <b>대기 전력</b>의 표시예요. 전원 스위치가 있는 멀티탭을 끄거나 플러그를 뽑으면 줄일 수 있어요.','대기 전력']
+];
+function buildLife(){
+  $('lifeGrid').innerHTML=LIFE.map((l,i)=>`<div class="life-card rise-in" style="--i:${i}"><span class="ic">${l[0]}</span><h3>${l[1]}</h3><p style="margin:0">${l[2]}</p><div class="more">👆 왜 그럴까?</div><div class="why"><p style="color:var(--color-text)">${l[3]}</p><span class="link-tag">🔗 ${l[4]}</span></div></div>`).join('');
+  $('lifeGrid').querySelectorAll('.life-card').forEach(c=>c.addEventListener('click',()=>{ if(c.classList.contains('open')) return; c.classList.add('open'); sfx('bulb'); burstAt(c.querySelector('.ic'),{count:12,speed:5,size:6,colors:['#ffd43b','#f2b705','#0ca678','#e8590c']});
+    if($('lifeGrid').querySelectorAll('.life-card.open').length===LIFE.length){ setTimeout(()=>{ sfx('combo'); toast('🌟 생활 속 전기 카드를 모두 열었어요!'); burstAt($('toQuiz'),{count:30,speed:8}); },400); } }));
+}
+
+/* ============ 개념 확인 10문항 ============ */
+const QF=(h)=>`<div style="max-width:420px;margin:0 auto">${h}</div>`;
+function ledLabelSVG(){ return `<svg viewBox="0 0 420 260" role="img" aria-label="전구에 표시된 내용"><circle cx="150" cy="110" r="78" fill="#f8f9fa" stroke="#9aa6bb" stroke-width="4"/><rect x="110" y="180" width="80" height="54" rx="8" fill="#adb5bd"/><rect x="118" y="192" width="64" height="6" rx="3" fill="#868e96"/><rect x="118" y="206" width="64" height="6" rx="3" fill="#868e96"/>`+txt(150,96,'LED',{s:30,c:'#1c7ed6',halo:0})+txt(150,134,'220 V  10 W',{s:24,halo:0})+`<path d="M232,110 H300" stroke="#5a5f80" stroke-width="3" stroke-dasharray="6 5"/><rect x="300" y="78" width="110" height="64" rx="10" fill="#fff9db" stroke="#f2b705" stroke-width="2.5"/>`+txt(355,104,'220 V',{s:20,halo:0})+txt(355,130,'10 W',{s:20,c:'#c92a2a',halo:0})+`</svg>`; }
+function q9Table(){ return `<div class="tbl-wrap"><table class="tbl"><tr><th>전기 기구</th><th>에너지 전환</th><th>소비 전력</th></tr><tr><td>전등</td><td>전기 → 빛</td><td>35 W</td></tr><tr><td>텔레비전</td><td>전기 → 빛, 소리</td><td>200 W</td></tr><tr><td>세탁기</td><td>전기 → 운동</td><td>550 W</td></tr><tr><td>전기다리미</td><td>전기 → 열</td><td>1500 W</td></tr></table></div>`; }
+const QUIZ=[
+  {type:'개념 이해 · 스스로 확인하기',q:'동일한 전구를 회로에 <b>직렬연결</b>할수록 전구 한 개의 밝기는 어떻게 되는가?',opts:['점점 어두워진다.','점점 밝아진다.','변하지 않는다.','처음 전구만 밝고 나머지는 꺼진다.'],exp:'직렬연결할수록 회로의 <b>전체 저항이 커져</b> 전류의 세기가 작아지므로 전구 한 개의 밝기는 <b>점점 어두워져요</b>. 직렬연결한 똑같은 전구들의 밝기는 서로 같아요.'},
+  {type:'개념 이해 · 대단원 문제',q:'전구의 저항이 모두 같을 때, 다음 특징을 직렬연결과 병렬연결로 옳게 짝 지은 것은?<br>(1) 각 전구의 밝기는 전구 한 개를 연결할 때의 밝기와 같다.<br>(2) 두 전구 중 한 개의 연결을 끊으면 다른 전구의 불도 꺼진다.',opts:['(1) 병렬, (2) 직렬','(1) 직렬, (2) 병렬','(1) 직렬, (2) 직렬','(1) 병렬, (2) 병렬'],exp:'(1) 병렬연결한 각 전구에는 같은 전압이 걸려 밝기가 전구 한 개일 때와 같아요 → <b>병렬</b>. (2) 직렬연결은 하나가 끊어지면 다른 전구에도 전류가 흐르지 않아요 → <b>직렬</b>.'},
+  {type:'자료 해석 · 대단원 문제',q:'그림은 동일한 전구 (가), (나)를 병렬로 연결한 모습이다. 스위치를 <b>열었을 때</b>에 대한 설명으로 옳은 것은?',fig:'',opts:['회로의 전체 저항은 커진다.','(가)의 밝기는 어두워진다.','(나)의 밝기는 밝아진다.','회로 전체 전류의 세기는 커진다.'],exp:'스위치를 열면 전구 (나)의 연결이 끊어지므로 갈래가 하나 줄어 <b>전체 저항은 커지고</b> 전체 전류의 세기는 작아져요. (가)에 걸리는 전압은 그대로라 (가)의 밝기는 변하지 않고, (나)는 꺼져요.'},
+  {type:'가상실험 결과',q:'탐구 ①에서 전구를 <b>병렬</b>로 2개에서 3개로 늘렸을 때의 변화로 옳은 것은?',opts:['전구 1개의 밝기는 그대로이고, 회로 전체 전류는 커진다.','전구 1개의 밝기가 어두워지고, 회로 전체 전류는 작아진다.','전구 1개의 밝기가 밝아지고, 회로 전체 저항은 커진다.','전구 1개에 걸리는 전압이 작아진다.'],exp:'병렬연결은 갈래가 늘어도 각 전구에 걸리는 <b>전압이 같아</b> 밝기가 그대로예요. 대신 전체 저항이 작아져 <b>회로 전체 전류는 커져요</b>.'},
+  {type:'적용 · 스스로 확인하기',q:'가정에서 전기 기구를 <b>병렬연결</b>하여 사용하는 까닭으로 옳은 것은?',opts:['각 기구에 같은 전압이 걸리고, 다른 기구의 영향을 받지 않고 사용할 수 있다.','기구를 많이 켤수록 각 기구에 걸리는 전압이 커져 성능이 좋아진다.','하나를 끄면 모든 기구가 함께 꺼져 편리하다.','회로 전체에 흐르는 전류의 세기를 항상 일정하게 유지할 수 있다.'],exp:'병렬연결하면 각 전기 기구에 모두 <b>같은 크기의 전압(220 V)</b>이 걸리고, 한 기구를 꺼도 <b>다른 기구는 영향을 받지 않아요</b>. 기구를 많이 켤수록 전체 전류는 커져요.'},
+  {type:'개념 이해',q:'소비 전력과 대기 전력에 대한 설명으로 옳은 것은?',opts:['전기 기구가 1초 동안 사용하는 전기 에너지의 양을 소비 전력이라고 한다.','소비 전력의 단위는 J(줄)이다.','전기 기구는 사용하지 않을 때 전기 에너지를 전혀 소비하지 않는다.','소비 전력이 클수록 같은 시간 동안 전기 에너지를 적게 사용한다.'],exp:'소비 전력은 <b>1초 동안 사용하는 전기 에너지의 양</b>이고 단위는 <b>W(와트)</b>예요. 소비 전력이 클수록 같은 시간 동안 전기 에너지를 많이 사용해요. 사용하지 않을 때에도 소비하는 전력이 <b>대기 전력</b>이에요.'},
+  {type:'자료 해석 · 대단원 문제',q:'그림은 어떤 전구에 표시된 내용이다. 이 전구에 대한 설명으로 옳은 것을 <보기>에서 모두 고른 것은?<br>ㄱ. 소비 전력은 10 W이다.<br>ㄴ. 전기 에너지를 빛에너지로 전환한다.<br>ㄷ. 220 V의 전원에 연결할 때 1초 동안 10 J의 전기 에너지를 사용한다.',fig:'',opts:['ㄱ, ㄴ, ㄷ','ㄱ','ㄱ, ㄴ','ㄴ, ㄷ'],exp:'220 V는 사용 전압, 10 W는 <b>소비 전력</b>이에요. 전구는 전기 에너지를 <b>빛에너지</b>로 전환하고, 소비 전력이 10 W이므로 <b>1초 동안 10 J</b>의 전기 에너지를 사용해요. → ㄱ, ㄴ, ㄷ 모두 옳아요.'},
+  {type:'적용 · 대단원 문제',q:'전기 에너지가 <b>주로 열에너지</b>로 전환되는 전기 기구는?',opts:['전기다리미','선풍기','전등','스피커'],exp:'전기다리미는 전기 에너지를 <b>열에너지</b>로 전환해요. 선풍기는 운동 에너지, 전등은 빛에너지, 스피커는 소리 에너지로 주로 전환해요.'},
+  {type:'자료 해석 · 탐구 ③',q:'표는 여러 전기 기구를 조사한 결과이다. 이에 대한 해석으로 옳은 것은? <span class="muted">(소비 전력은 예시 값)</span>',fig:'',opts:['전기 에너지를 열에너지로 전환하는 전기다리미의 소비 전력이 가장 크다.','같은 시간 동안 전기 에너지를 가장 많이 사용하는 기구는 전등이다.','텔레비전은 1초 동안 550 J의 전기 에너지를 사용한다.','세탁기는 전기 에너지를 주로 소리 에너지로 전환한다.'],exp:'열에너지로 전환하는 <b>전기다리미(1500 W)</b>의 소비 전력이 가장 커서 같은 시간 동안 전기 에너지를 가장 많이 사용해요. 텔레비전은 1초 동안 200 J, 세탁기는 주로 운동 에너지로 전환해요.'},
+  {type:'자료 해석 · 그림 Ⅶ-10',q:'전구 가는 공급한 전기 에너지의 20 %를, 전구 나는 80 %를 빛에너지로 전환한다. 옳은 것은?',opts:['나는 가보다 에너지 효율이 높다.','가에서 방출한 빛에너지와 열에너지의 합은 공급한 전기 에너지보다 작다.','같은 밝기의 빛을 낼 때 가가 전기 에너지를 더 적게 사용한다.','에너지 효율이 낮은 전구를 쓰면 전기 에너지를 절약할 수 있다.'],exp:'빛에너지로 전환되는 비율이 높은 <b>나</b>가 에너지 효율이 높아요. 에너지는 보존되므로 빛에너지와 열에너지의 합은 공급한 전기 에너지와 <b>같아요</b>. 효율이 높은 나가 같은 밝기를 낼 때 전기 에너지를 더 적게 사용해요.'}
+];
+QUIZ[2].fig=QF(netSVG({mode:'par',n:2,labels:['(가)','(나)'],sw:{1:'closed'},fs:24,showI:false}));
+QUIZ[6].fig=QF(ledLabelSVG());
+QUIZ[8].fig=q9Table();
+
+BOARDS.forEach(b=>b.slots.forEach(s=>s.ph='?'));
+const STK={cur:0,boards:[]}; let picked=null;
+function stkLoad(){ const s=lsGet('stk',null); STK.boards=BOARDS.map((b,i)=>Object.assign({placed:{},ok:{},tries:0,done:false,hint:{}},(s&&s.boards&&s.boards[i])||{})); STK.cur=s&&s.cur?s.cur:0; }
+function stkSave(){ lsSet('stk',{cur:STK.cur,boards:STK.boards}); }
+function unlocked(i){ return i===0||STK.boards[i-1].done; }
+function renderBoardTabs(){
+  $('boardTabs').innerHTML=BOARDS.map((b,i)=>`<button class="board-tab${i===STK.cur?' active':''}${unlocked(i)?'':' locked'}${STK.boards[i].done?' done':''}" data-b="${i}">${unlocked(i)?'':'<span class="lk">🔒</span>'}${i+1}. ${b.short}</button>`).join('');
+  $('boardTabs').querySelectorAll('.board-tab').forEach(t=>t.addEventListener('click',()=>{ const i=+t.dataset.b; if(!unlocked(i)){ sfx('wrong'); toast('🔒 앞 판을 먼저 완성해요'); return; } picked=null; STK.cur=i; stkSave(); sfx('tap'); renderBoardFrame(); }));
+}
+function renderBoardFrame(){
+  const b=BOARDS[STK.cur], bi=STK.cur;
+  renderBoardTabs(); $('boardTitle').textContent=b.title; $('boardDesc').textContent=b.desc;
+  let html=b.render();
+  if(b.type==='svg'){ html=html.replace('</div>',b.slots.map(s=>`<div class="slot abs" id="slot-${bi}-${s.id}" style="left:${s.x}%;top:${s.y}%"></div>`).join('')+'</div>'); }
+  $('stkBoard').innerHTML=html; $('stkMsg').innerHTML='<span class="trap-note">⚠️ 함정 스티커는 어디에도 붙이지 않아야 정답이에요.</span>';
+  const bd=$('stkBoard'); bd.classList.remove('rise-in'); void bd.offsetWidth; bd.style.animation='riseIn .45s both';
+  renderDone(false); renderStickers();
+}
+function stLabel(sid){ const [bi,i]=sid.split('-').map(Number); return BOARDS[bi].stickers[i]; }
+function renderStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi];
+  const used=new Set(Object.values(st.placed));
+  const tray=$('stkTray'); tray.innerHTML='<div class="tray-lbl">🗂️ 스티커 보관함 — 하나를 골라 빈칸을 눌러요</div>';
+  b.stickers.forEach((lab,i)=>{ const sid=bi+'-'+i; if(used.has(sid)) return;
+    const s=document.createElement('button'); s.className='sticker '+b.color+(picked===sid?' picked wiggle':''); s.dataset.sid=sid; s.style.setProperty('--tilt',(((i*7)%5)-2)*1.3+'deg'); s.textContent=lab;
+    s.addEventListener('click',()=>{ if(st.done) return; picked=picked===sid?null:sid; sfx(picked?'pick':'tap'); renderStickers(); });
+    tray.appendChild(s); });
+  if(tray.children.length===1) tray.insertAdjacentHTML('beforeend','<span class="muted">보관함이 비었어요</span>');
+  b.slots.forEach(sl=>{
+    const el=$('slot-'+bi+'-'+sl.id); if(!el) return; const sid=st.placed[sl.id], ok=!!st.ok[sl.id];
+    el.classList.toggle('ready',!!picked&&!ok); el.classList.toggle('ok',ok); el.innerHTML='';
+    if(sid){ const s=document.createElement('button'); s.className='sticker '+b.color; s.textContent=stLabel(sid);
+      s.addEventListener('click',e=>{ e.stopPropagation(); if(ok||st.done){ sfx('tap'); return; } if(picked){ place(sl.id); return; } delete st.placed[sl.id]; sfx('peel'); stkSave(); renderStickers(); });
+      el.appendChild(s); }
+    else el.innerHTML=`<span class="slot-num">${sl.ph||'?'}</span>`;
+    el.onclick=()=>{ if(ok||st.done) return; if(!picked){ sfx('tap'); toast('👇 먼저 보관함에서 스티커를 골라요'); return; } place(sl.id); };
+  });
+  $('stkCount').textContent=Object.keys(st.placed).length+' / '+b.slots.length; $('stkTry').textContent=st.tries;
+  $('stkCheck').disabled=st.done;
+}
+function place(slId){
+  const bi=STK.cur, st=STK.boards[bi]; const src=document.querySelector(`#stkTray .sticker[data-sid="${picked}"]`); const r0=src?src.getBoundingClientRect():null;
+  st.placed[slId]=picked; picked=null; sfx('stick'); stkSave(); renderStickers();
+  const dst=$('slot-'+bi+'-'+slId).querySelector('.sticker');
+  if(r0&&dst&&!REDUCED){ const r1=dst.getBoundingClientRect(); dst.style.transition='none'; dst.style.transform=`translate(${r0.left-r1.left}px,${r0.top-r1.top}px) scale(1.15) rotate(-6deg)`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ dst.style.transition='transform .42s cubic-bezier(.2,1.35,.4,1)'; dst.style.transform=''; })); }
+}
+function checkStickers(){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi]; if(st.done) return;
+  st.tries++; let wrong=0, empty=0, newOk=0; const msgs=[];
+  b.slots.forEach(sl=>{
+    if(st.ok[sl.id]) return; const el=$('slot-'+bi+'-'+sl.id), sid=st.placed[sl.id];
+    if(!sid){ empty++; return; }
+    if(Array.isArray(sl.answer)?sl.answer.includes(stLabel(sid)):stLabel(sid)===sl.answer){ st.ok[sl.id]=true; newOk++; setTimeout(()=>burstAt(el,{count:14,speed:5,size:6}),newOk*90); }
+    else { wrong++; el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); st.hint[sl.id]=Math.min((st.hint[sl.id]||0)+1,sl.hints.length);
+      msgs.push(`<span class="h">💡 <b>${sl.name}</b> — ${sl.hints[st.hint[sl.id]-1]}</span>`);
+      setTimeout(()=>{ if(st.placed[sl.id]===sid) delete st.placed[sl.id]; el.classList.remove('no'); stkSave(); renderStickers(); },850); }
+  });
+  const allOk=b.slots.every(sl=>st.ok[sl.id]);
+  if(allOk){ st.done=true; stkSave(); renderStickers(); $('stkMsg').innerHTML=''; setTimeout(()=>renderDone(true),350); }
+  else {
+    if(wrong){ sfx('wrong'); if(newOk) setTimeout(()=>sfx('correct'),250); }
+    else if(newOk) sfx('correct'); else sfx('tap');
+    let m=''; if(newOk) m+=`<span style="color:#12a874;font-weight:800">✔ ${newOk}칸 정답!</span> `;
+    if(wrong) m+=`<span style="color:#e5484d;font-weight:800">✖ ${wrong}칸은 다시 생각해 봐요.</span>`;
+    if(empty) m+=` <span class="muted">빈칸이 ${empty}개 남았어요.</span>`;
+    $('stkMsg').innerHTML=m+msgs.join(''); stkSave(); renderStickers();
+  }
+}
+function renderDone(fx){
+  const bi=STK.cur, b=BOARDS[bi], st=STK.boards[bi], next=bi<BOARDS.length-1, all=STK.boards.every(x=>x.done);
+  $('stkDone').innerHTML=st.done?`<div class="complete-banner"><div class="stamp">완성!</div><h3 style="margin:0 0 6px">🎉 ${b.short} 정리판 완성!</h3><p>${b.summary}</p><p class="muted">시도 ${st.tries}회 · 이 정리판이 바로 나의 개념 정리 노트예요 📒</p></div>`:'';
+  $('stkNext').classList.toggle('hidden',!(st.done&&next&&!all)); $('stkToLife').classList.toggle('hidden',!(all||(st.done&&!next)));
+  if(st.done&&fx){ sfx('fanfare'); setTimeout(()=>sfx('stamp'),180); fireworks(); renderBoardTabs();
+    if(next){ setTimeout(()=>{ sfx('unlock'); const t=$('boardTabs').children[bi+1]; if(t){ t.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:600,easing:'cubic-bezier(.3,1.6,.5,1)'}); burstAt(t,{count:20,speed:6}); } toast('🔓 다음 판이 열렸어요!'); },900); }
+    if(all) setTimeout(()=>toast('🏅 스티커 정리판 '+BOARDS.length+'개를 모두 완성했어요!'),1300);
+  }
+}
+
+
+
+let qz=null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(list,retry){ qz={list:shuffle(list||QUIZ.map((_,i)=>i)),i:0,score:0,wrong:[],t0:Date.now(),answered:false,streak:0,retry:!!retry,done:false}; if(cur!==5) goTo(5); renderQuestion(); }
+function renderQuestion(){
+  const qi=qz.list[qz.i], q=QUIZ[qi]; qz.answered=false; qz.order=shuffle(q.opts.map((_,i)=>i));
+  $('qNum').textContent=(qz.i+1)+' / '+qz.list.length; $('qBar').style.width=(qz.i/qz.list.length*100)+'%';
+  const card=$('qCard'); card.classList.remove('q-card'); void card.offsetWidth; card.classList.add('q-card');
+  card.innerHTML=`<span class="q-type">${q.type}</span>${qz.retry?' <span class="q-type" style="background:#fff0e2;color:#b35300">다시 풀기</span>':''}<div class="q-text">Q${qz.i+1}. ${q.q}</div>${q.fig?`<div class="q-fig">${q.fig}</div>`:''}
+    <div id="opts">${qz.order.map((oi,k)=>`<button class="opt" data-oi="${oi}"><span class="n">${'①②③④'[k]}</span><span>${q.opts[oi]}</span></button>`).join('')}</div><div id="fb"></div>`;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  $('qNext').classList.add('hidden');
+}
+function answer(btn){
+  if(qz.answered) return; qz.answered=true;
+  const qi=qz.list[qz.i], q=QUIZ[qi], ok=+btn.dataset.oi===0;
+  $('qCard').querySelectorAll('.opt').forEach(b=>{ if(+b.dataset.oi===0) b.classList.add('correct'); });
+  if(ok){ qz.score++; qz.streak++; sfx(qz.streak>=3?'combo':'correct'); burstAt(btn,{count:qz.streak>=3?60:34,speed:qz.streak>=3?11:8});
+    const r=btn.getBoundingClientRect(); floatText(r.left+r.width/2,r.top,qz.streak>=3?`🔥 ${qz.streak}연속!`:'정답! +1',qz.streak>=3?'#ff6a00':'#12a874');
+    const cb=$('combo'); cb.textContent=qz.streak>=2?`🔥 ${qz.streak}연속`:''; cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump');
+  } else { qz.streak=0; btn.classList.add('wrong'); sfx('wrong'); qz.wrong.push(qi); $('combo').textContent=''; if(navigator.vibrate) try{navigator.vibrate(80);}catch(e){} }
+  $('fb').innerHTML=`<div class="feedback ${ok?'ok':'no'}"><b class="big">${ok?'⭕ 정답이에요!':'❌ 아쉬워요! 정답은 초록색 보기예요.'}</b><br>${q.exp}</div>`;
+  $('qBar').style.width=((qz.i+1)/qz.list.length*100)+'%';
+  const nb=$('qNext'); nb.textContent=qz.i===qz.list.length-1?'결과 보기 🏁':'다음 문제 →'; nb.classList.remove('hidden');
+  setTimeout(()=>{ const r=$('fb').getBoundingClientRect(); if(r.bottom>innerHeight) window.scrollBy({top:r.bottom-innerHeight+90,behavior:'smooth'}); },60);
+}
+function nextQ(){ sfx('tap'); if(qz.i<qz.list.length-1){ qz.i++; renderQuestion(); window.scrollTo(0,0); } else showResult(); }
+function showResult(){
+  qz.done=true; const total=qz.list.length, sc=qz.score, rate=sc/total, sec=Math.round((Date.now()-qz.t0)/1000);
+  goTo(6);
+  const stars=rate>=.9?3:rate>=.7?2:rate>=.4?1:0;
+  $('trophy').textContent=rate>=.9?'🏆':rate>=.7?'🥈':'💪';
+  $('trophy').style.animation='none'; void $('trophy').offsetWidth; $('trophy').style.animation='';
+  [...$('stars').children].forEach((s,i)=>{ s.classList.remove('on'); if(i<stars) setTimeout(()=>{ s.classList.add('on'); sfx('pop'); burstAt(s,{count:14,speed:6,shapes:['s'],colors:['#ffd43b','#ffb238']}); },500+i*320); });
+  $('scoreBig').parentElement.nextElementSibling; $('scoreBig').nextElementSibling.textContent=' / '+total;
+  let n=0; const el=$('scoreBig'); el.textContent='0'; const tm=setInterval(()=>{ if(n>=sc){ clearInterval(tm); return; } n++; el.textContent=n; sfx('tick'); },110);
+  $('resultMsg').textContent=qz.retry?`틀렸던 ${total}문제 중 ${sc}문제를 맞혔어요!`:rate===1?'완벽해요! 옴의 법칙 박사 인정! 🎉':rate>=.8?'아주 잘했어요! 전류, 전압, 저항의 관계를 잘 이해했어요.':rate>=.5?'좋아요! 틀린 문제를 다시 풀어 보면 완벽해질 거예요.':'괜찮아요! 개념과 가상실험을 다시 보고 도전해 봐요.';
+  $('resultTime').textContent=`⏱ 걸린 시간 ${Math.floor(sec/60)}분 ${sec%60}초`;
+  $('wrongBox').innerHTML=qz.wrong.length?'<h3>📌 틀린 문제</h3>'+qz.wrong.map(qi=>`<p style="color:var(--color-text)">• ${QUIZ[qi].q}<br><span class="muted">정답: ${QUIZ[qi].opts[0]}</span></p>`).join(''):'<h3>🎯 틀린 문제가 없어요!</h3><p>모든 문제를 맞혔어요.</p>';
+  $('retryWrong').classList.toggle('hidden',!qz.wrong.length);
+  setTimeout(()=>{ if(rate>=.8){ sfx('fanfare'); fireworks(); } else { sfx('correct'); confetti(innerWidth/2,innerHeight*.3,{count:50,speed:9}); } },350);
+}
+
+
+/* ============ 시작 ============ */
+function init(){
+  const bb=$('bgBubbles'); for(let i=0;i<14;i++){ const s=document.createElement('span'); const z=14+Math.random()*36; s.style.width=s.style.height=z+'px'; s.style.left=Math.random()*100+'%'; s.style.animationDuration=(14+Math.random()*16)+'s'; s.style.animationDelay=(-Math.random()*20)+'s'; s.style.opacity=.35+Math.random()*.4; bb.appendChild(s); }
+  FX.cv=$('fx'); FX.ctx=FX.cv.getContext('2d'); fxResize(); addEventListener('resize',()=>{ fxResize(); kick(); });
+  const sb=$('soundBtn'); const upd=()=>{ sb.textContent=SND.on?'🔊':'🔇'; }; upd();
+  sb.addEventListener('click',()=>{ SND.on=!SND.on; lsSet('sound',SND.on); upd(); if(SND.on) sfx('correct'); toast(SND.on?'🔊 효과음 켜짐':'🔇 효과음 꺼짐'); });
+  document.addEventListener('pointerdown',e=>{ const b=e.target.closest('.btn'); if(!b||b.disabled) return; const r=b.getBoundingClientRect(), z=Math.max(r.width,r.height); const s=document.createElement('span'); s.className='ripple'; s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px'; b.appendChild(s); setTimeout(()=>s.remove(),650); });
+  document.addEventListener('pointerdown',e=>{ if(e.target.closest('.chip,.tab,.step-dot,.icon-btn,.board-tab,.btn,.myth,.life-card,.app,.bulb-hit,.tap-sw,.ladder-sw,.hs')) confetti(e.clientX,e.clientY,{count:7,speed:3.5,size:5,g:.1,decay:.045,shapes:['c','s'],colors:['#ffd43b','#f2b705','#2f6fdb','#e8590c','#0ca678']}); });
+  document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ goTo(+g.dataset.go); return; } const t=e.target.closest('[data-tabgo]'); if(t){ setTab(t.dataset.tabgo); return; }
+    const a=e.target.closest('[data-ans]'); if(a){ const box=$(a.dataset.ans); const h=box.classList.toggle('hidden'); a.textContent=h?'예시 답안 보기':'예시 답안 숨기기'; sfx(h?'tap':'sparkle'); } });
+  document.querySelectorAll('#expTabs .tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+  document.querySelectorAll('[data-save]').forEach(t=>{ const k=t.dataset.save; t.value=lsGet('note-'+k,''); let tm=null;
+    t.addEventListener('input',()=>{ clearTimeout(tm); tm=setTimeout(()=>{ lsSet('note-'+k,t.value); const s=$('saved-'+k); if(s){ s.textContent='저장됨 ✓'; setTimeout(()=>s.textContent='',1500); } },400); }); });
+  document.querySelectorAll('[data-save-check]').forEach(c=>{ const k='chk-'+c.dataset.saveCheck; c.checked=!!lsGet(k,false); c.addEventListener('change',()=>{ lsSet(k,c.checked); if(c.checked){ sfx('pop'); burstAt(c,{count:12,speed:5,size:6}); if([...document.querySelectorAll('[data-save-check]')].every(x=>x.checked)){ sfx('combo'); toast('✅ 학습목표를 모두 달성했어요!'); } } }); });
+  // 도입
+  $('heroBox').innerHTML=heroSVG(); thinkDraw();
+  $('startBtn').addEventListener('click',()=>{ goTo(1); });
+  const pg=lsGet('progress',0); if(pg>0){ $('resumeBtn').classList.remove('hidden'); $('resumeBtn').addEventListener('click',()=>goTo(pg)); }
+  $('thinkAnsBtn').addEventListener('click',()=>{ const a=$('thinkAns'); const h=a.classList.toggle('hidden'); sfx(h?'tap':'sparkle'); $('thinkAnsBtn').textContent=h?'예시 답안 보기':'예시 답안 숨기기'; });
+  // 모듈
+  buildConcepts(); buildExperiments(); buildLife(); stkLoad();
+  $('stkCheck').addEventListener('click',checkStickers);
+  $('stkReset').addEventListener('click',()=>{ const st=STK.boards[STK.cur]; Object.assign(st,{placed:{},ok:{},tries:0,done:false,hint:{}}); picked=null; stkSave(); sfx('peel'); renderBoardFrame(); });
+  $('stkNext').addEventListener('click',()=>{ if(STK.cur<BOARDS.length-1){ STK.cur++; picked=null; stkSave(); sfx('unlock'); renderBoardFrame(); window.scrollTo(0,0); } });
+  $('toQuiz').addEventListener('click',()=>{ startQuiz(); });
+  $('qNext').addEventListener('click',nextQ);
+  $('retryWrong').addEventListener('click',()=>startQuiz(qz.wrong.slice(),true));
+  $('retryAll').addEventListener('click',()=>startQuiz());
+  enterHooks[1]=()=>{ kick(); };
+  enterHooks[2]=()=>{ setTab(curTab); };
+  enterHooks[3]=()=>{ renderBoardFrame(); };
+  enterHooks[5]=()=>{ if(!qz||qz.done) startQuiz(); };
+  curTab=lsGet('tab','plan');
+  goTo(0);
+}
+init();
+
+</script>
+</body>
+</html>
